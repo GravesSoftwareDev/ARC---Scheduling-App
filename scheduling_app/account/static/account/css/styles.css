@@ -1,0 +1,248 @@
+/* Variables - OTC Inspired Color Scheme */
+:root {
+    --primary-color: #003F7F;        /* OTC Deep Blue */
+    --primary-light: #0052A3;        /* Lighter Blue */
+    --secondary-color: #FFFFFF;      /* White */
+    --accent-color: #E8F0F7;         /* Light Blue Background */
+    --success-color: #2E8B57;        /* Forest Green */
+    --danger-color: #C41E3A;         /* Deep Red */
+    --warning-color: #FF9800;        /* Orange */
+    --info-color: #2196F3;           /* Light Blue */
+    --light-color: #F5F7FA;          /* Very Light Gray */
+    --dark-color: #1A1A1A;           /* Near Black */
+    --text-color: #333333;           /* Dark Gray */
+    --border-color: #D0D8E0;         /* Light Gray Border */
+    --font-family: 'Segoe UI', 'Helvetica Neue', sans-serif;
+}
+
+/* Global Styles */
+body {
+    font-family: var(--font-family);
+    background: linear-gradient(135deg, var(--accent-color) 0%, var(--light-color) 100%);
+    color: var(--text-color);
+    margin: 0;
+    padding: 0;
+    line-height: 1.6;
+}
+a {
+    color: var(--primary-color);
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+a:hover {
+    color: var(--primary-light);
+    text-decoration: underline;
+}
+.container {
+    width: 90%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+.header {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%);
+    color: var(--secondary-color);
+    padding: 25px 0;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0, 63, 127, 0.15);
+    margin-bottom: 20px;
+}
+.header h1 {
+    margin: 0;
+    font-size: 28px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+.footer {
+    background-color: var(--primary-color);
+    color: var(--light-color);
+    padding: 15px 0;
+    text-align: center;
+    margin-top: 40px;
+    border-top: 3px solid var(--primary-light);
+    font-size: 14px;
+}
+
+/* Dashboard Styles */
+.dashboard-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 30px 20px;
+}
+
+.dashboard-container > h1 {
+    color: var(--primary-color);
+    font-size: 32px;
+    margin-bottom: 30px;
+    font-weight: 600;
+}
+
+.employee-info {
+    display: flex;
+    gap: 40px;
+    margin-top: 20px;
+}
+
+.info-section {
+    flex: 0 0 320px;
+    background: var(--secondary-color);
+    padding: 25px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 63, 127, 0.1);
+    border-left: 4px solid var(--primary-color);
+}
+
+.info-section h2 {
+    margin-top: 0;
+    color: var(--primary-color);
+    font-size: 20px;
+    border-bottom: 2px solid var(--accent-color);
+    padding-bottom: 12px;
+}
+
+.info-section p {
+    margin: 12px 0;
+    font-size: 15px;
+    color: var(--text-color);
+}
+
+.info-section strong {
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+.calendar-section {
+    flex: 1;
+}
+
+.calendar-section h2 {
+    color: var(--primary-color);
+    font-size: 22px;
+    margin-bottom: 20px;
+    font-weight: 600;
+}
+
+/* Hourly Calendar - Elegant OTC Design */
+.hourly-calendar {
+    background-color: var(--secondary-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    overflow-x: auto;
+    box-shadow: 0 4px 12px rgba(0, 63, 127, 0.1);
+}
+
+.calendar-header {
+    display: grid;
+    grid-template-columns: 100px repeat(5, 1fr);
+    gap: 0;
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%);
+    padding: 0;
+    sticky: top 0;
+    z-index: 10;
+}
+
+.hour-column {
+    background: inherit;
+    color: white;
+    padding: 14px 8px;
+    font-weight: 600;
+    text-align: center;
+    font-size: 12px;
+}
+
+.day-header {
+    background: inherit;
+    color: white;
+    padding: 14px 8px;
+    font-weight: 600;
+    text-align: center;
+    border-right: 1px solid rgba(255, 255, 255, 0.2);
+    font-size: 15px;
+}
+
+.day-header:last-child {
+    border-right: none;
+}
+
+.calendar-grid {
+    display: flex;
+    flex-direction: column;
+}
+
+.calendar-row {
+    display: grid;
+    grid-template-columns: 100px repeat(5, 1fr);
+    gap: 0;
+    background-color: transparent;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.calendar-row:last-child {
+    border-bottom: none;
+}
+
+.hour-label {
+    background-color: var(--light-color);
+    padding: 6px 8px;
+    font-weight: 600;
+    text-align: center;
+    border-right: 2px solid var(--border-color);
+    min-height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    color: var(--text-color);
+}
+
+.hour-label.closed {
+    background-color: #D3D3D3;
+    color: #999999;
+    opacity: 0.6;
+}
+
+.hour-cell {
+    background-color: #FFFFFF;
+    padding: 2px;
+    min-height: 18px;
+    position: relative;
+    border-right: 1px solid var(--border-color);
+    transition: background-color 0.2s ease;
+}
+
+.hour-cell.closed {
+    background-color: #E8E8E8;
+    opacity: 0.6;
+}
+
+.hour-cell:hover {
+    background-color: var(--accent-color);
+}
+
+.hour-cell.closed:hover {
+    background-color: #E8E8E8;
+}
+
+.availability-block {
+    background: linear-gradient(135deg, #1976D2 0%, #1565C0 100%);
+    border: 1px solid #0D47A1;
+    border-radius: 2px;
+    height: 100%;
+    min-height: 16px;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(25, 118, 210, 0.3);
+}
+
+.availability-block:hover {
+    box-shadow: 0 4px 8px rgba(25, 118, 210, 0.4);
+}
+
+.availability-block.preferred {
+    background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+    border-color: #FF9800;
+    box-shadow: 0 2px 4px rgba(255, 168, 0, 0.3);
+}
+
+.availability-block.preferred:hover {
+    box-shadow: 0 4px 8px rgba(255, 168, 0, 0.4);
+}
