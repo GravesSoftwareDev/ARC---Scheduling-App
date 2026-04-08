@@ -8,7 +8,30 @@
     <link rel="stylesheet" href="{% static 'account/css/styles.css' %}">
 </head>
 <body>
-    {% block content %}
-    {% endblock %}
+    <nav class="navbar">
+        <a href="{% url 'dashboard:dashboard' %}" class="navbar-logo">
+            <!-- Replace with <img> tag when you have a logo -->
+            <span class="logo-placeholder">ARC</span>
+        </a>
+        <div class="navbar-auth">
+            {% if user.is_authenticated %}
+                <form method="post" action="{% url 'dashboard:logout' %}" style="display:inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="nav-btn nav-btn-logout">Logout</button>
+                </form>
+            {% else %}
+                <a href="{% url 'dashboard:login' %}" class="nav-btn nav-btn-login">Login</a>
+            {% endif %}
+        </div>
+    </nav>
+
+    <main>
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    <footer class="footer">
+        <p>&copy; {% now "Y" %} Academic Resource Center</p>
+    </footer>
 </body>
 </html>

@@ -1,0 +1,13 @@
+{% extends "account/base.html" %}
+{% block title %}Employee Registration - Academic Resource Center{% endblock %}
+
+{% block content %}
+<div class="registration-container">
+    <h2>Employee Registration</h2>
+    <form method="post" class="registration-form">
+        {% csrf_token %}
+        {{ user_form.as_p }}
+        <button type="submit" class="btn btn-primary">Register Employee</button>
+    </form>
+</div>
+{% endblock %}

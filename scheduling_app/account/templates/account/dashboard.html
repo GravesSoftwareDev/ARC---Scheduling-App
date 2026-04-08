@@ -11,6 +11,10 @@
             {% if user.subjects.all %}
             <p><strong>Subjects:</strong> {{ user.subjects.all|join:", " }}</p>
             {% endif %}
+            {% if user.role == 'ADMIN' %}
+            <p><strong>Add Employee:</strong> <a href="{% url 'dashboard:registration' %}">Add New Employee</a></p>
+            {% endif %}
+            <p><strong>Reset your password:</strong> <a href="{% url 'dashboard:password_change' %}">Change Password</a></p>
         </div>
         
         <div class="calendar-section">
@@ -20,7 +24,10 @@
                 <div class="calendar-header">
                     <div class="hour-column"></div>
                     {% for day_code, day_name in days %}
-                    <div class="day-header">{{ day_name }}</div>
+                    <div class="day-header">
+                        <span class="day-full">{{ day_name }}</span>
+                        <span class="day-abbr">{{ day_code|slice:":3"|title }}</span>
+                    </div>
                     {% endfor %}
                 </div>
                 

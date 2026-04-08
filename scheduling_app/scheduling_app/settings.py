@@ -118,3 +118,20 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+
+LOGIN_URL = 'dashboard:login'
+LOGIN_REDIRECT_URL = 'dashboard:dashboard'
+LOGOUT_REDIRECT_URL = 'dashboard:login'
+
+# Email
+from email import charset
+charset.add_charset('utf-8', charset.SHORTEST, None, 'utf-8')
+
+# Email configuration for Gmail SMTP
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'sgravescreations@gmail.com'  # Replace with your Gmail address
+EMAIL_HOST_PASSWORD = 'ehafoyxidsumlara'  # Replace with your Gmail app password
+

@@ -58,6 +58,8 @@ class Employee(AbstractUser):
         related_name='employees'
     )
     
+    birthdate = models.DateField(null=True, blank=True)
+    
     role = models.CharField(
         choices=Role.choices,
         default=Role.employee
