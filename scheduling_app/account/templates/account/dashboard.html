@@ -12,6 +12,7 @@
             <p><strong>Subjects:</strong> {{ user.subjects.all|join:", " }}</p>
             {% endif %}
             <p><strong><a href="{% url 'dashboard:password_change' %}">Change Password</a></strong></p>
+            <p><strong><a href="{% url 'dashboard:manage_availability' %}">Manage Availability</a></strong></p>
             {% if user.role == 'ADMIN' %}
             <p><strong><a href="{% url 'dashboard:registration' %}">Register Employee</a></strong></p>
             <p><strong><a href="{% url 'dashboard:operating_hours' %}">Edit Operating Hours</a></strong></p>
