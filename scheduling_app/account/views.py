@@ -1,8 +1,10 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from .models import WeeklyAvailability, OperatingHours
 from datetime import time
 from django.contrib.auth.decorators import login_required, user_passes_test
-from .forms import RegistrationForm
+from django.forms import modelformset_factory
+from django.db.models import Case, When, IntegerField
+from .forms import RegistrationForm, OpenHoursForm
 
 # Create your views here.
 @login_required
@@ -110,8 +112,6 @@ def dashboard(request):
 
 @login_required
 @user_passes_test(lambda u: u.role == 'ADMIN')
-@login_required
-@user_passes_test(lambda u: u.role == 'ADMIN')
 def registration(request):
     if request.method == 'POST':
         user_form = RegistrationForm(request.POST)
@@ -130,3 +130,31 @@ def registration(request):
         'account/register.html',
         {'user_form': user_form}
     )
+
+
+@login_required
+@user_passes_test(lambda u: u.role == 'ADMIN')
+def operating_hours(request):
+    days = [d[0] for d in OperatingHours.DayOfWeek.choices]
+
+    # Ensure an OperatingHours row exists for each day
+    for day in days:
+        OperatingHours.objects.get_or_create(
+            day_of_week=day,
+            defaults={'start_time': time(8, 0), 'end_time': time(18, 0)}
+        )
+
+    OperatingHoursFormSet = modelformset_factory(
+        OperatingHours, form=OpenHoursForm, extra=0
+    )
+    queryset = OperatingHours.objects.all()
+
+    if request.method == 'POST':
+        formset = OperatingHoursFormSet(request.POST, queryset=queryset)
+        if formset.is_valid():
+            formset.save()
+            return redirect('dashboard:operating_hours')
+    else:
+        formset = OperatingHoursFormSet(queryset=queryset)
+
+    return render(request, 'account/operating_hours.html', {'formset': formset})

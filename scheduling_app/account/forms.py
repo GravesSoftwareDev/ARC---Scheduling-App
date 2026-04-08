@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import UserCreationForm
-from .models import Subject
+from .models import Subject, OperatingHours
 
 User = get_user_model()
 
@@ -26,4 +26,12 @@ class RegistrationForm(UserCreationForm):
             user.save()
             user.subjects.set(self.cleaned_data["subjects"])
         return user
-    
+
+class OpenHoursForm(forms.ModelForm):
+    class Meta:
+        model = OperatingHours
+        fields = ['start_time', 'end_time']
+        widgets = {
+            'start_time': forms.TimeInput(attrs={'type': 'time', 'class': 'time-input'}),
+            'end_time': forms.TimeInput(attrs={'type': 'time', 'class': 'time-input'}),
+        }

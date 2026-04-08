@@ -11,10 +11,11 @@
             {% if user.subjects.all %}
             <p><strong>Subjects:</strong> {{ user.subjects.all|join:", " }}</p>
             {% endif %}
+            <p><strong><a href="{% url 'dashboard:password_change' %}">Change Password</a></strong></p>
             {% if user.role == 'ADMIN' %}
-            <p><strong>Add Employee:</strong> <a href="{% url 'dashboard:registration' %}">Add New Employee</a></p>
+            <p><strong><a href="{% url 'dashboard:registration' %}">Register Employee</a></strong></p>
+            <p><strong><a href="{% url 'dashboard:operating_hours' %}">Edit Operating Hours</a></strong></p>
             {% endif %}
-            <p><strong>Reset your password:</strong> <a href="{% url 'dashboard:password_change' %}">Change Password</a></p>
         </div>
         
         <div class="calendar-section">

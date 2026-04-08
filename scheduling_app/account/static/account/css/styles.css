@@ -124,6 +124,11 @@ a:hover {
     color: var(--secondary-color);
     border: 2px solid var(--secondary-color);
 }
+.nav-btn-logout-dark {
+    background-color: transparent;
+    color: var(--primary-color);
+    border: 2px solid var(--secondary-color);
+}
 
 /* Footer */
 .footer {
@@ -455,4 +460,113 @@ a:hover {
     .info-section {
         display: none;
     }
+}
+
+/* Registration & Admin Forms */
+.registration-container {
+    max-width: 640px;
+    margin: 40px auto;
+    background: var(--secondary-color);
+    border-radius: 10px;
+    box-shadow: 0 2px 12px rgba(0, 63, 127, 0.1);
+    padding: 32px 40px;
+}
+
+.registration-container h2 {
+    margin: 0 0 24px;
+    color: var(--primary-color);
+    font-size: 22px;
+}
+
+.registration-form p {
+    margin-bottom: 16px;
+}
+
+.registration-form label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 4px;
+    color: var(--text-color);
+}
+
+.registration-form input,
+.registration-form select {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    font-size: 14px;
+    box-sizing: border-box;
+}
+
+.registration-form input:focus,
+.registration-form select:focus {
+    outline: none;
+    border-color: var(--primary-light);
+    box-shadow: 0 0 0 2px rgba(0, 63, 127, 0.15);
+}
+
+.btn {
+    display: inline-block;
+    padding: 10px 24px;
+    border: none;
+    border-radius: 5px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+}
+
+.btn:hover {
+    opacity: 0.87;
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    color: var(--secondary-color);
+}
+
+.form-errors {
+    color: var(--danger-color);
+    font-size: 13px;
+}
+
+/* Operating Hours Table */
+.hours-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 24px;
+}
+
+.hours-table th {
+    text-align: left;
+    padding: 10px 12px;
+    background-color: var(--primary-color);
+    color: var(--secondary-color);
+    font-size: 14px;
+}
+
+.hours-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border-color);
+    vertical-align: middle;
+}
+
+.hours-table tr:last-child td {
+    border-bottom: none;
+}
+
+.hours-table input[type="time"],
+.hours-table select {
+    padding: 6px 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    font-size: 14px;
+}
+
+.hours-table input[type="time"]:focus,
+.hours-table select:focus {
+    outline: none;
+    border-color: var(--primary-light);
+    box-shadow: 0 0 0 2px rgba(0, 63, 127, 0.15);
 }

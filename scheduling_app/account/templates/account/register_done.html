@@ -1,0 +1,10 @@
+{% extends "account/base.html" %}
+{% block title %}Registration Successful - Academic Resource Center{% endblock title %}
+{% block content %}
+<div class="registration-success-container">
+    <h2>Registration Successful</h2>
+    <p>Your account has been created successfully. This employee can now log in to their account.</p>
+        <a href="{% url 'dashboard:logout' %}" class="nav-btn nav-btn-logout-dark">Logout</a>
+        <a href="{% url 'dashboard:dashboard' %}" class="nav-btn nav-btn-logout-dark">Home</a>
+</div>
+{% endblock content %}
