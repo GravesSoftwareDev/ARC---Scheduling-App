@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect
-from .models import WeeklyAvailability, OperatingHours
+from .models import WeeklyAvailability, OperatingHours, DayOfWeek
 from datetime import time
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.forms import modelformset_factory
@@ -43,8 +43,10 @@ def manage_availability(request):
         )
         operating_hours[day_code] = {'start': oh.start_time, 'end': oh.end_time}
 
-    grid_start = operating_hours[days[0][0]]['start']
-    grid_end = operating_hours[days[0][0]]['end']
+    all_starts = [operating_hours[day]['start'] for day, _ in days]
+    all_ends = [operating_hours[day]['end'] for day, _ in days]
+    grid_start = min(all_starts)
+    grid_end = max(all_ends)
     slots = _build_time_slots(grid_start, grid_end)
 
     if request.method == 'POST':
@@ -56,7 +58,9 @@ def manage_availability(request):
 
             for slot in slots:
                 key = f"slot_{day_code}_{slot.hour:02d}_{slot.minute:02d}"
-                slot_type = request.POST.get(key, '')
+                oh = operating_hours[day_code]
+                in_hours = oh['start'] <= slot < oh['end']
+                slot_type = request.POST.get(key, '') if in_hours else ''
 
                 if slot_type in ('AVAILABLE', 'PREFERRED'):
                     if block_start is None:
@@ -97,12 +101,15 @@ def manage_availability(request):
     for slot in slots:
         row = {'time': slot, 'display': _slot_display(slot), 'days': {}}
         for day_code, _ in days:
+            oh = operating_hours[day_code]
+            in_hours = oh['start'] <= slot < oh['end']
             cell_type = ''
-            for avail in existing:
-                if avail.day_of_week == day_code and avail.start_time <= slot < avail.end_time:
-                    cell_type = avail.availability_type
-                    break
-            row['days'][day_code] = cell_type
+            if in_hours:
+                for avail in existing:
+                    if avail.day_of_week == day_code and avail.start_time <= slot < avail.end_time:
+                        cell_type = avail.availability_type
+                        break
+            row['days'][day_code] = {'type': cell_type, 'in_hours': in_hours}
         grid.append(row)
 
     context = {
@@ -117,7 +124,7 @@ def manage_availability(request):
 @login_required
 @user_passes_test(lambda u: u.role == 'ADMIN')
 def operating_hours(request):
-    days = [d[0] for d in OperatingHours.DayOfWeek.choices]
+    days = [d[0] for d in DayOfWeek.choices]
 
     for day in days:
         OperatingHours.objects.get_or_create(

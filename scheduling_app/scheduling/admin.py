@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import WeeklyAvailability, OperatingHours
+from .models import WeeklyAvailability, OperatingHours, WeeklySchedule
 
 
 @admin.register(WeeklyAvailability)
@@ -14,3 +14,9 @@ class WeeklyAvailabilityAdmin(admin.ModelAdmin):
 class OperatingHoursAdmin(admin.ModelAdmin):
     list_display = ['day_of_week', 'start_time', 'end_time']
     ordering = ['day_of_week']
+
+@admin.register(WeeklySchedule)
+class WeeklyScheduleAdmin(admin.ModelAdmin):
+    list_display = ['day_of_week','start_time','end_time','department']
+    ordering = ['day_of_week','start_time']
+    

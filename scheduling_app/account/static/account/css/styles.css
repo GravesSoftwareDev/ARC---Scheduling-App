@@ -147,56 +147,185 @@ a:hover {
     padding: 30px 20px;
 }
 
-.dashboard-container>h1 {
+/* Welcome header */
+.dashboard-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 28px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.dashboard-title {
+    margin: 0;
     color: var(--primary-color);
-    font-size: 32px;
-    margin-bottom: 30px;
-    font-weight: 600;
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+}
+
+.dashboard-subtitle {
+    margin: 4px 0 0;
+    font-size: 14px;
+    color: #777;
 }
 
 .employee-info {
     display: flex;
-    gap: 40px;
-    margin-top: 20px;
+    gap: 28px;
+    align-items: flex-start;
 }
 
+/* Left info card */
 .info-section {
-    flex: 0 0 320px;
+    flex: 0 0 300px;
     background: var(--secondary-color);
-    padding: 25px;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 63, 127, 0.1);
-    border-left: 4px solid var(--primary-color);
+    padding: 22px 22px 20px;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0, 63, 127, 0.09);
+    border-top: 4px solid var(--primary-color);
 }
 
 .info-section h2 {
-    margin-top: 0;
+    margin: 0 0 14px;
     color: var(--primary-color);
-    font-size: 20px;
-    border-bottom: 2px solid var(--accent-color);
-    padding-bottom: 12px;
+    font-size: 16px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
 }
 
-.info-section p {
-    margin: 12px 0;
-    font-size: 15px;
-    color: var(--text-color);
+/* Info fields */
+.info-fields p {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin: 0;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--accent-color);
+    font-size: 14px;
+    gap: 8px;
 }
 
-.info-section strong {
-    color: var(--primary-color);
+.info-fields p:last-child {
+    border-bottom: none;
+}
+
+.info-label {
+    color: #888;
+    font-size: 12px;
     font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    flex-shrink: 0;
 }
 
+.info-value {
+    color: var(--text-color);
+    font-weight: 500;
+    text-align: right;
+}
+
+/* Card action links */
+.card-links {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 2px solid var(--accent-color);
+}
+
+.card-link-item {
+    display: block;
+    padding: 9px 14px;
+    background: var(--light-color);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--primary-color);
+    text-decoration: none;
+    transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+}
+
+.card-link-item:hover {
+    background: var(--primary-color);
+    color: var(--secondary-color);
+    border-color: var(--primary-color);
+    text-decoration: none;
+}
+
+.card-link-admin {
+    border-color: transparent;
+    background: rgba(0, 63, 127, 0.06);
+    color: var(--primary-light);
+}
+
+.card-link-admin:hover {
+    background: var(--primary-light);
+    border-color: var(--primary-light);
+    color: var(--secondary-color);
+}
+
+/* Schedule section */
 .calendar-section {
     flex: 1;
+    min-width: 0;
 }
 
-.calendar-section h2 {
+.schedule-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+
+.schedule-header h2 {
+    margin: 0;
     color: var(--primary-color);
-    font-size: 22px;
-    margin-bottom: 20px;
-    font-weight: 600;
+    font-size: 20px;
+    font-weight: 700;
+}
+
+.schedule-legend {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: #666;
+}
+
+.legend-pip {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    display: inline-block;
+    flex-shrink: 0;
+}
+
+.schedule-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: #555;
+}
+
+/* Empty schedule state */
+.schedule-empty {
+    background: var(--light-color);
+    border: 1px dashed var(--border-color);
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin-bottom: 16px;
+}
+
+.schedule-empty p {
+    margin: 0;
+    font-size: 14px;
+    color: #888;
 }
 
 /* Hourly Calendar - Elegant OTC Design */
@@ -251,11 +380,16 @@ a:hover {
     grid-template-columns: 100px repeat(5, 1fr);
     gap: 0;
     background-color: transparent;
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: 1px solid rgba(208, 216, 224, 0.4);
 }
 
 .calendar-row:last-child {
     border-bottom: none;
+}
+
+/* Stronger visual break at whole-hour boundaries */
+.hour-row {
+    border-top: 1px solid var(--border-color);
 }
 
 .hour-label {
@@ -285,6 +419,11 @@ a:hover {
     position: relative;
     border-right: 1px solid var(--border-color);
     transition: background-color 0.2s ease;
+}
+
+.out-of-hours {
+    background-color: #e0e0e0;
+    cursor: not-allowed;
 }
 
 .hour-cell.closed {
@@ -434,11 +573,20 @@ a:hover {
         flex: 0 0 auto;
         width: 100%;
         order: 2;
+        box-sizing: border-box;
     }
 
     .calendar-section {
         order: 1;
         width: 100%;
+    }
+}
+
+@media (max-width: 600px) {
+    .dashboard-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
     }
 }
 
@@ -456,11 +604,6 @@ a:hover {
     }
 }
 
-@media (max-width: 600px) {
-    .info-section {
-        display: none;
-    }
-}
 
 /* Registration & Admin Forms */
 .registration-container {
@@ -529,6 +672,364 @@ a:hover {
 .form-errors {
     color: var(--danger-color);
     font-size: 13px;
+}
+
+/* Availability Page */
+.avail-page-container {
+    max-width: 1000px;
+    margin: 30px auto;
+    padding: 0 20px;
+}
+
+.avail-page-header {
+    background: var(--secondary-color);
+    border-left: 4px solid var(--primary-color);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 63, 127, 0.1);
+    padding: 24px 28px;
+    margin-bottom: 24px;
+}
+
+.avail-page-header h2 {
+    margin: 0 0 8px;
+    color: var(--primary-color);
+    font-size: 22px;
+    font-weight: 600;
+    border-bottom: 2px solid var(--accent-color);
+    padding-bottom: 12px;
+}
+
+.avail-page-subtitle {
+    margin: 12px 0 14px;
+    font-size: 14px;
+    color: var(--text-color);
+}
+
+.avail-legend {
+    display: flex;
+    gap: 20px;
+    font-size: 13px;
+    color: var(--text-color);
+    flex-wrap: wrap;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.legend-swatch {
+    width: 18px;
+    height: 18px;
+    border-radius: 3px;
+    display: inline-block;
+    flex-shrink: 0;
+}
+
+.hour-cell.avail-edit {
+    cursor: pointer;
+}
+
+.hour-cell.state-available {
+    background: linear-gradient(135deg, #1976D2 0%, #1565C0 100%);
+    box-shadow: inset 0 2px 4px rgba(25, 118, 210, 0.3);
+}
+
+.hour-cell.state-available:hover {
+    background: linear-gradient(135deg, #1976D2 0%, #1565C0 100%);
+    opacity: 0.82;
+}
+
+.hour-cell.state-preferred {
+    background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+    box-shadow: inset 0 2px 4px rgba(255, 168, 0, 0.3);
+}
+
+.hour-cell.state-preferred:hover {
+    background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+    opacity: 0.82;
+}
+
+.avail-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+/* Hidden hour labels (non-whole-hour slots) */
+.label-hidden {
+    visibility: hidden;
+}
+
+/* Schedule Block — event-card style; background/border-left-color set via inline style */
+.schedule-block {
+    border-left: 3px solid transparent;
+    border-radius: 3px;
+    margin: 1px 2px;
+    height: calc(100% - 2px);
+    min-height: 15px;
+    overflow: hidden;
+    font-size: 10px;
+    font-weight: 700;
+    color: #fff;
+    padding: 1px 4px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    box-shadow: 0 1px 4px rgba(27, 94, 32, 0.25);
+    letter-spacing: 0.2px;
+}
+
+/* Disable hover glow on non-interactive schedule cells */
+.schedule-calendar .hour-cell:hover {
+    background-color: #FFFFFF;
+}
+
+.schedule-calendar .out-of-hours:hover {
+    background-color: #e0e0e0;
+}
+
+/* Mini Availability Calendar (inside info card) */
+.mini-avail-section {
+    margin-top: 18px;
+    border-top: 2px solid var(--accent-color);
+    padding-top: 14px;
+}
+
+.mini-avail-section h3 {
+    margin: 0 0 8px;
+    color: var(--primary-color);
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.mini-calendar-link {
+    display: block;
+    text-decoration: none;
+    border-radius: 6px;
+    transition: opacity 0.18s ease, box-shadow 0.18s ease;
+}
+
+.mini-calendar-link:hover {
+    opacity: 0.88;
+    box-shadow: 0 2px 8px rgba(0, 63, 127, 0.18);
+    text-decoration: none;
+}
+
+.mini-calendar .calendar-header {
+    grid-template-columns: 30px repeat(5, 1fr);
+}
+
+.mini-calendar .day-header {
+    padding: 5px 2px;
+    font-size: 10px;
+}
+
+.mini-calendar .calendar-row {
+    grid-template-columns: 30px repeat(5, 1fr);
+}
+
+.mini-calendar .hour-label {
+    font-size: 8px;
+    padding: 0 2px;
+    min-height: 7px;
+    line-height: 1.2;
+}
+
+.mini-calendar .hour-cell {
+    min-height: 7px;
+    padding: 0;
+    border-right: none;
+}
+
+.mini-calendar .calendar-row {
+    border-bottom: none;
+}
+
+.mini-calendar .hour-row {
+    border-top: none;
+}
+
+.mini-calendar .hour-label {
+    border-right: none;
+}
+
+.mini-calendar .hour-cell:hover {
+    background-color: inherit;
+}
+
+.mini-calendar .out-of-hours:hover {
+    background-color: #e0e0e0;
+}
+
+/* Mini availability legend */
+.mini-avail-legend {
+    display: flex;
+    gap: 12px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+}
+
+.mini-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    color: #666;
+}
+
+.mini-swatch {
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+    display: inline-block;
+    flex-shrink: 0;
+}
+
+/* Operating Hours Form */
+.oh-container {
+    max-width: 580px;
+    margin: 40px auto;
+    background: var(--secondary-color);
+    border-radius: 10px;
+    box-shadow: 0 2px 12px rgba(0, 63, 127, 0.1);
+    padding: 36px 40px;
+}
+
+.oh-header {
+    margin-bottom: 28px;
+    border-bottom: 2px solid var(--accent-color);
+    padding-bottom: 16px;
+}
+
+.oh-header h2 {
+    margin: 0 0 6px;
+    color: var(--primary-color);
+    font-size: 22px;
+    font-weight: 600;
+}
+
+.oh-subtitle {
+    margin: 0;
+    font-size: 14px;
+    color: #666;
+}
+
+.oh-days {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 28px;
+}
+
+.oh-day-row {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 12px 16px;
+    border-radius: 7px;
+    background: var(--light-color);
+    border: 1px solid transparent;
+    transition: border-color 0.2s;
+}
+
+.oh-day-row:hover {
+    border-color: var(--border-color);
+}
+
+.oh-day-row--error {
+    border-color: var(--danger-color);
+    background: #FFF5F5;
+}
+
+.oh-day-label {
+    width: 110px;
+    font-weight: 600;
+    color: var(--primary-color);
+    font-size: 15px;
+    flex-shrink: 0;
+}
+
+.oh-times {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+}
+
+.oh-time-group {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.oh-time-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.oh-times input[type="time"] {
+    padding: 7px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    font-size: 14px;
+    font-family: var(--font-family);
+    color: var(--text-color);
+    background: var(--secondary-color);
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.oh-times input[type="time"]:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(0, 63, 127, 0.12);
+}
+
+.oh-time-sep {
+    color: #aaa;
+    font-size: 18px;
+    margin-top: 14px;
+}
+
+.oh-error {
+    color: var(--danger-color);
+    font-size: 13px;
+    margin-top: 4px;
+    width: 100%;
+}
+
+.oh-error--global {
+    margin-bottom: 16px;
+    padding: 10px 14px;
+    background: #FFF0F0;
+    border-left: 4px solid var(--danger-color);
+    border-radius: 5px;
+}
+
+.oh-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+.btn-secondary {
+    background-color: transparent;
+    color: var(--primary-color);
+    border: 1px solid var(--border-color);
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+}
+
+.btn-secondary:hover {
+    background-color: var(--light-color);
+    text-decoration: none;
 }
 
 /* Operating Hours Table */

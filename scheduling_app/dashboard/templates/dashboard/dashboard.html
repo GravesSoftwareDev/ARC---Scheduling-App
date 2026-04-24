@@ -1,0 +1,130 @@
+{% extends "dashboard/base.html" %}
+{% load custom_filters %}
+{% block title %}Dashboard - Academic Resource Center{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+
+    <div class="dashboard-header">
+        <div>
+            <h1 class="dashboard-title">Welcome back, {{ user.first_name }}</h1>
+            <p class="dashboard-subtitle">{% now "l, F j, Y" %}</p>
+        </div>
+    </div>
+
+    <div class="employee-info">
+
+        <!-- Left: User info card -->
+        <div class="info-section">
+            <h2>Employee Info</h2>
+            <div class="info-fields">
+                <p><span class="info-label">Name</span><span class="info-value">{{ user.first_name }} {{ user.last_name }}</span></p>
+                <p><span class="info-label">Department</span><span class="info-value">{{ user.departments.all|join:", " }}</span></p>
+                {% if user.subjects.all %}
+                <p><span class="info-label">Subjects</span><span class="info-value">{{ user.subjects.all|join:", " }}</span></p>
+                {% endif %}
+                <p><span class="info-label">Role</span><span class="info-value">{{ user.get_role_display }}</span></p>
+            </div>
+
+            <div class="card-links">
+                <a href="{% url 'scheduling:manage_availability' %}" class="card-link-item">Manage Availability</a>
+                <a href="{% url 'account:password_change' %}" class="card-link-item">Change Password</a>
+                {% if user.role == 'ADMIN' %}
+                <a href="{% url 'account:registration' %}" class="card-link-item card-link-admin">Register Employee</a>
+                <a href="{% url 'scheduling:operating_hours' %}" class="card-link-item card-link-admin">Edit Operating Hours</a>
+                {% endif %}
+            </div>
+
+            <!-- Mini Availability Calendar -->
+            <div class="mini-avail-section">
+                <h3>My Availability</h3>
+                <a href="{% url 'scheduling:manage_availability' %}" class="mini-calendar-link">
+                <div class="mini-calendar hourly-calendar">
+                    <div class="calendar-header">
+                        <div class="hour-column"></div>
+                        {% for day_code, day_name in days %}
+                        <div class="day-header">{{ day_code|slice:":2"|title }}</div>
+                        {% endfor %}
+                    </div>
+                    <div class="calendar-grid">
+                        {% for row in grid %}
+                        <div class="calendar-row {% if row.show_label %}hour-row{% endif %}">
+                            <div class="hour-label{% if not row.show_label %} label-hidden{% endif %}">
+                                {% if row.show_label %}{{ row.display }}{% endif %}
+                            </div>
+                            {% for day_code, day_name in days %}
+                            {% with cell=row.avail|dict_lookup:day_code %}
+                            <div class="hour-cell {% if not cell.in_hours %}out-of-hours{% elif cell.type == 'AVAILABLE' %}state-available{% elif cell.type == 'PREFERRED' %}state-preferred{% endif %}"></div>
+                            {% endwith %}
+                            {% endfor %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                </a>
+                <div class="mini-avail-legend">
+                    <span class="mini-legend-item">
+                        <span class="mini-swatch" style="background:linear-gradient(135deg,#1976D2,#1565C0);"></span>Available
+                    </span>
+                    <span class="mini-legend-item">
+                        <span class="mini-swatch" style="background:linear-gradient(135deg,#FFD700,#FFA500);"></span>Preferred
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main: Schedule Calendar -->
+        <div class="calendar-section">
+            <div class="schedule-header">
+                <h2>My Schedule</h2>
+                <div class="schedule-legend">
+                    {% for dept in schedule_departments %}
+                    <span class="schedule-legend-item">
+                        <span class="legend-pip" style="background:{{ dept|dept_color }};"></span>{{ dept }}
+                    </span>
+                    {% endfor %}
+                </div>
+            </div>
+
+            {% if not has_schedule %}
+            <div class="schedule-empty">
+                <p>No schedule has been assigned yet. Check back later or contact your administrator.</p>
+            </div>
+            {% endif %}
+
+            <div class="hourly-calendar schedule-calendar">
+                <div class="calendar-header">
+                    <div class="hour-column"></div>
+                    {% for day_code, day_name in days %}
+                    <div class="day-header">
+                        <span class="day-full">{{ day_name }}</span>
+                        <span class="day-abbr">{{ day_code|slice:":3"|title }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="calendar-grid">
+                    {% for row in grid %}
+                    <div class="calendar-row {% if row.show_label %}hour-row{% endif %}">
+                        <div class="hour-label{% if not row.show_label %} label-hidden{% endif %}">
+                            {% if row.show_label %}{{ row.display }}{% endif %}
+                        </div>
+                        {% for day_code, day_name in days %}
+                        {% with cell=row.schedule|dict_lookup:day_code %}
+                        <div class="hour-cell {% if not cell.in_hours %}out-of-hours{% endif %}">
+                            {% for block in cell.blocks %}
+                            <div class="schedule-block" style="background:{{ block.department|dept_color }};border-left-color:{{ block.department|dept_border_color }};">
+                                {% if block.start_time == row.time %}{{ block.department }}{% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endwith %}
+                        {% endfor %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

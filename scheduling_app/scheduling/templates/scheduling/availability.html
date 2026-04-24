@@ -1,4 +1,4 @@
-{% extends "account/base.html" %}
+{% extends "dashboard/base.html" %}
 {% load custom_filters %}
 {% block title %}Manage Availability - Academic Resource Center{% endblock %}
 
@@ -6,9 +6,10 @@
 <div class="avail-page-container">
     <div class="avail-page-header">
         <h2>Manage Your Availability</h2>
-        <p class="avail-page-subtitle">
-            Click a cell once to mark it <strong>Available</strong>, again for
-            <strong>Preferred</strong>, and a third time to clear it.
+       <p class="avail-page-subtitle">
+            Click or click and drag to mark cells. Once for <strong>Available</strong>, 
+            again for <strong>Preferred</strong>, and a third time to clear. 
+            Greyed cells are outside operating hours.
         </p>
         <div class="avail-legend">
             <span class="legend-item">
@@ -48,17 +49,17 @@
                     <div class="hour-label">{{ row.display }}</div>
 
                     {% for day_code, day_name in days %}
-                    {% with cell_type=row.days|dict_lookup:day_code %}
-                    <div class="hour-cell avail-edit {% if cell_type == 'AVAILABLE' %}state-available{% elif cell_type == 'PREFERRED' %}state-preferred{% endif %}"
+                    {% with cell=row.days|dict_lookup:day_code %}
+                    <div class="hour-cell {% if cell.in_hours %}avail-edit{% else %}out-of-hours{% endif %} {% if cell.type == 'AVAILABLE' %}state-available{% elif cell.type == 'PREFERRED' %}state-preferred{% endif %}"
                          data-day="{{ day_code }}"
                          data-hour="{{ row.time.hour|stringformat:'02d' }}"
                          data-minute="{{ row.time.minute|stringformat:'02d' }}"
-                         data-state="{{ cell_type }}">
+                         data-state="{{ cell.type }}">
                     </div>
                     <input type="hidden"
                            name="slot_{{ day_code }}_{{ row.time.hour|stringformat:'02d' }}_{{ row.time.minute|stringformat:'02d' }}"
                            id="input_{{ day_code }}_{{ row.time.hour|stringformat:'02d' }}_{{ row.time.minute|stringformat:'02d' }}"
-                           value="{{ cell_type }}">
+                           value="{{ cell.type }}">
                     {% endwith %}
                     {% endfor %}
                 </div>
@@ -73,111 +74,42 @@
     </form>
 </div>
 
-<style>
-.avail-page-container {
-    max-width: 1000px;
-    margin: 30px auto;
-    padding: 0 20px;
-}
-
-.avail-page-header {
-    background: var(--secondary-color);
-    border-left: 4px solid var(--primary-color);
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 63, 127, 0.1);
-    padding: 24px 28px;
-    margin-bottom: 24px;
-}
-
-.avail-page-header h2 {
-    margin: 0 0 8px;
-    color: var(--primary-color);
-    font-size: 22px;
-    font-weight: 600;
-    border-bottom: 2px solid var(--accent-color);
-    padding-bottom: 12px;
-}
-
-.avail-page-subtitle {
-    margin: 12px 0 14px;
-    font-size: 14px;
-    color: var(--text-color);
-}
-
-.avail-legend {
-    display: flex;
-    gap: 20px;
-    font-size: 13px;
-    color: var(--text-color);
-    flex-wrap: wrap;
-}
-
-.legend-item {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-}
-
-.legend-swatch {
-    width: 18px;
-    height: 18px;
-    border-radius: 3px;
-    display: inline-block;
-    flex-shrink: 0;
-}
-
-/* Interactive cell states */
-.hour-cell.avail-edit {
-    cursor: pointer;
-}
-
-.hour-cell.state-available {
-    background: linear-gradient(135deg, #1976D2 0%, #1565C0 100%);
-    box-shadow: inset 0 2px 4px rgba(25, 118, 210, 0.3);
-}
-
-.hour-cell.state-available:hover {
-    background: linear-gradient(135deg, #1976D2 0%, #1565C0 100%);
-    opacity: 0.82;
-}
-
-.hour-cell.state-preferred {
-    background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
-    box-shadow: inset 0 2px 4px rgba(255, 168, 0, 0.3);
-}
-
-.hour-cell.state-preferred:hover {
-    background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
-    opacity: 0.82;
-}
-
-.avail-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 12px;
-    margin-top: 20px;
-}
-</style>
-
 <script>
+let isDragging = false;
+let dragState = '';
+
+function applyState(cell, state) {
+    cell.dataset.state = state;
+    cell.classList.remove('state-available', 'state-preferred');
+    if (state === 'AVAILABLE') cell.classList.add('state-available');
+    if (state === 'PREFERRED') cell.classList.add('state-preferred');
+
+    const input = document.getElementById(
+        'input_' + cell.dataset.day + '_' + cell.dataset.hour + '_' + cell.dataset.minute
+    );
+    if (input) input.value = state;
+}
+
+function cycleState(current) {
+    return current === '' ? 'AVAILABLE' : current === 'AVAILABLE' ? 'PREFERRED' : '';
+}
+
 document.querySelectorAll('.avail-edit').forEach(function(cell) {
-    cell.addEventListener('click', function() {
-        var day    = cell.dataset.day;
-        var hour   = cell.dataset.hour;
-        var minute = cell.dataset.minute;
-        var state  = cell.dataset.state;
-
-        // Cycle: '' -> 'AVAILABLE' -> 'PREFERRED' -> ''
-        var next = state === '' ? 'AVAILABLE' : state === 'AVAILABLE' ? 'PREFERRED' : '';
-
-        cell.dataset.state = next;
-        cell.classList.remove('state-available', 'state-preferred');
-        if (next === 'AVAILABLE')  cell.classList.add('state-available');
-        if (next === 'PREFERRED')  cell.classList.add('state-preferred');
-
-        var input = document.getElementById('input_' + day + '_' + hour + '_' + minute);
-        if (input) input.value = next;
+    cell.addEventListener('mousedown', function(e) {
+        e.preventDefault(); // prevents text selection while dragging
+        isDragging = true;
+        dragState = cycleState(cell.dataset.state);
+        applyState(cell, dragState);
     });
+
+    cell.addEventListener('mouseenter', function() {
+        if (isDragging) applyState(cell, dragState);
+    });
+});
+
+// Stop dragging when mouse is released anywhere on the page
+document.addEventListener('mouseup', function() {
+    isDragging = false;
 });
 </script>
 {% endblock %}

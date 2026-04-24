@@ -15,12 +15,12 @@
         </a>
         <div class="navbar-auth">
             {% if user.is_authenticated %}
-                <form method="post" action="{% url 'dashboard:logout' %}" class="button-form">
+                <form method="post" action="{% url 'account:logout' %}" class="button-form">
                     {% csrf_token %}
                     <button type="submit" class="nav-btn nav-btn-logout">Logout</button>
                 </form>
             {% else %}
-                <a href="{% url 'dashboard:login' %}" class="nav-btn nav-btn-login">Login</a>
+                <a href="{% url 'account:login' %}" class="nav-btn nav-btn-login">Login</a>
             {% endif %}
         </div>
     </nav>

@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'account',
     'scheduling',
+    'dashboard',
 ]
 
 AUTH_USER_MODEL = 'account.Employee'
@@ -120,9 +121,9 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
-LOGIN_URL = 'dashboard:login'
+LOGIN_URL = 'account:login'
 LOGIN_REDIRECT_URL = 'dashboard:dashboard'
-LOGOUT_REDIRECT_URL = 'dashboard:login'
+LOGOUT_REDIRECT_URL = 'account:login'
 
 # Email
 from email import charset

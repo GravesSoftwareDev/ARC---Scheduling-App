@@ -1,4 +1,4 @@
-{% extends "account/base.html" %}
+{% extends "dashboard/base.html" %}
 {% block title %}Logout - Academic Resource Center{% endblock %}
 
 {% block content %}
@@ -6,7 +6,7 @@
     <div class="auth-card">
         <h2>You have been logged out</h2>
         <p>Thank you for using the Academic Resource Center. We hope to see you again soon!</p>
-        <a href="{% url 'dashboard:login' %}" class="auth-btn">Login Again</a>
+        <a href="{% url 'account:login' %}" class="auth-btn">Login Again</a>
     </div>
 </div>
 {% endblock %}

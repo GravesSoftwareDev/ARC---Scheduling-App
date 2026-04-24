@@ -1,36 +1,65 @@
 import os
 import sys
 import django
-from datetime import time
+from datetime import date, time
 
-# Add the Django project directory to the Python path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'scheduling_app'))
 
-# Setup Django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'scheduling_app.settings')
 django.setup()
 
-from account.models import Employee, WeeklyAvailability, Subject
+from account.models import Employee, Subject, Department
+from scheduling.models import WeeklyAvailability, OperatingHours, DayOfWeek
 
-def seed_database():
-    # Define relevant subjects for seed data
-    relevant_subjects = {
-        'MTH': 'Math',
-        'SCI': 'Science', 
-        'WRI': 'Writing',
-    }
-    
-    # Create Subject objects only for relevant subjects
-    subjects_dict = {}
-    for code, name in relevant_subjects.items():
-        subject, created = Subject.objects.get_or_create(
-            code=code,
-            defaults={'name': name}
+
+def seed_subjects():
+    data = [
+        ('MTH', 'Math'),
+        ('SCI', 'Science'),
+        ('SPC', 'Speech'),
+        ('WRI', 'Writing'),
+        ('ACC', 'Accounting'),
+        ('CIS', 'Computer Science'),
+        ('LAN', 'Language'),
+        ('ACD', 'Academic Coach'),
+        ('MTC', 'Math Coach'),
+        ('AEA', 'AEA - Academic Coach'),
+    ]
+    result = {}
+    for code, name in data:
+        obj, created = Subject.objects.get_or_create(code=code, defaults={'name': name})
+        result[code] = obj
+        print(f"{'Created' if created else 'Found'} subject: {obj.name}")
+    return result
+
+
+def seed_departments():
+    names = ['New Hire', 'Tutor', 'Arc Assistant I', 'Arc Assistant II', 'Supervisor', 'Director']
+    result = {}
+    for name in names:
+        obj, created = Department.objects.get_or_create(name=name)
+        result[name] = obj
+        print(f"{'Created' if created else 'Found'} department: {obj.name}")
+    return result
+
+
+def seed_operating_hours():
+    hours = [
+        ('MON', time(8, 0), time(17, 0)),
+        ('TUE', time(8, 0), time(17, 0)),
+        ('WED', time(8, 0), time(17, 0)),
+        ('THU', time(8, 0), time(17, 0)),
+        ('FRI', time(8, 0), time(17, 0)),
+    ]
+    for day, start, end in hours:
+        obj, created = OperatingHours.objects.get_or_create(
+            day_of_week=day,
+            defaults={'start_time': start, 'end_time': end}
         )
-        subjects_dict[code] = subject
-        print(f"{'Created' if created else 'Found'} subject: {subject.name}")
-    
-    # Create test employees
+        print(f"{'Created' if created else 'Found'} operating hours: {obj}")
+
+
+def seed_employees(subjects, departments):
     employees = [
         {
             'username': 'admin_user',
@@ -38,8 +67,9 @@ def seed_database():
             'first_name': 'Admin',
             'last_name': 'User',
             'email': 'admin@example.com',
+            'birthdate': date(1980, 1, 15),
             'role': Employee.Role.admin,
-            'department': Employee.Department.director,
+            'departments': ['Director'],
             'subjects': [],
         },
         {
@@ -48,8 +78,9 @@ def seed_database():
             'first_name': 'Scheduler',
             'last_name': 'User',
             'email': 'scheduler@example.com',
+            'birthdate': date(1985, 6, 20),
             'role': Employee.Role.scheduler,
-            'department': Employee.Department.supervisor,
+            'departments': ['Supervisor'],
             'subjects': [],
         },
         {
@@ -58,8 +89,9 @@ def seed_database():
             'first_name': 'Math',
             'last_name': 'Tutor',
             'email': 'math.tutor@example.com',
+            'birthdate': date(1995, 3, 10),
             'role': Employee.Role.employee,
-            'department': Employee.Department.tutor,
+            'departments': ['Tutor'],
             'subjects': ['MTH'],
         },
         {
@@ -68,8 +100,9 @@ def seed_database():
             'first_name': 'Science',
             'last_name': 'Tutor',
             'email': 'science.tutor@example.com',
+            'birthdate': date(1997, 8, 5),
             'role': Employee.Role.employee,
-            'department': Employee.Department.tutor,
+            'departments': ['Tutor'],
             'subjects': ['SCI'],
         },
         {
@@ -78,116 +111,81 @@ def seed_database():
             'first_name': 'Writing',
             'last_name': 'Coach',
             'email': 'writing.coach@example.com',
+            'birthdate': date(1993, 11, 22),
             'role': Employee.Role.employee,
-            'department': Employee.Department.arc_assist_one,
+            'departments': ['Arc Assistant I'],
             'subjects': ['WRI'],
         },
     ]
 
-    created_employees = []
+    result = []
     for emp_data in employees:
-        subjects = emp_data.pop('subjects')
+        dept_names = emp_data.pop('departments')
+        subject_codes = emp_data.pop('subjects')
+        password = emp_data.pop('password')
+
         employee, created = Employee.objects.get_or_create(
             username=emp_data['username'],
-            defaults={
-                'first_name': emp_data['first_name'],
-                'last_name': emp_data['last_name'],
-                'email': emp_data['email'],
-                'role': emp_data['role'],
-                'department': emp_data['department'],
-            }
+            defaults={k: v for k, v in emp_data.items()}
         )
         if created:
-            employee.set_password(emp_data['password'])
+            employee.set_password(password)
             employee.save()
-        
-        # Add subjects to the employee
-        for subject_code in subjects:
-            employee.subjects.add(subjects_dict[subject_code])
-        
-        created_employees.append(employee)
-        subject_names = ', '.join([s.name for s in employee.subjects.all()]) or 'None'
-        print(f"{'Created' if created else 'Found'} employee: {employee.username} (Subjects: {subject_names})")
 
-    # Create weekly availabilities with 15-minute increments
+        employee.departments.set([departments[n] for n in dept_names])
+        employee.subjects.set([subjects[c] for c in subject_codes])
+
+        result.append(employee)
+        dept_display = ', '.join(dept_names) or 'None'
+        subj_display = ', '.join([subjects[c].name for c in subject_codes]) or 'None'
+        print(f"{'Created' if created else 'Found'} employee: {employee.username} (Departments: {dept_display}, Subjects: {subj_display})")
+
+    return result
+
+
+def seed_availability(employees_by_username):
     availabilities = [
-        # Admin user - various times for testing
-        {
-            'user': 'admin_user',
-            'day_of_week': WeeklyAvailability.DayOfWeek.MONDAY,
-            'start_time': time(9, 0),
-            'end_time': time(11, 30),
-            'availability_type': WeeklyAvailability.AvailabilityType.PREFERRED,
-        },
-        {
-            'user': 'admin_user',
-            'day_of_week': WeeklyAvailability.DayOfWeek.WEDNESDAY,
-            'start_time': time(14, 0),
-            'end_time': time(17, 0),
-            'availability_type': WeeklyAvailability.AvailabilityType.AVAILABLE,
-        },
-        # Math tutor - Monday morning (8:00-12:00)
-        {
-            'user': 'math_tutor',
-            'day_of_week': WeeklyAvailability.DayOfWeek.MONDAY,
-            'start_time': time(8, 0),
-            'end_time': time(12, 0),
-            'availability_type': WeeklyAvailability.AvailabilityType.AVAILABLE,
-        },
-        # Math tutor - Wednesday afternoon (13:00-15:30)
-        {
-            'user': 'math_tutor',
-            'day_of_week': WeeklyAvailability.DayOfWeek.WEDNESDAY,
-            'start_time': time(13, 0),
-            'end_time': time(15, 30),
-            'availability_type': WeeklyAvailability.AvailabilityType.PREFERRED,
-        },
-        # Science tutor - Tuesday morning (9:15-12:00)
-        {
-            'user': 'science_tutor',
-            'day_of_week': WeeklyAvailability.DayOfWeek.TUESDAY,
-            'start_time': time(9, 15),
-            'end_time': time(12, 0),
-            'availability_type': WeeklyAvailability.AvailabilityType.AVAILABLE,
-        },
-        # Science tutor - Thursday afternoon (14:00-16:00)
-        {
-            'user': 'science_tutor',
-            'day_of_week': WeeklyAvailability.DayOfWeek.THURSDAY,
-            'start_time': time(14, 0),
-            'end_time': time(16, 0),
-            'availability_type': WeeklyAvailability.AvailabilityType.AVAILABLE,
-        },
-        # Writing coach - Tuesday afternoon (13:45-15:15)
-        {
-            'user': 'writing_coach',
-            'day_of_week': WeeklyAvailability.DayOfWeek.TUESDAY,
-            'start_time': time(13, 45),
-            'end_time': time(15, 15),
-            'availability_type': WeeklyAvailability.AvailabilityType.PREFERRED,
-        },
-        # Writing coach - Friday morning (10:00-12:30)
-        {
-            'user': 'writing_coach',
-            'day_of_week': WeeklyAvailability.DayOfWeek.FRIDAY,
-            'start_time': time(10, 0),
-            'end_time': time(12, 30),
-            'availability_type': WeeklyAvailability.AvailabilityType.AVAILABLE,
-        },
+        ('admin_user',    'MON', time(9, 0),  time(11, 30), WeeklyAvailability.AvailabilityType.PREFERRED),
+        ('admin_user',    'WED', time(14, 0), time(17, 0),  WeeklyAvailability.AvailabilityType.AVAILABLE),
+        ('math_tutor',   'MON', time(8, 0),  time(12, 0),  WeeklyAvailability.AvailabilityType.AVAILABLE),
+        ('math_tutor',   'WED', time(13, 0), time(15, 30), WeeklyAvailability.AvailabilityType.PREFERRED),
+        ('science_tutor','TUE', time(9, 15), time(12, 0),  WeeklyAvailability.AvailabilityType.AVAILABLE),
+        ('science_tutor','THU', time(14, 0), time(16, 0),  WeeklyAvailability.AvailabilityType.AVAILABLE),
+        ('writing_coach','TUE', time(13, 45),time(15, 15), WeeklyAvailability.AvailabilityType.PREFERRED),
+        ('writing_coach','FRI', time(10, 0), time(12, 30), WeeklyAvailability.AvailabilityType.AVAILABLE),
     ]
 
-    for avail_data in availabilities:
-        user = Employee.objects.get(username=avail_data['user'])
-        availability, created = WeeklyAvailability.objects.get_or_create(
+    for username, day, start, end, avail_type in availabilities:
+        user = employees_by_username[username]
+        obj, created = WeeklyAvailability.objects.get_or_create(
             user=user,
-            day_of_week=avail_data['day_of_week'],
-            start_time=avail_data['start_time'],
-            end_time=avail_data['end_time'],
-            defaults={'availability_type': avail_data['availability_type']}
+            day_of_week=day,
+            start_time=start,
+            end_time=end,
+            defaults={'availability_type': avail_type}
         )
-        print(f"{'Created' if created else 'Found'} availability: {availability}")
+        print(f"{'Created' if created else 'Found'} availability: {obj}")
 
-    print("Database seeding completed!")
+
+def seed_database():
+    print("--- Subjects ---")
+    subjects = seed_subjects()
+
+    print("\n--- Departments ---")
+    departments = seed_departments()
+
+    print("\n--- Operating Hours ---")
+    seed_operating_hours()
+
+    print("\n--- Employees ---")
+    employees = seed_employees(subjects, departments)
+    employees_by_username = {e.username: e for e in employees}
+
+    print("\n--- Weekly Availability ---")
+    seed_availability(employees_by_username)
+
+    print("\nDatabase seeding completed!")
+
 
 if __name__ == '__main__':
     seed_database()

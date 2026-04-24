@@ -29,25 +29,25 @@ class Subject(models.Model):
     
     class Meta:
         ordering = ['name']
+class Department(models.Model):
+    name = models.CharField(max_length=100, unique=True)
 
+    def __str__(self):
+        return self.name
+    
+    class Meta:
+        ordering = ['name']
+        
 class Employee(AbstractUser):
     class Role(models.TextChoices):
         employee = 'EMPLOYEE','Employee'
         scheduler = 'SCHEDULER','Scheduler'
         admin = 'ADMIN','Admin'
     
-    class Department(models.TextChoices):
-        new = 'NEW', 'New Hire'
-        tutor = 'TUT','Tutor'
-        arc_assist_one = 'AA1','Arc Assistant I'
-        arc_assist_two = 'AA2','Arc Asssistant II'
-        supervisor = 'SUP','Supervisor'
-        director = 'DIR','Director'
-
-    department = models.CharField(
-        max_length=3,
-        choices=Department.choices,
-        default = Department.new
+    departments = models.ManyToManyField(
+        Department,
+        blank=True,
+        related_name='employees'
     )
 
     subjects = models.ManyToManyField(
