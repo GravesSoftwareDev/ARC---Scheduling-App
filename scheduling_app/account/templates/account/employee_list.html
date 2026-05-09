@@ -1,0 +1,51 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Employee List – ARC{% endblock %}
+
+{% block content %}
+<div class="emp-list-container">
+  <div class="roster-page-header">
+    <h1>Employee List</h1>
+    <a href="{% url 'dashboard:dashboard' %}" class="btn btn-secondary">Back to Dashboard</a>
+  </div>
+
+  <p class="emp-list-count">{{ employees|length }} active employee{{ employees|length|pluralize }}</p>
+
+  <div class="emp-list-table-wrap">
+    <table class="emp-list-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Username</th>
+          <th>Departments</th>
+          <th>Subjects</th>
+          <th>Role</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for emp in employees %}
+        <tr class="emp-list-row">
+          <td class="emp-name">{{ emp.last_name }}, {{ emp.first_name }}</td>
+          <td class="emp-username">{{ emp.username }}</td>
+          <td class="emp-depts">{{ emp.departments.all|join:", " }}</td>
+          <td class="emp-subjs">{{ emp.subjects.all|join:", " }}</td>
+          <td>
+            <span class="role-badge role-{{ emp.role|lower }}">{{ emp.get_role_display }}</span>
+          </td>
+          <td class="emp-actions">
+            <form method="post"
+                  onsubmit="return confirm('Deactivate {{ emp.first_name }} {{ emp.last_name }}? They will no longer be able to log in.');">
+              {% csrf_token %}
+              <input type="hidden" name="deactivate" value="{{ emp.pk }}">
+              <button type="submit" class="btn btn-deactivate">Deactivate</button>
+            </form>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" class="emp-list-empty">No active employees found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

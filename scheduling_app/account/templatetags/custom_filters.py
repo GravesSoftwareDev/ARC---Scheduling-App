@@ -32,3 +32,39 @@ def dept_border_color(department):
         return '#263238'
     _, border = _DEPT_COLORS[department.pk % len(_DEPT_COLORS)]
     return border
+
+
+# Location-based colors for schedule blocks (light bg, dark border)
+_LOCATION_NAMED = {
+    'WC':      ('#BBDEFB', '#1565C0'),  # blue
+    'TLC':     ('#C8E6C9', '#2E7D32'),  # green
+    'ZOOM':    ('#E1BEE7', '#6A1B9A'),  # purple
+    'Drop-in': ('#FFF9C4', '#F57F17'),  # amber
+    'Coach':   ('#F8BBD0', '#AD1457'),  # pink
+}
+_LOCATION_PALETTE = [
+    ('#BBDEFB', '#1565C0'),
+    ('#C8E6C9', '#2E7D32'),
+    ('#E1BEE7', '#6A1B9A'),
+    ('#FFF9C4', '#F57F17'),
+    ('#F8BBD0', '#AD1457'),
+    ('#B2EBF2', '#00695C'),
+    ('#FFE0B2', '#E65100'),
+    ('#D7CCC8', '#4E342E'),
+]
+
+def _loc_colors(location):
+    if not location:
+        return ('#E3F2FD', '#1565C0')
+    if location in _LOCATION_NAMED:
+        return _LOCATION_NAMED[location]
+    idx = sum(ord(c) for c in location) % len(_LOCATION_PALETTE)
+    return _LOCATION_PALETTE[idx]
+
+@register.filter
+def location_bg(location):
+    return _loc_colors(location)[0]
+
+@register.filter
+def location_border(location):
+    return _loc_colors(location)[1]

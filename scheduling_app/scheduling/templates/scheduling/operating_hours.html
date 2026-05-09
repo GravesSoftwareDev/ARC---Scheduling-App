@@ -1,53 +1,153 @@
 {% extends "dashboard/base.html" %}
-{% block title %}Operating Hours - Academic Resource Center{% endblock %}
+{% block title %}Operating Hours – Academic Resource Center{% endblock %}
 
 {% block content %}
 <div class="oh-container">
-    <div class="oh-header">
-        <h2>Operating Hours</h2>
-        <p class="oh-subtitle">Set the tutoring center's open and close times for each day.</p>
-    </div>
 
-    <form method="post" class="oh-form">
+  <div class="oh-page-header">
+    <div>
+      <h1 class="oh-title">Operating Hours</h1>
+      <p class="oh-subtitle">Set default weekly hours and add date-specific overrides.</p>
+    </div>
+    <a href="{% url 'dashboard:dashboard' %}" class="btn btn-secondary">← Back to Dashboard</a>
+  </div>
+
+  <div class="oh-layout">
+
+    <!-- LEFT: Weekly defaults -->
+    <div class="oh-card">
+      <h2 class="oh-card-title">Default Weekly Hours</h2>
+      <p class="oh-card-desc">These apply to any date that doesn't have a special override.</p>
+
+      <form method="post" class="oh-form">
         {% csrf_token %}
         {{ formset.management_form }}
 
         <div class="oh-days">
-            {% for form in formset %}
-                {{ form.id }}
-                <div class="oh-day-row{% if form.errors %} oh-day-row--error{% endif %}">
-                    <div class="oh-day-label">
-                        {{ form.instance.get_day_of_week_display }}
-                    </div>
-                    <div class="oh-times">
-                        <div class="oh-time-group">
-                            <label class="oh-time-label">Open</label>
-                            {{ form.start_time }}
-                        </div>
-                        <span class="oh-time-sep">–</span>
-                        <div class="oh-time-group">
-                            <label class="oh-time-label">Close</label>
-                            {{ form.end_time }}
-                        </div>
-                    </div>
-                    {% if form.errors %}
-                    <div class="oh-error">
-                        {% for error in form.non_field_errors %}{{ error }}{% endfor %}
-                        {% for field in form %}{% for error in field.errors %}{{ error }}{% endfor %}{% endfor %}
-                    </div>
-                    {% endif %}
-                </div>
-            {% endfor %}
+          {% for form in formset %}
+          {{ form.id }}
+          <div class="oh-day-row{% if form.errors %} oh-day-row--error{% endif %}">
+            <div class="oh-day-label">{{ form.instance.get_day_of_week_display }}</div>
+            <div class="oh-times">
+              <div class="oh-time-group">
+                <label class="oh-time-label">Open</label>
+                {{ form.start_time }}
+              </div>
+              <span class="oh-time-sep">–</span>
+              <div class="oh-time-group">
+                <label class="oh-time-label">Close</label>
+                {{ form.end_time }}
+              </div>
+            </div>
+            {% if form.errors %}
+            <div class="oh-error">
+              {% for error in form.non_field_errors %}{{ error }}{% endfor %}
+              {% for field in form %}{% for error in field.errors %}{{ error }}{% endfor %}{% endfor %}
+            </div>
+            {% endif %}
+          </div>
+          {% endfor %}
         </div>
 
         {% if formset.non_form_errors %}
-            <div class="oh-error oh-error--global">{{ formset.non_form_errors }}</div>
+        <div class="oh-error oh-error--global">{{ formset.non_form_errors }}</div>
         {% endif %}
 
         <div class="oh-actions">
-            <a href="{% url 'dashboard:dashboard' %}" class="btn btn-primary">Cancel</a>
-            <button type="submit" class="btn btn-primary">Save Hours</button>
+          <button type="submit" name="save_defaults" class="btn btn-primary">Save Default Hours</button>
         </div>
-    </form>
+      </form>
+    </div>
+
+    <!-- RIGHT: Special date overrides -->
+    <div class="oh-card">
+      <h2 class="oh-card-title">Special Date Overrides</h2>
+      <p class="oh-card-desc">Override hours for a specific date (holidays, special events, closures).</p>
+
+      <!-- Add special date form -->
+      <form method="post" class="oh-special-form">
+        {% csrf_token %}
+
+        <div class="oh-special-fields">
+          <div class="form-group">
+            <label class="form-label">Date</label>
+            {{ date_form.date }}
+            {% if date_form.date.errors %}<span class="form-error">{{ date_form.date.errors.0 }}</span>{% endif %}
+          </div>
+
+          <div class="form-group oh-closed-group">
+            <label class="oh-closed-label">
+              {{ date_form.is_closed }} Closed all day
+            </label>
+          </div>
+
+          <div id="oh-time-fields" class="oh-time-override-row">
+            <div class="oh-time-group">
+              <label class="oh-time-label">Open</label>
+              {{ date_form.start_time }}
+            </div>
+            <span class="oh-time-sep">–</span>
+            <div class="oh-time-group">
+              <label class="oh-time-label">Close</label>
+              {{ date_form.end_time }}
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Note (optional)</label>
+            {{ date_form.note }}
+          </div>
+
+          {% if date_form.non_field_errors %}
+          <div class="form-error form-error-block">{{ date_form.non_field_errors.0 }}</div>
+          {% endif %}
+        </div>
+
+        <div class="oh-actions">
+          <button type="submit" name="add_special" class="btn btn-primary">Add Override</button>
+        </div>
+      </form>
+
+      <!-- Upcoming overrides list -->
+      {% if special_hours %}
+      <div class="oh-special-list">
+        <h3 class="oh-special-list-title">Upcoming Special Dates</h3>
+        {% for entry in special_hours %}
+        <div class="oh-special-item{% if entry.is_closed %} oh-special-closed{% endif %}">
+          <div class="oh-special-info">
+            <span class="oh-special-date">{{ entry.date|date:"D, M j, Y" }}</span>
+            {% if entry.is_closed %}
+            <span class="oh-special-status">Closed</span>
+            {% else %}
+            <span class="oh-special-status">{{ entry.start_time|time:"g:i A" }} – {{ entry.end_time|time:"g:i A" }}</span>
+            {% endif %}
+            {% if entry.note %}<span class="oh-special-note">{{ entry.note }}</span>{% endif %}
+          </div>
+          <form method="post" action="{% url 'scheduling:delete_special_hours' entry.pk %}"
+                onsubmit="return confirm('Remove this override?');" style="display:inline;">
+            {% csrf_token %}
+            <button type="submit" class="sb-btn-delete">✕</button>
+          </form>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="oh-no-special">No upcoming special dates configured.</p>
+      {% endif %}
+    </div>
+
+  </div>
 </div>
+
+<script>
+const closedCheck = document.getElementById('id_is_closed');
+const timeFields = document.getElementById('oh-time-fields');
+
+function toggleTimeFields() {
+  timeFields.style.display = closedCheck.checked ? 'none' : 'flex';
+}
+
+closedCheck.addEventListener('change', toggleTimeFields);
+toggleTimeFields();
+</script>
 {% endblock %}

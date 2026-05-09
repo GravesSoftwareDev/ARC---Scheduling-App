@@ -1,0 +1,468 @@
+{% extends "dashboard/base.html" %}
+{% load custom_filters %}
+{% block title %}Schedule Builder – Academic Resource Center{% endblock %}
+
+{% block content %}
+<div class="sb2-page">
+
+  <!-- ── Top bar ──────────────────────────────────────────────────────────── -->
+  <div class="sb2-topbar">
+    <div class="sb2-topbar-left">
+      <h1 class="sb2-title">Schedule Builder</h1>
+      <p class="sb2-subtitle">
+        {% if active_dept %}{{ active_dept }}{% else %}Select a department{% endif %}
+        {% if active_subject %}&mdash; {{ active_subject.name }}{% endif %}
+        {% if is_admin %}&mdash; All departments visible{% endif %}
+      </p>
+    </div>
+    <div class="sb2-topbar-right">
+      <div class="sb2-week-nav">
+        <a href="?week={{ prev_week }}&dept={{ active_dept_pk }}" class="week-nav-btn" id="nav-prev">&#8592;</a>
+        <span class="week-nav-label">{{ week_label }}</span>
+        <a href="?week={{ next_week }}&dept={{ active_dept_pk }}" class="week-nav-btn" id="nav-next">&#8594;</a>
+      </div>
+      <a href="{% url 'dashboard:dashboard' %}" class="btn btn-secondary" id="nav-dashboard">← Dashboard</a>
+    </div>
+  </div>
+
+  <!-- ── Body: sidebar + grid ─────────────────────────────────────────────── -->
+  <div class="sb2-body">
+
+    <!-- Sidebar -->
+    <div class="sb2-sidebar">
+
+      <!-- Department selector -->
+      <div class="sb2-sidebar-section">
+        <label class="sb2-sidebar-label" for="dept-select">Department</label>
+        <select id="dept-select" class="sb2-select">
+          {% for dept in allowed_departments %}
+          <option value="{{ dept.pk }}"
+                  data-url="?week={{ week_start|date:'Y-m-d' }}&dept={{ dept.pk }}"
+                  {% if dept.pk|stringformat:'s' == active_dept_pk %}selected{% endif %}>
+            {{ dept.name }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Subject selector (only for departments that have subjects) -->
+      {% if dept_subjects %}
+      <div class="sb2-sidebar-section">
+        <label class="sb2-sidebar-label" for="subject-select">Subject</label>
+        <select id="subject-select" class="sb2-select">
+          {% for subj in dept_subjects %}
+          <option value="{{ subj.pk }}"
+                  data-url="?week={{ week_start|date:'Y-m-d' }}&dept={{ active_dept_pk }}&subject={{ subj.pk }}"
+                  {% if subj.pk|stringformat:'s' == active_subject_pk %}selected{% endif %}>
+            {{ subj.name }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      {% endif %}
+
+      <!-- Employee selector -->
+      <div class="sb2-sidebar-section">
+        <div class="sb2-sidebar-label">Select Employee to Schedule</div>
+        <div id="emp-list" class="sb2-emp-list">
+          {% for emp in visible_employees %}
+          <button type="button"
+                  class="sb2-emp-pill"
+                  data-emp="{{ emp.pk }}"
+                  style="--emp-color: {{ employee_colors|dict_lookup:emp.pk }};"
+                  onclick="selectEmployee('{{ emp.pk }}', '{{ employee_colors|dict_lookup:emp.pk }}')">
+            <span class="sb2-emp-swatch" style="background:{{ employee_colors|dict_lookup:emp.pk }};"></span>
+            {{ emp.last_name }}, {{ emp.first_name }}
+          </button>
+          {% empty %}
+          <p class="sb2-no-emp">No employees in this department.</p>
+          {% endfor %}
+        </div>
+        <div id="active-emp-label" class="sb2-active-label" style="display:none;">
+          Drawing for: <strong id="active-emp-name"></strong>
+          <button type="button" class="sb2-clear-sel" onclick="clearEmployee()">✕</button>
+        </div>
+      </div>
+
+      <!-- Draw / Erase -->
+      <div class="sb2-sidebar-section">
+        <div class="sb2-sidebar-label">Mode</div>
+        <div class="sb2-mode-btns">
+          <button type="button" id="mode-draw"  class="sb2-mode-btn sb2-mode-active" onclick="setMode('draw')">✏ Draw</button>
+          <button type="button" id="mode-erase" class="sb2-mode-btn"                 onclick="setMode('erase')">✕ Erase</button>
+        </div>
+        <p class="sb2-mode-hint">Ctrl+Z undo &nbsp;·&nbsp; Ctrl+Y redo</p>
+      </div>
+
+      <!-- Color key -->
+      <div class="sb2-sidebar-section sb2-key-section">
+        <div class="sb2-sidebar-label">Color Key</div>
+        <div class="sb2-key-list">
+          {% for emp in visible_employees %}
+          <div class="sb2-key-item" data-emp-key="{{ emp.pk }}">
+            <span class="sb2-key-swatch" style="background:{{ employee_colors|dict_lookup:emp.pk }};"></span>
+            <span class="sb2-key-name">{{ emp.first_name }} {{ emp.last_name }}</span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Grid area -->
+    <div class="sb2-grid-wrap">
+      <form method="post" id="schedule-form">
+        {% csrf_token %}
+        <input type="hidden" name="active_dept_pk" value="{{ active_dept_pk }}">
+        <input type="hidden" name="active_subject_pk" value="{{ active_subject_pk }}">
+
+        <div class="sb2-calendar-scroll">
+        <div class="sb2-calendar hourly-calendar">
+
+          <!-- ── Header ──────────────────────────────────────────────────── -->
+          <div class="calendar-header {% if has_locs %}sb2-multiloc-header{% endif %}"
+               style="grid-template-columns: {{ col_template }};">
+            <div class="hour-column" {% if has_locs %}style="grid-row: span 2;"{% endif %}></div>
+            {% for day in day_header_cols %}
+            <div class="day-header {% if day.is_today %}day-header-today{% endif %}"
+                 {% if has_locs %}style="grid-column: span {{ day.span }};"{% endif %}>
+              <span class="day-full">{{ day.label }}</span>
+              <span class="day-date-num">{{ day.month_abbr }} {{ day.date_num }}</span>
+              {% if day.closed %}<span class="day-closed-tag">Closed</span>{% endif %}
+            </div>
+            {% endfor %}
+            {% if has_locs %}
+            {% for lhc in loc_header_cells %}
+            <div class="sb2-loc-header">{{ lhc.loc }}</div>
+            {% endfor %}
+            {% endif %}
+          </div>
+
+          <!-- ── Grid rows ────────────────────────────────────────────────── -->
+          <div class="calendar-grid">
+            {% for row in grid %}
+            <div class="calendar-row {% if row.show_label %}hour-row{% endif %}"
+                 style="grid-template-columns: {{ col_template }};">
+              <div class="hour-label {% if not row.show_label %}label-hidden{% endif %}">
+                {% if row.show_label %}{{ row.display }}{% endif %}
+              </div>
+              {% for cell in row.cells %}
+              <div class="hour-cell sb2-cell {% if cell.in_hours %}sb2-in-hours{% else %}out-of-hours{% endif %}"
+                   data-date="{{ cell.date_iso }}"
+                   data-slot="{{ row.slot_key }}"
+                   data-loc="{{ cell.loc_slug }}"
+                   data-emp="{{ cell.emp_pk }}"
+                   {% if cell.color %}style="background:{{ cell.color }};opacity:0.82;"{% endif %}>
+              </div>
+              <input type="hidden"
+                     name="{{ cell.inp_name }}"
+                     id="{{ cell.inp_id }}"
+                     value="{{ cell.value }}">
+              {% endfor %}
+            </div>
+            {% endfor %}
+          </div>
+
+        </div><!-- .sb2-calendar -->
+        </div><!-- .sb2-calendar-scroll -->
+
+        <div class="sb2-form-actions">
+          <span id="unsaved-badge" class="sb2-unsaved" style="display:none;">Unsaved changes</span>
+          <button type="submit" class="btn btn-primary sb2-save-btn">Save Schedule</button>
+        </div>
+      </form>
+    </div>
+
+  </div><!-- .sb2-body -->
+</div><!-- .sb2-page -->
+
+<!-- ── Unsaved-changes dialog ─────────────────────────────────────────────── -->
+<div id="unsaved-dialog" class="modal-overlay" style="display:none;">
+  <div class="modal-box" style="max-width:380px;">
+    <div class="modal-header">
+      <h3>Unsaved Changes</h3>
+    </div>
+    <div style="padding:20px;">
+      <p style="margin:0 0 18px;font-size:14px;">
+        You have unsaved changes to the <strong>{{ active_dept }}</strong> schedule.
+        Save before switching?
+      </p>
+      <div style="display:flex;gap:10px;justify-content:flex-end;">
+        <button class="btn btn-secondary" onclick="discardAndNavigate()">Discard</button>
+        <button class="btn btn-primary" onclick="saveAndNavigate()">Save &amp; Switch</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const employeeColors       = JSON.parse('{{ employee_colors_json|escapejs }}');
+const employeeAvailability = JSON.parse('{{ employee_availability_json|escapejs }}');
+const employeeConflicts    = JSON.parse('{{ employee_conflicts_json|escapejs }}');
+const dateDayMap           = JSON.parse('{{ date_day_map_json|escapejs }}');
+const hasLocs = {{ has_locs|yesno:"true,false" }};
+
+let activeEmpPk    = null;
+let activeEmpColor = null;
+let activeDeptPk   = '{{ active_dept_pk }}';
+let activeSubjectPk = '{{ active_subject_pk }}';
+let drawMode  = 'draw';
+let isDragging = false;
+let hasUnsaved = false;
+let pendingNavUrl = null;
+
+// ── Undo / Redo ────────────────────────────────────────────────────────────
+const MAX_HISTORY = 60;
+let undoStack = [];
+let redoStack = [];
+
+function snapshotState() {
+  const snap = {};
+  document.querySelectorAll('.sb2-cell').forEach(cell => {
+    const key = `${cell.dataset.date}__${cell.dataset.slot}__${cell.dataset.loc||''}`;
+    snap[key] = { emp: cell.dataset.emp || '', bg: cell.style.background || '', op: cell.style.opacity || '' };
+  });
+  return snap;
+}
+
+function applySnapshot(snap) {
+  document.querySelectorAll('.sb2-cell').forEach(cell => {
+    const key = `${cell.dataset.date}__${cell.dataset.slot}__${cell.dataset.loc||''}`;
+    const s = snap[key];
+    if (!s) return;
+    cell.dataset.emp = s.emp;
+    cell.style.background = s.bg;
+    cell.style.opacity = s.op;
+    // sync hidden input
+    const inp = document.getElementById(cell.dataset.inputId);
+    if (inp) inp.value = s.emp || '';
+  });
+  markUnsaved();
+}
+
+function pushUndo() {
+  undoStack.push(snapshotState());
+  if (undoStack.length > MAX_HISTORY) undoStack.shift();
+  redoStack = [];
+}
+
+function undo() {
+  if (!undoStack.length) return;
+  redoStack.push(snapshotState());
+  applySnapshot(undoStack.pop());
+}
+
+function redo() {
+  if (!redoStack.length) return;
+  undoStack.push(snapshotState());
+  applySnapshot(redoStack.pop());
+}
+
+document.addEventListener('keydown', e => {
+  const mod = e.ctrlKey || e.metaKey;
+  if (mod && !e.shiftKey && e.key === 'z') { e.preventDefault(); undo(); }
+  if (mod && (e.key === 'y' || (e.shiftKey && e.key === 'z'))) { e.preventDefault(); redo(); }
+});
+
+// ── Employee selection ─────────────────────────────────────────────────────
+function selectEmployee(empPk, color) {
+  activeEmpPk   = String(empPk);
+  activeEmpColor = color;
+  document.querySelectorAll('.sb2-emp-pill').forEach(p => p.classList.remove('sb2-emp-active'));
+  document.querySelector(`.sb2-emp-pill[data-emp="${empPk}"]`)?.classList.add('sb2-emp-active');
+  document.getElementById('active-emp-label').style.display = 'flex';
+  const pill = document.querySelector(`.sb2-emp-pill[data-emp="${empPk}"]`);
+  document.getElementById('active-emp-name').textContent = pill ? pill.textContent.trim() : empPk;
+  document.querySelectorAll('.sb2-key-item').forEach(k => k.classList.remove('sb2-key-active'));
+  document.querySelector(`.sb2-key-item[data-emp-key="${empPk}"]`)?.classList.add('sb2-key-active');
+  applyAvailabilityHighlight(empPk);
+}
+
+function clearEmployee() {
+  activeEmpPk = null; activeEmpColor = null;
+  document.querySelectorAll('.sb2-emp-pill').forEach(p => p.classList.remove('sb2-emp-active'));
+  document.querySelectorAll('.sb2-key-item').forEach(k => k.classList.remove('sb2-key-active'));
+  document.getElementById('active-emp-label').style.display = 'none';
+  clearAvailabilityHighlight();
+}
+
+// ── Availability + conflict highlighting ───────────────────────────────────
+function applyAvailabilityHighlight(empPk) {
+  clearAvailabilityHighlight();
+  const avail     = employeeAvailability[String(empPk)];
+  const conflicts = employeeConflicts[String(empPk)] || [];
+
+  document.querySelectorAll('.sb2-cell.sb2-in-hours').forEach(cell => {
+    const [h, m] = cell.dataset.slot.split('_').map(Number);
+    const slotMin = h * 60 + m;
+    const dateStr = cell.dataset.date;
+
+    // Conflict check first (already scheduled elsewhere this week)
+    const isConflict = conflicts.some(c => {
+      if (c.date !== dateStr) return false;
+      const [sh, sm] = c.start.split(':').map(Number);
+      const [eh, em] = c.end.split(':').map(Number);
+      return slotMin >= sh * 60 + sm && slotMin < eh * 60 + em;
+    });
+    if (isConflict) {
+      cell.classList.add('sb2-sched-conflict');
+      return;
+    }
+
+    // Availability check
+    const day = dateDayMap[dateStr];
+    const dayBlocks = (avail && avail[day]) ? avail[day] : [];
+    let inAvail = false, isPreferred = false;
+    for (const b of dayBlocks) {
+      const [bh, bm] = b.start.split(':').map(Number);
+      const [eh, em] = b.end.split(':').map(Number);
+      if (slotMin >= bh * 60 + bm && slotMin < eh * 60 + em) {
+        inAvail = true;
+        if (b.type === 'PREFERRED') isPreferred = true;
+        break;
+      }
+    }
+    if (inAvail) {
+      cell.classList.add(isPreferred ? 'sb2-avail-preferred' : 'sb2-avail-ok');
+    } else {
+      cell.classList.add('sb2-avail-blocked');
+    }
+  });
+}
+
+function clearAvailabilityHighlight() {
+  document.querySelectorAll(
+    '.sb2-avail-ok, .sb2-avail-blocked, .sb2-avail-preferred, .sb2-sched-conflict'
+  ).forEach(c => {
+    c.classList.remove('sb2-avail-ok', 'sb2-avail-blocked', 'sb2-avail-preferred', 'sb2-sched-conflict');
+  });
+}
+
+// ── Draw mode ──────────────────────────────────────────────────────────────
+function setMode(mode) {
+  drawMode = mode;
+  document.getElementById('mode-draw').classList.toggle('sb2-mode-active', mode === 'draw');
+  document.getElementById('mode-erase').classList.toggle('sb2-mode-active', mode === 'erase');
+}
+
+// ── Cell painting ──────────────────────────────────────────────────────────
+function paintCell(cell) {
+  if (!cell.classList.contains('sb2-in-hours')) return;
+  if (drawMode === 'draw' && activeEmpPk && (
+    cell.classList.contains('sb2-avail-blocked') ||
+    cell.classList.contains('sb2-sched-conflict')
+  )) return;
+  const inp = document.getElementById(cell.dataset.inputId);
+
+  if (drawMode === 'erase') {
+    cell.dataset.emp = '';
+    cell.style.background = '';
+    cell.style.opacity = '';
+    if (inp) inp.value = '';
+  } else {
+    if (!activeEmpPk) return;
+    cell.dataset.emp = activeEmpPk;
+    cell.style.background = activeEmpColor;
+    cell.style.opacity = '0.82';
+    if (inp) inp.value = activeEmpPk;
+  }
+  markUnsaved();
+}
+
+// Wire up all cells and precompute input IDs on DOMContentLoaded
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.sb2-cell').forEach(cell => {
+    // precompute and store the input id on the cell element itself
+    const loc = cell.dataset.loc || '';
+    const id = loc
+      ? `inp_${cell.dataset.date}_${cell.dataset.slot}_${loc}`
+      : `inp_${cell.dataset.date}_${cell.dataset.slot}`;
+    cell.dataset.inputId = id;
+
+    cell.addEventListener('mousedown', e => {
+      if (drawMode === 'erase' || activeEmpPk) {
+        e.preventDefault();
+        pushUndo();
+        isDragging = true;
+        paintCell(cell);
+      }
+    });
+    cell.addEventListener('mouseenter', () => {
+      if (isDragging && (drawMode === 'erase' || activeEmpPk)) paintCell(cell);
+    });
+  });
+});
+
+document.addEventListener('mouseup', () => { isDragging = false; });
+
+// ── Unsaved indicator ──────────────────────────────────────────────────────
+function markUnsaved() {
+  hasUnsaved = true;
+  document.getElementById('unsaved-badge').style.display = 'inline-flex';
+}
+
+document.getElementById('schedule-form').addEventListener('submit', () => { hasUnsaved = false; });
+
+// ── Department change: prompt to save first ────────────────────────────────
+document.getElementById('dept-select').addEventListener('change', function() {
+  const selectedOpt = this.options[this.selectedIndex];
+  const targetUrl = selectedOpt.dataset.url;
+  if (hasUnsaved) {
+    pendingNavUrl = targetUrl;
+    document.getElementById('unsaved-dialog').style.display = 'flex';
+    this.value = activeDeptPk;
+  } else {
+    window.location = targetUrl;
+  }
+});
+
+// ── Subject change: prompt to save first ──────────────────────────────────
+const subjectSelect = document.getElementById('subject-select');
+if (subjectSelect) {
+  subjectSelect.addEventListener('change', function() {
+    const selectedOpt = this.options[this.selectedIndex];
+    const targetUrl = selectedOpt.dataset.url;
+    if (hasUnsaved) {
+      pendingNavUrl = targetUrl;
+      document.getElementById('unsaved-dialog').style.display = 'flex';
+      this.value = activeSubjectPk;
+    } else {
+      window.location = targetUrl;
+    }
+  });
+}
+
+function discardAndNavigate() {
+  hasUnsaved = false;
+  document.getElementById('unsaved-dialog').style.display = 'none';
+  window.location = pendingNavUrl;
+}
+
+function saveAndNavigate() {
+  document.getElementById('unsaved-dialog').style.display = 'none';
+  // Stash the destination in a hidden field, then submit
+  const hidden = document.createElement('input');
+  hidden.type = 'hidden'; hidden.name = 'redirect_after_save'; hidden.value = pendingNavUrl;
+  document.getElementById('schedule-form').appendChild(hidden);
+  document.getElementById('schedule-form').submit();
+}
+
+// ── Week nav / dashboard nav: warn on unsaved ──────────────────────────────
+['nav-prev','nav-next','nav-dashboard'].forEach(id => {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.addEventListener('click', e => {
+    if (hasUnsaved) {
+      e.preventDefault();
+      pendingNavUrl = el.href;
+      document.getElementById('unsaved-dialog').style.display = 'flex';
+    }
+  });
+});
+
+// ── Native beforeunload guard ──────────────────────────────────────────────
+window.addEventListener('beforeunload', e => {
+  if (hasUnsaved) { e.preventDefault(); e.returnValue = ''; }
+});
+</script>
+{% endblock %}
