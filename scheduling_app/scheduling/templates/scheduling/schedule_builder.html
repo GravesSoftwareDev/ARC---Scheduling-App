@@ -82,6 +82,21 @@
           Drawing for: <strong id="active-emp-name"></strong>
           <button type="button" class="sb2-clear-sel" onclick="clearEmployee()">✕</button>
         </div>
+        <div id="hours-counter" class="sb2-hours-counter" style="display:none;">
+          <div class="sb2-hours-counter-row">
+            <span class="sb2-hours-label">Scheduled this week</span>
+            <span id="hours-value" class="sb2-hours-value">0.0</span>
+            <span id="hours-cap" class="sb2-hours-cap">/ 19.5 hrs</span>
+          </div>
+          <div class="sb2-hours-bar-wrap">
+            <div class="sb2-hours-bar">
+              <div id="hours-fill" class="sb2-hours-fill"></div>
+            </div>
+          </div>
+          <div id="hours-warning" class="sb2-hours-warning" style="display:none;">
+            ⚠ Weekly limit reached
+          </div>
+        </div>
       </div>
 
       <!-- Draw / Erase -->
@@ -200,7 +215,10 @@ const employeeColors       = JSON.parse('{{ employee_colors_json|escapejs }}');
 const employeeAvailability = JSON.parse('{{ employee_availability_json|escapejs }}');
 const employeeConflicts    = JSON.parse('{{ employee_conflicts_json|escapejs }}');
 const dateDayMap           = JSON.parse('{{ date_day_map_json|escapejs }}');
+const employeeIsParttime   = JSON.parse('{{ employee_is_parttime_json|escapejs }}');
+const employeeOtherHours   = JSON.parse('{{ employee_other_hours_json|escapejs }}');
 const hasLocs = {{ has_locs|yesno:"true,false" }};
+const PARTTIME_MAX = 19.5;
 
 let activeEmpPk    = null;
 let activeEmpColor = null;
@@ -238,6 +256,7 @@ function applySnapshot(snap) {
     if (inp) inp.value = s.emp || '';
   });
   markUnsaved();
+  updateHoursCounter();
 }
 
 function pushUndo() {
@@ -276,6 +295,7 @@ function selectEmployee(empPk, color) {
   document.querySelectorAll('.sb2-key-item').forEach(k => k.classList.remove('sb2-key-active'));
   document.querySelector(`.sb2-key-item[data-emp-key="${empPk}"]`)?.classList.add('sb2-key-active');
   applyAvailabilityHighlight(empPk);
+  updateHoursCounter();
 }
 
 function clearEmployee() {
@@ -283,6 +303,7 @@ function clearEmployee() {
   document.querySelectorAll('.sb2-emp-pill').forEach(p => p.classList.remove('sb2-emp-active'));
   document.querySelectorAll('.sb2-key-item').forEach(k => k.classList.remove('sb2-key-active'));
   document.getElementById('active-emp-label').style.display = 'none';
+  document.getElementById('hours-counter').style.display = 'none';
   clearAvailabilityHighlight();
 }
 
@@ -345,13 +366,63 @@ function setMode(mode) {
   document.getElementById('mode-erase').classList.toggle('sb2-mode-active', mode === 'erase');
 }
 
+// ── Hours counter ──────────────────────────────────────────────────────────
+function calcScheduledHours(empPk) {
+  // Count unique (date, slot) combinations — deduplicates multi-location grids
+  const covered = new Set();
+  document.querySelectorAll('.sb2-cell').forEach(cell => {
+    if (cell.dataset.emp === String(empPk))
+      covered.add(`${cell.dataset.date}__${cell.dataset.slot}`);
+  });
+  return covered.size * 0.25;
+}
+
+function updateHoursCounter() {
+  const counter = document.getElementById('hours-counter');
+  if (!activeEmpPk || !employeeIsParttime[activeEmpPk]) {
+    counter.style.display = 'none';
+    return;
+  }
+  const thisHrs  = calcScheduledHours(activeEmpPk);
+  const otherHrs = employeeOtherHours[activeEmpPk] || 0;
+  const total    = thisHrs + otherHrs;
+  const pct      = Math.min(100, (total / PARTTIME_MAX) * 100);
+
+  counter.style.display = 'block';
+  document.getElementById('hours-value').textContent = total.toFixed(1);
+
+  const fill    = document.getElementById('hours-fill');
+  const valEl   = document.getElementById('hours-value');
+  const warnEl  = document.getElementById('hours-warning');
+
+  fill.style.width = pct + '%';
+
+  if (total > PARTTIME_MAX) {
+    fill.className  = 'sb2-hours-fill sb2-hours-over';
+    valEl.className = 'sb2-hours-value sb2-hours-over';
+    warnEl.style.display = 'block';
+  } else if (total >= PARTTIME_MAX - 1) {
+    fill.className  = 'sb2-hours-fill sb2-hours-warn';
+    valEl.className = 'sb2-hours-value sb2-hours-warn';
+    warnEl.style.display = 'none';
+  } else {
+    fill.className  = 'sb2-hours-fill';
+    valEl.className = 'sb2-hours-value';
+    warnEl.style.display = 'none';
+  }
+}
+
+let hoursWarnTimeout = null;
+function showHoursLimitWarning() {
+  const counter = document.getElementById('hours-counter');
+  counter.classList.add('sb2-hours-shake');
+  clearTimeout(hoursWarnTimeout);
+  hoursWarnTimeout = setTimeout(() => counter.classList.remove('sb2-hours-shake'), 500);
+}
+
 // ── Cell painting ──────────────────────────────────────────────────────────
 function paintCell(cell) {
   if (!cell.classList.contains('sb2-in-hours')) return;
-  if (drawMode === 'draw' && activeEmpPk && (
-    cell.classList.contains('sb2-avail-blocked') ||
-    cell.classList.contains('sb2-sched-conflict')
-  )) return;
   const inp = document.getElementById(cell.dataset.inputId);
 
   if (drawMode === 'erase') {
@@ -359,14 +430,30 @@ function paintCell(cell) {
     cell.style.background = '';
     cell.style.opacity = '';
     if (inp) inp.value = '';
-  } else {
-    if (!activeEmpPk) return;
-    cell.dataset.emp = activeEmpPk;
-    cell.style.background = activeEmpColor;
-    cell.style.opacity = '0.82';
-    if (inp) inp.value = activeEmpPk;
+    markUnsaved();
+    updateHoursCounter();
+    return;
   }
+
+  if (!activeEmpPk) return;
+  if (cell.classList.contains('sb2-avail-blocked') ||
+      cell.classList.contains('sb2-sched-conflict')) return;
+
+  // Block painting if the employee would exceed the weekly part-time cap
+  if (employeeIsParttime[activeEmpPk] && cell.dataset.emp !== activeEmpPk) {
+    const total = calcScheduledHours(activeEmpPk) + (employeeOtherHours[activeEmpPk] || 0);
+    if (total + 0.25 > PARTTIME_MAX) {
+      showHoursLimitWarning();
+      return;
+    }
+  }
+
+  cell.dataset.emp = activeEmpPk;
+  cell.style.background = activeEmpColor;
+  cell.style.opacity = '0.82';
+  if (inp) inp.value = activeEmpPk;
   markUnsaved();
+  updateHoursCounter();
 }
 
 // Wire up all cells and precompute input IDs on DOMContentLoaded

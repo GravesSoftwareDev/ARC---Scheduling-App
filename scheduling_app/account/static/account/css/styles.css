@@ -2035,3 +2035,73 @@ select.form-control { cursor: pointer; }
     font-style: italic;
     padding: 32px;
 }
+
+/* =====================================================
+   SCHEDULE BUILDER — HOURS COUNTER
+   ===================================================== */
+.sb2-hours-counter {
+    background: #f7f9fb;
+    border: 1px solid #e0e6ed;
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-top: 8px;
+    font-size: 13px;
+}
+.sb2-hours-counter-row {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    margin-bottom: 6px;
+}
+.sb2-hours-label {
+    flex: 1;
+    color: #555;
+    font-size: 12px;
+}
+.sb2-hours-value {
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--primary-dark);
+    transition: color 0.2s;
+}
+.sb2-hours-value.sb2-hours-warn { color: #E65100; }
+.sb2-hours-value.sb2-hours-over { color: #B71C1C; }
+.sb2-hours-cap {
+    font-size: 12px;
+    color: #888;
+}
+.sb2-hours-bar-wrap {
+    height: 6px;
+    background: #e0e6ed;
+    border-radius: 3px;
+    overflow: hidden;
+}
+.sb2-hours-bar {
+    height: 100%;
+    width: 100%;
+}
+.sb2-hours-fill {
+    height: 100%;
+    background: var(--primary-color);
+    border-radius: 3px;
+    transition: width 0.2s, background 0.2s;
+}
+.sb2-hours-fill.sb2-hours-warn { background: #E65100; }
+.sb2-hours-fill.sb2-hours-over { background: #B71C1C; }
+.sb2-hours-warning {
+    margin-top: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #B71C1C;
+    text-align: center;
+}
+@keyframes sb2-shake {
+    0%,100% { transform: translateX(0); }
+    20%      { transform: translateX(-4px); }
+    40%      { transform: translateX(4px); }
+    60%      { transform: translateX(-3px); }
+    80%      { transform: translateX(3px); }
+}
+.sb2-hours-shake {
+    animation: sb2-shake 0.45s ease;
+}
