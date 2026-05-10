@@ -1,0 +1,4313 @@
+[
+{
+  "model": "sessions.session",
+  "pk": "2m16su6elcky6r6hiyp6f26rw37uohll",
+  "fields": {
+    "session_data": ".eJxVjMsOwiAQRf-FtSEgb5fu-w1kGAapGkhKuzL-uzbpQrf3nHNfLMK21rgNWuKc2YVZdvrdEuCD2g7yHdqtc-xtXebEd4UfdPCpZ3peD_fvoMKo31oTIGgvFblCQM6ZINHLs9KQEZwIkkoSpLIMIpgQtMkalSjWC8SiLHt_APfCOAw:1wLp6F:piZkSoZaGi8N2lXuamVzCoRVSVAuUK2cQsIBamJ6tEc",
+    "expire_date": "2026-05-23T21:20:39.839Z"
+  }
+},
+{
+  "model": "sessions.session",
+  "pk": "2xauuoajzfqc0kdnc1ntwho1kg80heul",
+  "fields": {
+    "session_data": ".eJxVjc0OwiAQhN-FszbQBQoevfsMZNldrD8pprTxYHx3a-LF68w337xUemBrzzpzmqXJkpZ6k0kdFA9nNPe9700OwWERBqbIWQ8BoikebcmuL2qnEq7LmNYmc7rwtvT_WUbajN-Crzida0d1WuZL7r5I92tbd6os9-OP_ROM2MZtrWPwAxfm7RcNOJQigC6K015DILDe6j57GkiTEFrDAGS9MOoYHaj3BxvUTUg:1wFd2g:-A4op7LhgZUlKcgNWCftKVFUalhEP5ghnJ3d-q34Zpo",
+    "expire_date": "2026-05-06T19:15:22.307Z"
+  }
+},
+{
+  "model": "sessions.session",
+  "pk": "6yjn9bzga1ujzkowmiwk0urbc2ankwvh",
+  "fields": {
+    "session_data": ".eJxVjDsOwjAQBe_iGlle4l8o6XMGa9dr4wCypTipEHeHSCmgfTPzXiLgtpaw9bSEmcVFgBGn35EwPlLdCd-x3pqMra7LTHJX5EG7nBqn5_Vw_w4K9vKtk3dJ6aycQe11dCPZzHYEIobBKHMGcMoyeAdskrUeGRXaYciE2ZAS7w_2czfO:1wLpzQ:Bt9Iwy_F5R3mSBMShiGgQvnoywQM4Gsn0fZPW35fYNg",
+    "expire_date": "2026-05-23T22:17:40.639Z"
+  }
+},
+{
+  "model": "sessions.session",
+  "pk": "7czl9x8gi7nw0q9f9ioj4k4w8lb74vbz",
+  "fields": {
+    "session_data": ".eJxVjEEOwiAQRe_C2hDqAC0u3fcMZJgZpGpoUtqV8e7apAvd_vfef6mI21ri1mSJE6uL8ur0uyWkh9Qd8B3rbdY013WZkt4VfdCmx5nleT3cv4OCrXxrEwbfc2bOyWEHDiULoAvijDcwEFhvzTl56smQENqOAch6YTQhOFDvD_jQOC4:1wD63h:pBDXQDqMtPYkcmJVE3ZQTsJhmflGng1Owt6KCauIfCU",
+    "expire_date": "2026-04-29T19:37:57.983Z"
+  }
+},
+{
+  "model": "sessions.session",
+  "pk": "gkuy48atwwidti0vkqszi6u3oexcvgft",
+  "fields": {
+    "session_data": ".eJxVjEEOwiAQRe_C2pDCAC0u3XsGMsOAVA0kpV0Z765NutDtf-_9lwi4rSVsPS1hZnEW2onT70gYH6nuhO9Yb03GVtdlJrkr8qBdXhun5-Vw_w4K9vKt82THnAbgTMpaIpXTNGrwWTsF7JVFBk7M2Wlt2FggDwYN2wiRAAfx_gAd9jiR:1wLqAH:xmdmNT7HHPpfAAvsp_GrqKJSrJGvoD2RndYuu4PNw-0",
+    "expire_date": "2026-05-23T22:28:53.910Z"
+  }
+},
+{
+  "model": "sessions.session",
+  "pk": "iqc6kwqdowl0v1myjske1b00ee2bilz1",
+  "fields": {
+    "session_data": ".eJxVjMsOwiAQRf-FtSG8EZfu-w1kBgapGkhKuzL-uzbpQrf3nHNfLMK21rgNWuKc2YVJw06_I0J6UNtJvkO7dZ56W5cZ-a7wgw4-9UzP6-H-HVQY9VsXlwiKddpo0loH6ekM2fjkEwqtHNkCSoJQMisMNhOiC0GGAsJIIZC9PxMVOCI:1wLpJS:lPXAOsTpYLbJH8fZlK9yufYsTYTWuEQyAKAetPRGnTw",
+    "expire_date": "2026-05-23T21:34:18.138Z"
+  }
+},
+{
+  "model": "sessions.session",
+  "pk": "jlawo1d2jqxg9ji483bw5nvss8zxkg5t",
+  "fields": {
+    "session_data": ".eJxVjEEOwiAQRe_C2pBOoQRcuvcMZGaYStVAUtpV491tky50-997f1MR1yXHtckcp6SuCry6_I6E_JJykPTE8qiaa1nmifSh6JM2fa9J3rfT_TvI2PJeW_bBAAgP7ACcOEg9Wg7A4FHYjYZDJ0LG2V1yfkAkSz1hNwobD-rzBRBBOLI:1wLq8D:cgWG32F93DoInjlPYmBfdYDiJaXOx_Ca14Q-QdMT-Q0",
+    "expire_date": "2026-05-23T22:26:45.790Z"
+  }
+},
+{
+  "model": "sessions.session",
+  "pk": "n0a7ze6qa3pd5i64n6p8ggv47ubwcetv",
+  "fields": {
+    "session_data": ".eJxVjEEOwiAQRe_C2pDCAC0u3XsGMsOAVA0kpV0Z765NutDtf-_9lwi4rSVsPS1hZnEW2onT70gYH6nuhO9Yb03GVtdlJrkr8qBdXhun5-Vw_w4K9vKt82THnAbgTMpaIpXTNGrwWTsF7JVFBk7M2Wlt2FggDwYN2wiRAAfx_gAd9jiR:1wLq9p:lxeDOW0Ay6xyh7faot6HrBHVvFVal4yc3cNXpEGxs-Y",
+    "expire_date": "2026-05-23T22:28:25.623Z"
+  }
+},
+{
+  "model": "sessions.session",
+  "pk": "n0izmzdsw01fbej4fd4sp6qtmhpd43m6",
+  "fields": {
+    "session_data": ".eJxVjEsOAiEQBe_C2hDBaT4u3XsG0g2NjBpIhpmV8e5KMgvdvqp6LxFwW0vYOi9hTuIslDj8boTxwXWAdMd6azK2ui4zyaHInXZ5bYmfl939OyjYy7d21oLOyjKSAavQsj7aRB4gQVaGjSOjTYyePWKKE4Fzpyn7SKwHFe8P33A4Jw:1w6AMx:dTGm3B3gNlPeZU_5zuFrO3V4rUofa2mwuOuXbxJ3yLc",
+    "expire_date": "2026-04-10T16:49:11.467Z"
+  }
+},
+{
+  "model": "sessions.session",
+  "pk": "n6l9j8uail9vmq5jnhti8dwzjf5n9scn",
+  "fields": {
+    "session_data": ".eJxVjEEOwiAQRe_C2hDqAC0u3fcMZJgZpGpoUtqV8e7apAvd_vfef6mI21ri1mSJE6uL8ur0uyWkh9Qd8B3rbdY013WZkt4VfdCmx5nleT3cv4OCrXxrEwbfc2bOyWEHDiULoAvijDcwEFhvzTl56smQENqOAch6YTQhOFDvD_jQOC4:1wAuEi:H6AWWBnFa4yKqjvUf_oAs5YFOF_yBtW2FK5aGhR5_48",
+    "expire_date": "2026-04-23T18:36:16.321Z"
+  }
+},
+{
+  "model": "sessions.session",
+  "pk": "nsy5sgczweibngtyjomn9qc241hhnzck",
+  "fields": {
+    "session_data": ".eJxVjrmuwjAURP_FNUQ2XuJL-Xq-wbpbCIvipzhAgfh3gkRDO3PmaJ6m_GNrjzpLmbXpUpZ60cnsjfTnO8EWkJh9cDFTGjKDgsshkoOdiHNKZmMK3pax3JrO5STrMv1mhLwaP4WccTrWjuu0zCfqPkj3bVt3qKLXvy_7IxixjevaQk69DCIDRXQ-og7qMYJGm6zP68kU7I4S92xZGYMT7zkkFbQA0ZvXGws-TSs:1wGKNB:nEa6Q1O6ZT1Atvv7wW7_0ullrejFZ0f4wopMCJ0L1SU",
+    "expire_date": "2026-05-08T17:31:25.681Z"
+  }
+},
+{
+  "model": "sessions.session",
+  "pk": "nzukyl8flq2w6s7c048u9qt4ofy6pvd9",
+  "fields": {
+    "session_data": ".eJxVjEEOwiAQRe_C2hCGjgVcuvcMZIBBqgaS0q6Md7dNutDtf-_9t_C0LsWvnWc_JXERGsTpdwwUn1x3kh5U703GVpd5CnJX5EG7vLXEr-vh_h0U6mWrreYBMSFY48iGFMxoXEY4A7IaoqUMwNoqwlEHjRwzOlRqg6QM5Sg-X-tIN5c:1wLq8E:DCabYXcQaoADTUZf31CyjQpVcemTCMTlSBj_Ohk5eyA",
+    "expire_date": "2026-05-23T22:26:46.042Z"
+  }
+},
+{
+  "model": "sessions.session",
+  "pk": "oi0zf2ypq91rtvqomj70np6ej4sxudvo",
+  "fields": {
+    "session_data": ".eJxVjEEOwiAQRe_C2hDqAC0u3fcMZJgZpGpoUtqV8e7apAvd_vfef6mI21ri1mSJE6uL8ur0uyWkh9Qd8B3rbdY013WZkt4VfdCmx5nleT3cv4OCrXxrEwbfc2bOyWEHDiULoAvijDcwEFhvzTl56smQENqOAch6YTQhOFDvD_jQOC4:1wCN0C:8ZsRPTqiGaq9wMQQkH07ic_utw7S_wrq2fTKViwB3-E",
+    "expire_date": "2026-04-27T19:31:20.841Z"
+  }
+},
+{
+  "model": "sessions.session",
+  "pk": "pohscicd6bltml9pvfspffj9oosxnw9v",
+  "fields": {
+    "session_data": ".eJxVjMsOwiAQRf-FtSGF4enSvd9AYBikaiAp7cr479qkC93ec859sRC3tYZt0BLmzM5MADv9jinig9pO8j22W-fY27rMie8KP-jg157peTncv4MaR_3WqRAqCZRJOZqyl2kymqS0TghCVM4VpaSNGrwBHy1mSKjJgFBUXBLs_QEXpzg9:1wLpY3:w45RXE2FHxvjPG4qo8uPrJyDwa_lD9YV_lmwtgu89og",
+    "expire_date": "2026-05-23T21:49:23.419Z"
+  }
+},
+{
+  "model": "sessions.session",
+  "pk": "q06nbjdjfz28xfej8953u61hppylce7q",
+  "fields": {
+    "session_data": ".eJxVjDsOwjAQBe_iGlle4l8o6XMGa9dr4wCypTipEHeHSCmgfTPzXiLgtpaw9bSEmcVFgBGn35EwPlLdCd-x3pqMra7LTHJX5EG7nBqn5_Vw_w4K9vKtk3dJ6aycQe11dCPZzHYEIobBKHMGcMoyeAdskrUeGRXaYciE2ZAS7w_2czfO:1wLp7U:gAJcxneneit7Elu-E2gzWcei7NGKeGoG8U3iWthCfUw",
+    "expire_date": "2026-05-23T21:21:56.896Z"
+  }
+},
+{
+  "model": "sessions.session",
+  "pk": "ttkysswokvrrm6bmqu445z1r5c46dzfh",
+  "fields": {
+    "session_data": ".eJxVjMsOwiAQRf-FtSG8EZfu-w1kBgapGkhKuzL-uzbpQrf3nHNfLMK21rgNWuKc2YVJw06_I0J6UNtJvkO7dZ56W5cZ-a7wgw4-9UzP6-H-HVQY9VsXlwiKddpo0loH6ekM2fjkEwqtHNkCSoJQMisMNhOiC0GGAsJIIZC9PxMVOCI:1wLp7q:CvEFJoiSkmkW-0gCUDkJ5zqHIUs0BYmq8HdMChrdktc",
+    "expire_date": "2026-05-23T21:22:18.540Z"
+  }
+},
+{
+  "model": "sessions.session",
+  "pk": "x866x4dqse1gg3c51umhc6cqme7v4hiq",
+  "fields": {
+    "session_data": ".eJxVjEEOwiAQRe_C2hDqAC0u3fcMZJgZpGpoUtqV8e7apAvd_vfef6mI21ri1mSJE6uL8ur0uyWkh9Qd8B3rbdY013WZkt4VfdCmx5nleT3cv4OCrXxrEwbfc2bOyWEHDiULoAvijDcwEFhvzTl56smQENqOAch6YTQhOFDvD_jQOC4:1wAUWW:yaxF2TC3Hbl39TAAG7FyfBt_o5i33azIp1aVyvVlyic",
+    "expire_date": "2026-04-22T15:08:56.495Z"
+  }
+},
+{
+  "model": "sessions.session",
+  "pk": "xvqkejkerjqakavbrery90zrqjnlnybw",
+  "fields": {
+    "session_data": ".eJxVjEEOwiAQRe_C2pDCAC0u3XsGMsOAVA0kpV0Z765NutDtf-_9lwi4rSVsPS1hZnEW2onT70gYH6nuhO9Yb03GVtdlJrkr8qBdXhun5-Vw_w4K9vKt82THnAbgTMpaIpXTNGrwWTsF7JVFBk7M2Wlt2FggDwYN2wiRAAfx_gAd9jiR:1wLqKp:Z2xehqCBRA0ClETCqlqMZfAQvyUcPiiCMV6AqlMtKrQ",
+    "expire_date": "2026-05-23T22:39:47.766Z"
+  }
+},
+{
+  "model": "account.subject",
+  "pk": "ACC",
+  "fields": {
+    "name": "Accounting"
+  }
+},
+{
+  "model": "account.subject",
+  "pk": "ACD",
+  "fields": {
+    "name": "Academic Coach"
+  }
+},
+{
+  "model": "account.subject",
+  "pk": "AEA",
+  "fields": {
+    "name": "AEA - Academic Coach"
+  }
+},
+{
+  "model": "account.subject",
+  "pk": "CIS",
+  "fields": {
+    "name": "Computer Science"
+  }
+},
+{
+  "model": "account.subject",
+  "pk": "LAN",
+  "fields": {
+    "name": "Language"
+  }
+},
+{
+  "model": "account.subject",
+  "pk": "MTC",
+  "fields": {
+    "name": "Math Coach"
+  }
+},
+{
+  "model": "account.subject",
+  "pk": "MTH",
+  "fields": {
+    "name": "Math"
+  }
+},
+{
+  "model": "account.subject",
+  "pk": "SCI",
+  "fields": {
+    "name": "Science"
+  }
+},
+{
+  "model": "account.subject",
+  "pk": "SPC",
+  "fields": {
+    "name": "Speech"
+  }
+},
+{
+  "model": "account.subject",
+  "pk": "WRI",
+  "fields": {
+    "name": "Writing"
+  }
+},
+{
+  "model": "account.department",
+  "pk": 1,
+  "fields": {
+    "name": "New Hire"
+  }
+},
+{
+  "model": "account.department",
+  "pk": 2,
+  "fields": {
+    "name": "Tutor"
+  }
+},
+{
+  "model": "account.department",
+  "pk": 3,
+  "fields": {
+    "name": "Arc Assistant I"
+  }
+},
+{
+  "model": "account.department",
+  "pk": 4,
+  "fields": {
+    "name": "Arc Assistant II"
+  }
+},
+{
+  "model": "account.department",
+  "pk": 5,
+  "fields": {
+    "name": "Supervisor"
+  }
+},
+{
+  "model": "account.department",
+  "pk": 6,
+  "fields": {
+    "name": "Director"
+  }
+},
+{
+  "model": "account.employee",
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$2efeGZZKPphuOoYUaJGsPi$Cxd8D1tIUGiE0VmsTnXteAYoVbtaFj5c613Qn+vFVk0=",
+    "last_login": "2026-05-09T22:26:45.789Z",
+    "is_superuser": false,
+    "username": "smitha",
+    "first_name": "Alaina",
+    "last_name": "Smith",
+    "email": "",
+    "is_staff": true,
+    "is_active": true,
+    "date_joined": "2026-05-09T22:26:35.487Z",
+    "birthdate": null,
+    "role": "ADMIN",
+    "groups": [],
+    "user_permissions": [],
+    "departments": [
+      6
+    ],
+    "subjects": []
+  }
+},
+{
+  "model": "account.employee",
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$eiooqQawlAvflM7DgxMYmc$B9lP5irymjf9gMx2emWIa1P7JZGwWn8hqW/1S99wXRA=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "rowana",
+    "first_name": "Ashley",
+    "last_name": "Rowan",
+    "email": "",
+    "is_staff": true,
+    "is_active": true,
+    "date_joined": "2026-05-09T22:26:35.723Z",
+    "birthdate": null,
+    "role": "ADMIN",
+    "groups": [],
+    "user_permissions": [],
+    "departments": [
+      6
+    ],
+    "subjects": []
+  }
+},
+{
+  "model": "account.employee",
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$vcoxyTggsANAphDAWu3XoZ$Sus1+ZTBRFc8AKwJnEc+XFNYcZFvJzvAPIr072/YE78=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "quinnm",
+    "first_name": "Marie",
+    "last_name": "Quinn",
+    "email": "",
+    "is_staff": true,
+    "is_active": true,
+    "date_joined": "2026-05-09T22:26:35.955Z",
+    "birthdate": null,
+    "role": "ADMIN",
+    "groups": [],
+    "user_permissions": [],
+    "departments": [
+      5
+    ],
+    "subjects": []
+  }
+},
+{
+  "model": "account.employee",
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$DVIKDr1PqajgWJTcfZEGMt$0Pj+WLVJ091Iur74VyO+jzUlH0aAf22G2sJJ5Ho+WO0=",
+    "last_login": "2026-05-09T22:26:46.041Z",
+    "is_superuser": false,
+    "username": "swearingena",
+    "first_name": "Alysia",
+    "last_name": "Swearingen",
+    "email": "",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2026-05-09T22:26:36.187Z",
+    "birthdate": null,
+    "role": "SCHEDULER",
+    "groups": [],
+    "user_permissions": [],
+    "departments": [
+      5,
+      2
+    ],
+    "subjects": [
+      "MTH",
+      "SCI"
+    ]
+  }
+},
+{
+  "model": "account.employee",
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$cwlIo5CSdNXL321ogMirgx$Xf6w57EdbRl6kLTIrAQfhUUqeY5tt5gwnJveaVj1a6A=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "snodgrassc",
+    "first_name": "Carolyn",
+    "last_name": "Snodgrass",
+    "email": "",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2026-05-09T22:26:36.422Z",
+    "birthdate": null,
+    "role": "SCHEDULER",
+    "groups": [],
+    "user_permissions": [],
+    "departments": [
+      5,
+      2
+    ],
+    "subjects": [
+      "CIS"
+    ]
+  }
+},
+{
+  "model": "account.employee",
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$HV9VVUarELcwSuuJmfPoEy$DVrvgKxe7lYhUn6UqJZj7P3eovSlVvK1LGagUG9y9xM=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "templetond",
+    "first_name": "Daniel",
+    "last_name": "Templeton",
+    "email": "",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2026-05-09T22:26:36.654Z",
+    "birthdate": null,
+    "role": "SCHEDULER",
+    "groups": [],
+    "user_permissions": [],
+    "departments": [
+      5,
+      2
+    ],
+    "subjects": [
+      "ACD",
+      "ACC"
+    ]
+  }
+},
+{
+  "model": "account.employee",
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$wMubOw5pWh7CA1vppQRRuH$6F6Uu6eRvaI68JUT62N3KdAJfbOCHGyc9sAILYxxAmU=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "welchs",
+    "first_name": "Sierra",
+    "last_name": "Welch",
+    "email": "",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2026-05-09T22:26:36.888Z",
+    "birthdate": null,
+    "role": "SCHEDULER",
+    "groups": [],
+    "user_permissions": [],
+    "departments": [
+      5,
+      2
+    ],
+    "subjects": [
+      "WRI"
+    ]
+  }
+},
+{
+  "model": "account.employee",
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$HRqdqcf5OOc9ahLcWtN3v1$sWozf82V93i8KZE8A+5z7r6A4UI/OHdLJbor02IRwTc=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "pattersonе",
+    "first_name": "Eva",
+    "last_name": "Patterson",
+    "email": "",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2026-05-09T22:26:37.120Z",
+    "birthdate": null,
+    "role": "SCHEDULER",
+    "groups": [],
+    "user_permissions": [],
+    "departments": [
+      5,
+      2
+    ],
+    "subjects": [
+      "SPC"
+    ]
+  }
+},
+{
+  "model": "account.employee",
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$2XW7jh1gg9GU91VLKehvX3$oHqnorpN68Fq2JBw9JTCbO/sU/9SuEMztSO6qwsrpFY=",
+    "last_login": "2026-05-09T22:39:47.765Z",
+    "is_superuser": true,
+    "username": "gravess",
+    "first_name": "Shanna",
+    "last_name": "Graves",
+    "email": "",
+    "is_staff": true,
+    "is_active": true,
+    "date_joined": "2026-05-09T22:28:20.008Z",
+    "birthdate": null,
+    "role": "ADMIN",
+    "groups": [],
+    "user_permissions": [],
+    "departments": [
+      4
+    ],
+    "subjects": []
+  }
+},
+{
+  "model": "account.employee",
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$YnvibNOGN518NDiJl3jQLs$qq9Dz5fc4tws11mOe683aHmgim0TSn+8WWdcCJkp+qc=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "worthamg",
+    "first_name": "Geoffrey",
+    "last_name": "Wortham",
+    "email": "worthamg@otc.edu",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2026-05-09T22:33:35.821Z",
+    "birthdate": "2005-11-21",
+    "role": "EMPLOYEE",
+    "groups": [],
+    "user_permissions": [],
+    "departments": [
+      2
+    ],
+    "subjects": [
+      "MTH"
+    ]
+  }
+},
+{
+  "model": "account.employee",
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$G9TFfpEr3ZP0AQat9bDPGy$SSaH5lRGtmLchXqm/kZ+jRRFx0fP6z7H2xxWxWPiKIg=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "ricew",
+    "first_name": "Billy",
+    "last_name": "Rice",
+    "email": "ricew@otc.edu",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2026-05-09T22:34:32.060Z",
+    "birthdate": "1990-02-13",
+    "role": "EMPLOYEE",
+    "groups": [],
+    "user_permissions": [],
+    "departments": [
+      2
+    ],
+    "subjects": [
+      "MTH",
+      "MTC"
+    ]
+  }
+},
+{
+  "model": "account.employee",
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$d8JgmI0sdf2rSoTnQVhiDt$WSs7LeCGGvlKYim8StmNXS+knQmaWQIp9TEbSokcBRI=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "kinnardr",
+    "first_name": "Reece",
+    "last_name": "Kinnard",
+    "email": "kinnardr@otc.edu",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2026-05-09T22:35:29.313Z",
+    "birthdate": "2000-01-01",
+    "role": "EMPLOYEE",
+    "groups": [],
+    "user_permissions": [],
+    "departments": [
+      2
+    ],
+    "subjects": [
+      "WRI"
+    ]
+  }
+},
+{
+  "model": "account.employee",
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$az3SA5oeviCusv8YwxWhoI$3jwvsVCD4SQtzme1wEvPPcuKDWFUjTiNd6uVcB3+sH0=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "metcalfh",
+    "first_name": "Hannah",
+    "last_name": "Metcalf",
+    "email": "",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2026-05-09T22:52:40.217Z",
+    "birthdate": "2000-01-05",
+    "role": "EMPLOYEE",
+    "groups": [],
+    "user_permissions": [],
+    "departments": [
+      2
+    ],
+    "subjects": [
+      "ACD",
+      "LAN"
+    ]
+  }
+},
+{
+  "model": "account.employee",
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$qt2OxGaSFpQqG4Wr3mE588$B1wLuOuRewCbXMrebVj+//S/UguYgMuEuc/NueP6axs=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "taylorh",
+    "first_name": "Hanna",
+    "last_name": "Taylor",
+    "email": "",
+    "is_staff": false,
+    "is_active": false,
+    "date_joined": "2026-05-09T22:52:40.454Z",
+    "birthdate": "2000-01-14",
+    "role": "EMPLOYEE",
+    "groups": [],
+    "user_permissions": [],
+    "departments": [],
+    "subjects": []
+  }
+},
+{
+  "model": "account.employee",
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$67VAjh4iwr7OYxXoiVnvIr$qDQ91UwAvC/TokUZA9t4CeXU9XNGvydgi+liw3I4syE=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "zimmermane",
+    "first_name": "Emily",
+    "last_name": "Zimmerman",
+    "email": "",
+    "is_staff": false,
+    "is_active": false,
+    "date_joined": "2026-05-09T22:52:40.688Z",
+    "birthdate": "2000-01-21",
+    "role": "EMPLOYEE",
+    "groups": [],
+    "user_permissions": [],
+    "departments": [],
+    "subjects": []
+  }
+},
+{
+  "model": "account.employee",
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$Vp3Fj7WeyzMruQ57MqAeOE$WX1RluN16SsePpbUKR6GlrTqG4SamLSjqKydK7D1Lvs=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "batemanb",
+    "first_name": "Bradley",
+    "last_name": "Bateman",
+    "email": "",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2026-05-09T22:52:40.956Z",
+    "birthdate": "2000-02-01",
+    "role": "EMPLOYEE",
+    "groups": [],
+    "user_permissions": [],
+    "departments": [
+      2
+    ],
+    "subjects": [
+      "MTH",
+      "MTC",
+      "SCI"
+    ]
+  }
+},
+{
+  "model": "account.employee",
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$EJlHRuZqRvXrT7kz0BaT9o$XvL+WZ3cRWGL1Scu3lZlHZ0WZgbqZe40zGWsbVnzANM=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "baysa",
+    "first_name": "Andrew",
+    "last_name": "Bays",
+    "email": "",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2026-05-09T22:52:41.189Z",
+    "birthdate": "2000-02-05",
+    "role": "EMPLOYEE",
+    "groups": [],
+    "user_permissions": [],
+    "departments": [
+      2
+    ],
+    "subjects": [
+      "MTH"
+    ]
+  }
+},
+{
+  "model": "account.employee",
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$PSArko3pBXSfpxzTibVR5a$jVHLHdHNwJrqIeo6rr13JUh8/72IBLqHZXh6oTvOoRE=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "adamsc",
+    "first_name": "Crystal",
+    "last_name": "Adams",
+    "email": "",
+    "is_staff": false,
+    "is_active": false,
+    "date_joined": "2026-05-09T22:52:41.421Z",
+    "birthdate": "2000-02-11",
+    "role": "EMPLOYEE",
+    "groups": [],
+    "user_permissions": [],
+    "departments": [
+      2
+    ],
+    "subjects": []
+  }
+},
+{
+  "model": "account.employee",
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$LZ3rFtENm0IsUItWI53gEk$5Wrag8qFRjuo/XlOb9bUlNm4+VzheScoaLlkJlkXDuA=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "lewellenj",
+    "first_name": "Jacob",
+    "last_name": "Lewellen",
+    "email": "",
+    "is_staff": false,
+    "is_active": false,
+    "date_joined": "2026-05-09T22:52:41.652Z",
+    "birthdate": "2000-02-25",
+    "role": "EMPLOYEE",
+    "groups": [],
+    "user_permissions": [],
+    "departments": [
+      2
+    ],
+    "subjects": []
+  }
+},
+{
+  "model": "account.employee",
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$fO9tniWFGU3eZGhjzjsk2m$jRzujsRhUABCeOwDs2RwMvpPbEhgixtMuzTZhjOL/WE=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "fostert",
+    "first_name": "Terri",
+    "last_name": "Foster",
+    "email": "",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2026-05-09T22:52:41.887Z",
+    "birthdate": "2000-02-26",
+    "role": "EMPLOYEE",
+    "groups": [],
+    "user_permissions": [],
+    "departments": [
+      4,
+      2
+    ],
+    "subjects": [
+      "WRI"
+    ]
+  }
+},
+{
+  "model": "account.employee",
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$mwEjXgXHWUcASTcEauHfE1$25VUB0cLi7uPCYE5IiFrI98zB359NRSkw+XPcU8GulQ=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "byrnea",
+    "first_name": "Audrey",
+    "last_name": "Byrne",
+    "email": "",
+    "is_staff": false,
+    "is_active": false,
+    "date_joined": "2026-05-09T22:52:42.120Z",
+    "birthdate": "2000-03-03",
+    "role": "EMPLOYEE",
+    "groups": [],
+    "user_permissions": [],
+    "departments": [
+      2
+    ],
+    "subjects": []
+  }
+},
+{
+  "model": "account.employee",
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$nPA4rGTDDeU9ibSwIDjVcy$k/Vd+QTDFkyHqznNHwyK5Rc8C6ZHQjKmazrnhiDrSfo=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "degraffenreidl",
+    "first_name": "Lora",
+    "last_name": "Degraffenreid",
+    "email": "",
+    "is_staff": false,
+    "is_active": false,
+    "date_joined": "2026-05-09T22:52:42.354Z",
+    "birthdate": "2000-03-10",
+    "role": "EMPLOYEE",
+    "groups": [],
+    "user_permissions": [],
+    "departments": [
+      2
+    ],
+    "subjects": []
+  }
+},
+{
+  "model": "account.employee",
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$uOkS0zpWQSUkaBkUW9hm68$hXeCNjuclI4oS7tDxYHzmCeIblqG8IAtKBsd+mRx7DA=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "robertss",
+    "first_name": "Sara",
+    "last_name": "Roberts",
+    "email": "",
+    "is_staff": false,
+    "is_active": false,
+    "date_joined": "2026-05-09T22:52:42.589Z",
+    "birthdate": "2000-03-19",
+    "role": "EMPLOYEE",
+    "groups": [],
+    "user_permissions": [],
+    "departments": [
+      2
+    ],
+    "subjects": []
+  }
+},
+{
+  "model": "account.employee",
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$zYysH4IlZ1gKKLceUgtiGa$xiSs9xDuxmDhorUBZLCL0SUSrCCLcUHFaNkKJRY37o0=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "lands",
+    "first_name": "Sarah",
+    "last_name": "Land",
+    "email": "",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2026-05-09T22:52:42.823Z",
+    "birthdate": "2000-03-21",
+    "role": "EMPLOYEE",
+    "groups": [],
+    "user_permissions": [],
+    "departments": [
+      2
+    ],
+    "subjects": [
+      "SPC"
+    ]
+  }
+},
+{
+  "model": "account.employee",
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$njdUyfWt3O8ISqqrRLqxxt$4GaE9g7WiNOXjJiE0kdNes5vH6E6o2N2NXUOGpCE+1s=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "wrayj",
+    "first_name": "Jacque",
+    "last_name": "Wray",
+    "email": "",
+    "is_staff": false,
+    "is_active": false,
+    "date_joined": "2026-05-09T22:52:43.057Z",
+    "birthdate": "2000-03-28",
+    "role": "EMPLOYEE",
+    "groups": [],
+    "user_permissions": [],
+    "departments": [
+      2
+    ],
+    "subjects": []
+  }
+},
+{
+  "model": "account.employee",
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$ovr8butjfnvfO1yGF0WJF7$qVqxyBJXMPsdQiGbchKnXPtJ5fVq5/ur1v1lvMAtN14=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "garrottt",
+    "first_name": "Tia",
+    "last_name": "Garrott",
+    "email": "",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2026-05-09T22:52:43.292Z",
+    "birthdate": "2000-03-31",
+    "role": "EMPLOYEE",
+    "groups": [],
+    "user_permissions": [],
+    "departments": [
+      2
+    ],
+    "subjects": [
+      "SPC"
+    ]
+  }
+},
+{
+  "model": "account.employee",
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$yagux1E2bqWOfmue1gtRoH$sUh0yPKNWlKF0lZEpRW8oynNnJy1HRUjfSxyBJ9t53k=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "westbrookm",
+    "first_name": "Madelyn",
+    "last_name": "Westbrook",
+    "email": "",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2026-05-09T22:52:43.529Z",
+    "birthdate": "2000-04-02",
+    "role": "EMPLOYEE",
+    "groups": [],
+    "user_permissions": [],
+    "departments": [
+      2
+    ],
+    "subjects": [
+      "ACD"
+    ]
+  }
+},
+{
+  "model": "account.employee",
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$y2LgdnGXlv9qOAaBKRPS33$CpmbT7nbpv191ZQgrh2Hu2+nRGRYLegNHBXS8ysHLP0=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "mccullyt",
+    "first_name": "Tim",
+    "last_name": "McCully",
+    "email": "",
+    "is_staff": false,
+    "is_active": false,
+    "date_joined": "2026-05-09T22:52:43.815Z",
+    "birthdate": "2000-04-08",
+    "role": "EMPLOYEE",
+    "groups": [],
+    "user_permissions": [],
+    "departments": [
+      2
+    ],
+    "subjects": []
+  }
+},
+{
+  "model": "account.employee",
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$2TRg1BDJRZmitzZ1eBHTz6$/XYIvFqr9v+X+MZy2SddLVpb7/xYyd0iS/ZKjxqva1Q=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "smithh",
+    "first_name": "Hannah",
+    "last_name": "Smith",
+    "email": "",
+    "is_staff": false,
+    "is_active": false,
+    "date_joined": "2026-05-09T22:52:44.049Z",
+    "birthdate": "2000-04-16",
+    "role": "EMPLOYEE",
+    "groups": [],
+    "user_permissions": [],
+    "departments": [
+      2
+    ],
+    "subjects": []
+  }
+},
+{
+  "model": "account.employee",
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$p9SsEaH4Wh3XicCpMeIN64$uNYHJSyjMaKcnR3b8G0I6ubQm+ZIFKQcuUjSyI/5mhA=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "stalkern",
+    "first_name": "Natalie",
+    "last_name": "Stalker",
+    "email": "",
+    "is_staff": false,
+    "is_active": false,
+    "date_joined": "2026-05-09T22:52:44.283Z",
+    "birthdate": "2000-04-22",
+    "role": "EMPLOYEE",
+    "groups": [],
+    "user_permissions": [],
+    "departments": [
+      2
+    ],
+    "subjects": []
+  }
+},
+{
+  "model": "account.employee",
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$iSAaYpHcYJbxkjB02zczOY$r3k4tSVpYPXGA0ZN4L8yk8MaICwTES5q58z5EVWtZ74=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "wolfer",
+    "first_name": "Rain",
+    "last_name": "Wolfe",
+    "email": "",
+    "is_staff": false,
+    "is_active": false,
+    "date_joined": "2026-05-09T22:52:44.517Z",
+    "birthdate": "2000-04-27",
+    "role": "EMPLOYEE",
+    "groups": [],
+    "user_permissions": [],
+    "departments": [
+      2
+    ],
+    "subjects": []
+  }
+},
+{
+  "model": "account.employee",
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$832xgVkbYBvrMvjE9VNh4E$PW3hBSOrjx2aEPVazHBCoNEdbGBLl/sXVsiNrbDQpn0=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "greggl",
+    "first_name": "Lacey",
+    "last_name": "Gregg",
+    "email": "",
+    "is_staff": false,
+    "is_active": false,
+    "date_joined": "2026-05-09T22:52:44.750Z",
+    "birthdate": "2000-04-30",
+    "role": "EMPLOYEE",
+    "groups": [],
+    "user_permissions": [],
+    "departments": [
+      2
+    ],
+    "subjects": []
+  }
+},
+{
+  "model": "account.employee",
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$g59FuPBLP5ev63ZD8V9R7O$Cpq3A+lSc45KjR9f6JVK5sbbi8F8Tahjd8b2bSVyBOc=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "adamsr",
+    "first_name": "Ren",
+    "last_name": "Adams",
+    "email": "",
+    "is_staff": false,
+    "is_active": false,
+    "date_joined": "2026-05-09T22:52:44.985Z",
+    "birthdate": "2000-06-03",
+    "role": "EMPLOYEE",
+    "groups": [],
+    "user_permissions": [],
+    "departments": [
+      2
+    ],
+    "subjects": []
+  }
+},
+{
+  "model": "account.employee",
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$B8Tyml14ockzh9tl4QTJvJ$+51Tn0wjGG1G9qfsHaSZQDlVOjBpl0zg3/cMpmhOTbk=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "rousej",
+    "first_name": "Jesse",
+    "last_name": "Rouse",
+    "email": "",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2026-05-09T22:52:45.220Z",
+    "birthdate": "2000-06-04",
+    "role": "EMPLOYEE",
+    "groups": [],
+    "user_permissions": [],
+    "departments": [
+      2
+    ],
+    "subjects": [
+      "SPC"
+    ]
+  }
+},
+{
+  "model": "account.employee",
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$B8rax6sGTfL81I0D5i93F2$2hVNz+kaLvUv1nSNJmuaCag2lrS0qr6tp8UZMLQmpiE=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "dietza",
+    "first_name": "Andrew",
+    "last_name": "Dietz",
+    "email": "",
+    "is_staff": false,
+    "is_active": false,
+    "date_joined": "2026-05-09T22:52:45.456Z",
+    "birthdate": "2000-06-08",
+    "role": "EMPLOYEE",
+    "groups": [],
+    "user_permissions": [],
+    "departments": [
+      2
+    ],
+    "subjects": []
+  }
+},
+{
+  "model": "account.employee",
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$XtRpUliEE5O3oScgxQcUGO$2vNREo00rBxrJSStFcBl1SOxVa70XXym+HWpUfCQzWo=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "bradleya",
+    "first_name": "Aryanna",
+    "last_name": "Bradley",
+    "email": "",
+    "is_staff": false,
+    "is_active": false,
+    "date_joined": "2026-05-09T22:52:45.692Z",
+    "birthdate": "2000-06-10",
+    "role": "EMPLOYEE",
+    "groups": [],
+    "user_permissions": [],
+    "departments": [
+      2
+    ],
+    "subjects": []
+  }
+},
+{
+  "model": "account.employee",
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$ovnWZLeui2zWumqjouMAVc$R12Wt9QpHpu/gL3yRaL41J4OBZYK1G1ADR1TfO9/5e0=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "mcconnellb",
+    "first_name": "Becca",
+    "last_name": "McConnell",
+    "email": "",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2026-05-09T22:52:45.928Z",
+    "birthdate": "2000-06-22",
+    "role": "EMPLOYEE",
+    "groups": [],
+    "user_permissions": [],
+    "departments": [
+      4,
+      2
+    ],
+    "subjects": [
+      "ACD",
+      "ACC"
+    ]
+  }
+},
+{
+  "model": "account.employee",
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$d7vOH0OjsK2GJqjBCDy9BP$To4osJMsATa28I5Y/Zicv0Wz0XwMYSYWA9WkDrc1oP4=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "meyersw",
+    "first_name": "William",
+    "last_name": "Meyers",
+    "email": "",
+    "is_staff": false,
+    "is_active": false,
+    "date_joined": "2026-05-09T22:52:46.163Z",
+    "birthdate": "2000-06-25",
+    "role": "EMPLOYEE",
+    "groups": [],
+    "user_permissions": [],
+    "departments": [
+      2
+    ],
+    "subjects": []
+  }
+},
+{
+  "model": "account.employee",
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$2w3tTqYj8ITdLnoaQ5Spk7$xSCabeenVTtqfN+g8oinnEgx05vJxtoHvUUpCjePE3w=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "trimblev",
+    "first_name": "Viktor",
+    "last_name": "Trimble",
+    "email": "",
+    "is_staff": false,
+    "is_active": false,
+    "date_joined": "2026-05-09T22:52:46.399Z",
+    "birthdate": "2000-06-25",
+    "role": "EMPLOYEE",
+    "groups": [],
+    "user_permissions": [],
+    "departments": [
+      2
+    ],
+    "subjects": []
+  }
+},
+{
+  "model": "account.employee",
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$aDOQLfCdnIN7Qx5tlZH0TY$SVNBaMjXUS9tSN7y+3NBAffc/lwOPqd6kbAVG9wKM0E=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "holmank",
+    "first_name": "Kelyn",
+    "last_name": "Holman",
+    "email": "",
+    "is_staff": false,
+    "is_active": false,
+    "date_joined": "2026-05-09T22:52:46.633Z",
+    "birthdate": null,
+    "role": "EMPLOYEE",
+    "groups": [],
+    "user_permissions": [],
+    "departments": [
+      2
+    ],
+    "subjects": []
+  }
+},
+{
+  "model": "account.employee",
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$ZxHczs9YAm7muINOuGqRWD$sMMHlRd7dA2Gm8vgqe7plBcXkPhp5fmvC6ja1TC60eM=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "nicholasc",
+    "first_name": "Ciel",
+    "last_name": "Nicholas",
+    "email": "",
+    "is_staff": false,
+    "is_active": false,
+    "date_joined": "2026-05-09T22:52:46.868Z",
+    "birthdate": "2000-06-27",
+    "role": "EMPLOYEE",
+    "groups": [],
+    "user_permissions": [],
+    "departments": [
+      2
+    ],
+    "subjects": []
+  }
+},
+{
+  "model": "account.employee",
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$uVdPbg7ACl0XpijhYvcMZD$Ca8lFrtvqOWrzfrWQZoO2H1oL3TZPepTi/jz0VqKjrQ=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "tuckw",
+    "first_name": "Will",
+    "last_name": "Tuck",
+    "email": "",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2026-05-09T22:52:47.103Z",
+    "birthdate": "2000-06-28",
+    "role": "EMPLOYEE",
+    "groups": [],
+    "user_permissions": [],
+    "departments": [
+      4,
+      2
+    ],
+    "subjects": [
+      "CIS",
+      "MTH"
+    ]
+  }
+},
+{
+  "model": "account.employee",
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$QP9aNn6Fm6R37CAli61gpk$QcRUHHQimkUIQsOM2fmE8byoqDmNc44sRDT9ph13eQI=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "bowlesm",
+    "first_name": "Melissa",
+    "last_name": "Bowles",
+    "email": "",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2026-05-09T22:52:47.337Z",
+    "birthdate": "2000-07-01",
+    "role": "EMPLOYEE",
+    "groups": [],
+    "user_permissions": [],
+    "departments": [
+      2
+    ],
+    "subjects": [
+      "ACD",
+      "WRI"
+    ]
+  }
+},
+{
+  "model": "account.employee",
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$omF31mAaAAEfhQDpCN3n4L$uwZAU/R/SZXlrqCV0GwNdW7jJ342aU7joi7lM6fcOtg=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "leet",
+    "first_name": "Trista",
+    "last_name": "Lee",
+    "email": "",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2026-05-09T22:52:47.574Z",
+    "birthdate": "2000-07-01",
+    "role": "EMPLOYEE",
+    "groups": [],
+    "user_permissions": [],
+    "departments": [
+      5,
+      2
+    ],
+    "subjects": [
+      "MTH",
+      "SCI"
+    ]
+  }
+},
+{
+  "model": "account.employee",
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$vqxvkPWNHSNBWJuGiQFEV2$TRz3Cg+D7aMjpr6wqhtf9nFDFjKWeUNQv8TXsk+Biao=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "lindseym",
+    "first_name": "Michael",
+    "last_name": "Lindsey",
+    "email": "",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2026-05-09T22:52:47.812Z",
+    "birthdate": "2000-07-01",
+    "role": "EMPLOYEE",
+    "groups": [],
+    "user_permissions": [],
+    "departments": [
+      2
+    ],
+    "subjects": [
+      "LAN"
+    ]
+  }
+},
+{
+  "model": "account.employee",
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$PevqM3814gXnDdhrvo6GAh$SarqqGZ6HfLk1traVBqG1lyi2EsImV+sniNo0pG2p4w=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "phillipso",
+    "first_name": "Orion",
+    "last_name": "Phillips",
+    "email": "",
+    "is_staff": false,
+    "is_active": false,
+    "date_joined": "2026-05-09T22:52:48.046Z",
+    "birthdate": "2000-07-05",
+    "role": "EMPLOYEE",
+    "groups": [],
+    "user_permissions": [],
+    "departments": [
+      2
+    ],
+    "subjects": []
+  }
+},
+{
+  "model": "account.employee",
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$LviXQeNK9Hi0KOjbbpK8cw$16TxdGOGV/hceGNyz3z42QytrcLUJpostPlaZCHdGlY=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "bayramgeldiyeva",
+    "first_name": "Auguste",
+    "last_name": "Bayramgeldiyev",
+    "email": "",
+    "is_staff": false,
+    "is_active": false,
+    "date_joined": "2026-05-09T22:52:48.282Z",
+    "birthdate": "2000-07-16",
+    "role": "EMPLOYEE",
+    "groups": [],
+    "user_permissions": [],
+    "departments": [
+      2
+    ],
+    "subjects": []
+  }
+},
+{
+  "model": "account.employee",
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$gXgknBqcHb7A55gW0IZQvu$yI8rpeXevp/MvPr9Um8BQ3QC1Yibise09lhNQIg+Cs4=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "benzb",
+    "first_name": "Brooke",
+    "last_name": "Benz",
+    "email": "",
+    "is_staff": false,
+    "is_active": false,
+    "date_joined": "2026-05-09T22:52:48.516Z",
+    "birthdate": "2000-07-25",
+    "role": "EMPLOYEE",
+    "groups": [],
+    "user_permissions": [],
+    "departments": [
+      2
+    ],
+    "subjects": []
+  }
+},
+{
+  "model": "account.employee",
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$zZBT4Cha7n1C7jDdLHQrs1$G8hdkcp+WPBRf2kFqZhdxEk6m1xVPlDITN91DSHU5N0=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "daltonj",
+    "first_name": "Jake",
+    "last_name": "Dalton",
+    "email": "",
+    "is_staff": false,
+    "is_active": false,
+    "date_joined": "2026-05-09T22:52:48.752Z",
+    "birthdate": "2000-07-29",
+    "role": "EMPLOYEE",
+    "groups": [],
+    "user_permissions": [],
+    "departments": [
+      2
+    ],
+    "subjects": []
+  }
+},
+{
+  "model": "account.employee",
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$qA5r1uxNgXdUZV8FMyeU6i$f8p+VWMhcwAQCpJL+cFGFKj5otFEglnEAU/MbqLBMjc=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "laia",
+    "first_name": "Amelia",
+    "last_name": "Lai",
+    "email": "",
+    "is_staff": false,
+    "is_active": false,
+    "date_joined": "2026-05-09T22:52:48.987Z",
+    "birthdate": "2000-07-30",
+    "role": "EMPLOYEE",
+    "groups": [],
+    "user_permissions": [],
+    "departments": [
+      2
+    ],
+    "subjects": []
+  }
+},
+{
+  "model": "account.employee",
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$F1JFTYw5ulgGjNE4dZIbvm$B6wDhNdppES/ONZE73jR4hL6+gDU524pCanUgpBDK1U=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "grantb",
+    "first_name": "Becca",
+    "last_name": "Grant",
+    "email": "",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2026-05-09T22:52:49.222Z",
+    "birthdate": "2000-07-30",
+    "role": "EMPLOYEE",
+    "groups": [],
+    "user_permissions": [],
+    "departments": [
+      2
+    ],
+    "subjects": [
+      "MTH",
+      "SCI"
+    ]
+  }
+},
+{
+  "model": "account.employee",
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$mV7txLAYue9qviEa53N16n$63VZwXh9ypSqLs75t37QZNaA4sP/RINHQH0eW+9gVj8=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "deornellisk",
+    "first_name": "Kaira",
+    "last_name": "Deornellis",
+    "email": "",
+    "is_staff": false,
+    "is_active": false,
+    "date_joined": "2026-05-09T22:52:49.457Z",
+    "birthdate": "2000-08-08",
+    "role": "EMPLOYEE",
+    "groups": [],
+    "user_permissions": [],
+    "departments": [
+      2
+    ],
+    "subjects": []
+  }
+},
+{
+  "model": "account.employee",
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$J55LrnwSUvuf9DYrOSzy7m$/02XV6FvrViuhRgSuoev9r+KzMU95x3pWiKIPRX6vJM=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "wheelerm",
+    "first_name": "Marcia",
+    "last_name": "Wheeler",
+    "email": "",
+    "is_staff": false,
+    "is_active": false,
+    "date_joined": "2026-05-09T22:52:49.695Z",
+    "birthdate": "2000-08-12",
+    "role": "EMPLOYEE",
+    "groups": [],
+    "user_permissions": [],
+    "departments": [
+      2
+    ],
+    "subjects": []
+  }
+},
+{
+  "model": "account.employee",
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$kry4nRGNBEA4t8YFo0ugEY$kYTC+SEmFCWl2fjCNOtjCmuE/haC458sPmmKcZFwVtg=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "hillk",
+    "first_name": "Kyle",
+    "last_name": "Hill",
+    "email": "",
+    "is_staff": false,
+    "is_active": false,
+    "date_joined": "2026-05-09T22:52:49.929Z",
+    "birthdate": "2000-08-20",
+    "role": "EMPLOYEE",
+    "groups": [],
+    "user_permissions": [],
+    "departments": [
+      2
+    ],
+    "subjects": []
+  }
+},
+{
+  "model": "account.employee",
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$p1roc582C9RTTgLecDHFGj$qnK3rl6keQlSEdOvJ3SJCzUpYwtZaD42btPJXCQCmwE=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "leeb",
+    "first_name": "Bradley",
+    "last_name": "Lee",
+    "email": "",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2026-05-09T22:52:50.166Z",
+    "birthdate": "2000-09-04",
+    "role": "EMPLOYEE",
+    "groups": [],
+    "user_permissions": [],
+    "departments": [
+      2
+    ],
+    "subjects": [
+      "WRI"
+    ]
+  }
+},
+{
+  "model": "account.employee",
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$lFS1wJfEv0erxlwluQOvez$sPHwfJK6BGFka/W91XiBBHYpnJf+v9096klxUiugkHA=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "mcgradyt",
+    "first_name": "Tracy",
+    "last_name": "McGrady",
+    "email": "",
+    "is_staff": false,
+    "is_active": false,
+    "date_joined": "2026-05-09T22:52:50.401Z",
+    "birthdate": "2000-09-04",
+    "role": "EMPLOYEE",
+    "groups": [],
+    "user_permissions": [],
+    "departments": [
+      2
+    ],
+    "subjects": []
+  }
+},
+{
+  "model": "account.employee",
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$HMU7riXYUDwaQAF1xSaEIj$gWKloSaRAYDg4dZ4SlXsMMaL7NiN6j378trsdrnjshY=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "dillmanc",
+    "first_name": "Chuck",
+    "last_name": "Dillman",
+    "email": "",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2026-05-09T22:52:50.637Z",
+    "birthdate": "2000-10-03",
+    "role": "EMPLOYEE",
+    "groups": [],
+    "user_permissions": [],
+    "departments": [
+      2
+    ],
+    "subjects": [
+      "ACC",
+      "CIS"
+    ]
+  }
+},
+{
+  "model": "account.employee",
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$KMAyJmkywY5sGz8GR10zJ0$uyVP497ZS45raXc6kuHbWngOAFdneOjMRzP7hVuVn+E=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "pattya",
+    "first_name": "Ali",
+    "last_name": "Patty",
+    "email": "",
+    "is_staff": false,
+    "is_active": false,
+    "date_joined": "2026-05-09T22:52:50.873Z",
+    "birthdate": "2000-10-05",
+    "role": "EMPLOYEE",
+    "groups": [],
+    "user_permissions": [],
+    "departments": [
+      2
+    ],
+    "subjects": []
+  }
+},
+{
+  "model": "account.employee",
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$BvGd837yuScDvt5NeHC6iI$hhygJp1qKjh1NWSeDvc/IoIYu+Qt/p9DsPH1ok03Y1w=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "lopezk",
+    "first_name": "Kris",
+    "last_name": "Lopez",
+    "email": "",
+    "is_staff": false,
+    "is_active": false,
+    "date_joined": "2026-05-09T22:52:51.109Z",
+    "birthdate": "2000-10-11",
+    "role": "EMPLOYEE",
+    "groups": [],
+    "user_permissions": [],
+    "departments": [
+      2
+    ],
+    "subjects": []
+  }
+},
+{
+  "model": "account.employee",
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$ifxN2IlIIZpe7RrFISjeX6$yOlT+kWulmcZe8xmrESB453i1b/QG25tcDaJGPCFUt0=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "priesterc",
+    "first_name": "Corey",
+    "last_name": "Priester",
+    "email": "",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2026-05-09T22:52:51.345Z",
+    "birthdate": "2000-10-15",
+    "role": "EMPLOYEE",
+    "groups": [],
+    "user_permissions": [],
+    "departments": [
+      2
+    ],
+    "subjects": [
+      "MTC"
+    ]
+  }
+},
+{
+  "model": "account.employee",
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$0qzC6gMSDtLJo7hxtBhFW6$RbT1FyftJazyXSDBvDPQIsJUovigsmdrP1TUvGINnk4=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "gilchristc",
+    "first_name": "Christin",
+    "last_name": "Gilchrist",
+    "email": "",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2026-05-09T22:52:51.581Z",
+    "birthdate": "2000-10-17",
+    "role": "EMPLOYEE",
+    "groups": [],
+    "user_permissions": [],
+    "departments": [
+      2
+    ],
+    "subjects": [
+      "SCI"
+    ]
+  }
+},
+{
+  "model": "account.employee",
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$CEsegpddDSOzdsEl01DjBk$vHwEfEdqdKuym7QOeg9lmHrtg+HMaUmu6ed1+XfE9gQ=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "manarye",
+    "first_name": "Eve",
+    "last_name": "Manary",
+    "email": "",
+    "is_staff": false,
+    "is_active": false,
+    "date_joined": "2026-05-09T22:52:51.818Z",
+    "birthdate": "2000-11-24",
+    "role": "EMPLOYEE",
+    "groups": [],
+    "user_permissions": [],
+    "departments": [
+      2
+    ],
+    "subjects": []
+  }
+},
+{
+  "model": "account.employee",
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$W2gAk4wyRVq3xv2Hh1H5c2$9y/BA/FqiDjipMgpuaXaHwmy5Zb4Xq71pSXB1j6Hphs=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "neelyc",
+    "first_name": "Caitlyn",
+    "last_name": "Neely",
+    "email": "",
+    "is_staff": false,
+    "is_active": false,
+    "date_joined": "2026-05-09T22:52:52.054Z",
+    "birthdate": "2000-12-03",
+    "role": "EMPLOYEE",
+    "groups": [],
+    "user_permissions": [],
+    "departments": [
+      2
+    ],
+    "subjects": []
+  }
+},
+{
+  "model": "account.employee",
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$1Et88pvSdjZZqnvqbYXSuz$1lDv6xWTG1eEOQiztkM5bWTt0cdtGqYhVkitmJfFJHg=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "lorenzt",
+    "first_name": "Tres",
+    "last_name": "Lorenz",
+    "email": "",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2026-05-09T22:52:52.289Z",
+    "birthdate": "2000-12-04",
+    "role": "EMPLOYEE",
+    "groups": [],
+    "user_permissions": [],
+    "departments": [
+      2
+    ],
+    "subjects": [
+      "WRI"
+    ]
+  }
+},
+{
+  "model": "account.employee",
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$xfMjKhvadMcs8SYHxgQX4v$7nJRThGwsh7Z9NrfkOqWmggcupj8L52D5yEUWLoPdEY=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "richardsonj",
+    "first_name": "Jenean",
+    "last_name": "Richardson",
+    "email": "",
+    "is_staff": false,
+    "is_active": false,
+    "date_joined": "2026-05-09T22:52:52.524Z",
+    "birthdate": "2000-12-04",
+    "role": "EMPLOYEE",
+    "groups": [],
+    "user_permissions": [],
+    "departments": [
+      2
+    ],
+    "subjects": []
+  }
+},
+{
+  "model": "account.employee",
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$5iwk4lOCdVBJ8UnjBfz00F$Qff6WYggc6CH7zYzoFOd2fUstoxnyrM3Ne6Qw4mi+u4=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "cozortc",
+    "first_name": "Chelsea",
+    "last_name": "Cozort",
+    "email": "",
+    "is_staff": false,
+    "is_active": false,
+    "date_joined": "2026-05-09T22:52:52.761Z",
+    "birthdate": "2000-12-06",
+    "role": "EMPLOYEE",
+    "groups": [],
+    "user_permissions": [],
+    "departments": [
+      2
+    ],
+    "subjects": []
+  }
+},
+{
+  "model": "account.employee",
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$RLIVMh88WASEhO6RADIKVO$4laUPi/pOKvXEVc4EKiDjSlt0pQcmWb5hll1QuNPBnM=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "spindlerj",
+    "first_name": "Jayna",
+    "last_name": "Spindler",
+    "email": "",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2026-05-09T22:52:52.997Z",
+    "birthdate": "2000-12-07",
+    "role": "EMPLOYEE",
+    "groups": [],
+    "user_permissions": [],
+    "departments": [
+      2
+    ],
+    "subjects": [
+      "AEA"
+    ]
+  }
+},
+{
+  "model": "account.employee",
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$DrvLVrtfe1SaWlgc3YEYp7$s78afj9LnIfBqDaxkHeGwVjtSuDAheUyl9/SX5yVKfs=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "sidwello",
+    "first_name": "Olivia",
+    "last_name": "Sidwell",
+    "email": "",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2026-05-09T22:52:53.233Z",
+    "birthdate": "2000-12-23",
+    "role": "EMPLOYEE",
+    "groups": [],
+    "user_permissions": [],
+    "departments": [
+      2
+    ],
+    "subjects": [
+      "WRI"
+    ]
+  }
+},
+{
+  "model": "account.employee",
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$m5T8eWAs6hItWcdhezQhOQ$6/6zf+vSWUKn39ohixMWXrPq2u+gWpC73VNj1JTFFMU=",
+    "last_login": null,
+    "is_superuser": false,
+    "username": "macmahonm",
+    "first_name": "Matthew",
+    "last_name": "Macmahon",
+    "email": "macmahonm@otc.edu",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2026-05-09T23:15:40.640Z",
+    "birthdate": "2000-11-11",
+    "role": "EMPLOYEE",
+    "groups": [],
+    "user_permissions": [],
+    "departments": [
+      2
+    ],
+    "subjects": [
+      "ACD",
+      "SCI"
+    ]
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 313,
+  "fields": {
+    "user": [
+      "batemanb"
+    ],
+    "day_of_week": "TUE",
+    "start_time": "11:00:00",
+    "end_time": "17:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 314,
+  "fields": {
+    "user": [
+      "batemanb"
+    ],
+    "day_of_week": "FRI",
+    "start_time": "08:00:00",
+    "end_time": "12:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 315,
+  "fields": {
+    "user": [
+      "batemanb"
+    ],
+    "day_of_week": "THU",
+    "start_time": "11:00:00",
+    "end_time": "17:00:00",
+    "availability_type": "PREFERRED"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 316,
+  "fields": {
+    "user": [
+      "batemanb"
+    ],
+    "day_of_week": "MON",
+    "start_time": "12:00:00",
+    "end_time": "17:00:00",
+    "availability_type": "PREFERRED"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 317,
+  "fields": {
+    "user": [
+      "baysa"
+    ],
+    "day_of_week": "FRI",
+    "start_time": "08:00:00",
+    "end_time": "12:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 318,
+  "fields": {
+    "user": [
+      "baysa"
+    ],
+    "day_of_week": "MON",
+    "start_time": "08:00:00",
+    "end_time": "13:00:00",
+    "availability_type": "PREFERRED"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 319,
+  "fields": {
+    "user": [
+      "baysa"
+    ],
+    "day_of_week": "WED",
+    "start_time": "10:00:00",
+    "end_time": "15:00:00",
+    "availability_type": "PREFERRED"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 320,
+  "fields": {
+    "user": [
+      "baysa"
+    ],
+    "day_of_week": "TUE",
+    "start_time": "09:00:00",
+    "end_time": "14:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 321,
+  "fields": {
+    "user": [
+      "baysa"
+    ],
+    "day_of_week": "THU",
+    "start_time": "10:00:00",
+    "end_time": "15:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 322,
+  "fields": {
+    "user": [
+      "bowlesm"
+    ],
+    "day_of_week": "THU",
+    "start_time": "10:00:00",
+    "end_time": "16:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 323,
+  "fields": {
+    "user": [
+      "bowlesm"
+    ],
+    "day_of_week": "WED",
+    "start_time": "10:00:00",
+    "end_time": "16:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 324,
+  "fields": {
+    "user": [
+      "bowlesm"
+    ],
+    "day_of_week": "MON",
+    "start_time": "13:00:00",
+    "end_time": "17:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 325,
+  "fields": {
+    "user": [
+      "bowlesm"
+    ],
+    "day_of_week": "TUE",
+    "start_time": "09:00:00",
+    "end_time": "13:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 326,
+  "fields": {
+    "user": [
+      "dillmanc"
+    ],
+    "day_of_week": "WED",
+    "start_time": "12:00:00",
+    "end_time": "17:00:00",
+    "availability_type": "PREFERRED"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 327,
+  "fields": {
+    "user": [
+      "dillmanc"
+    ],
+    "day_of_week": "TUE",
+    "start_time": "11:00:00",
+    "end_time": "17:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 328,
+  "fields": {
+    "user": [
+      "dillmanc"
+    ],
+    "day_of_week": "FRI",
+    "start_time": "08:00:00",
+    "end_time": "12:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 329,
+  "fields": {
+    "user": [
+      "dillmanc"
+    ],
+    "day_of_week": "THU",
+    "start_time": "11:00:00",
+    "end_time": "15:00:00",
+    "availability_type": "PREFERRED"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 330,
+  "fields": {
+    "user": [
+      "dillmanc"
+    ],
+    "day_of_week": "MON",
+    "start_time": "11:00:00",
+    "end_time": "16:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 331,
+  "fields": {
+    "user": [
+      "fostert"
+    ],
+    "day_of_week": "TUE",
+    "start_time": "09:00:00",
+    "end_time": "16:00:00",
+    "availability_type": "PREFERRED"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 332,
+  "fields": {
+    "user": [
+      "fostert"
+    ],
+    "day_of_week": "MON",
+    "start_time": "09:00:00",
+    "end_time": "16:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 333,
+  "fields": {
+    "user": [
+      "fostert"
+    ],
+    "day_of_week": "THU",
+    "start_time": "09:00:00",
+    "end_time": "14:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 334,
+  "fields": {
+    "user": [
+      "garrottt"
+    ],
+    "day_of_week": "TUE",
+    "start_time": "12:00:00",
+    "end_time": "17:00:00",
+    "availability_type": "PREFERRED"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 335,
+  "fields": {
+    "user": [
+      "garrottt"
+    ],
+    "day_of_week": "THU",
+    "start_time": "12:00:00",
+    "end_time": "16:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 336,
+  "fields": {
+    "user": [
+      "garrottt"
+    ],
+    "day_of_week": "WED",
+    "start_time": "10:00:00",
+    "end_time": "14:00:00",
+    "availability_type": "PREFERRED"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 337,
+  "fields": {
+    "user": [
+      "garrottt"
+    ],
+    "day_of_week": "FRI",
+    "start_time": "08:00:00",
+    "end_time": "12:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 338,
+  "fields": {
+    "user": [
+      "garrottt"
+    ],
+    "day_of_week": "MON",
+    "start_time": "09:00:00",
+    "end_time": "13:00:00",
+    "availability_type": "PREFERRED"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 339,
+  "fields": {
+    "user": [
+      "gilchristc"
+    ],
+    "day_of_week": "MON",
+    "start_time": "10:00:00",
+    "end_time": "15:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 340,
+  "fields": {
+    "user": [
+      "gilchristc"
+    ],
+    "day_of_week": "TUE",
+    "start_time": "08:00:00",
+    "end_time": "13:00:00",
+    "availability_type": "PREFERRED"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 341,
+  "fields": {
+    "user": [
+      "gilchristc"
+    ],
+    "day_of_week": "FRI",
+    "start_time": "08:00:00",
+    "end_time": "12:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 342,
+  "fields": {
+    "user": [
+      "gilchristc"
+    ],
+    "day_of_week": "WED",
+    "start_time": "12:00:00",
+    "end_time": "17:00:00",
+    "availability_type": "PREFERRED"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 343,
+  "fields": {
+    "user": [
+      "gilchristc"
+    ],
+    "day_of_week": "THU",
+    "start_time": "10:00:00",
+    "end_time": "14:00:00",
+    "availability_type": "PREFERRED"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 344,
+  "fields": {
+    "user": [
+      "grantb"
+    ],
+    "day_of_week": "THU",
+    "start_time": "13:00:00",
+    "end_time": "17:00:00",
+    "availability_type": "PREFERRED"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 345,
+  "fields": {
+    "user": [
+      "grantb"
+    ],
+    "day_of_week": "FRI",
+    "start_time": "08:00:00",
+    "end_time": "12:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 346,
+  "fields": {
+    "user": [
+      "grantb"
+    ],
+    "day_of_week": "TUE",
+    "start_time": "13:00:00",
+    "end_time": "17:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 347,
+  "fields": {
+    "user": [
+      "grantb"
+    ],
+    "day_of_week": "MON",
+    "start_time": "12:00:00",
+    "end_time": "17:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 348,
+  "fields": {
+    "user": [
+      "grantb"
+    ],
+    "day_of_week": "WED",
+    "start_time": "12:00:00",
+    "end_time": "17:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 349,
+  "fields": {
+    "user": [
+      "gravess"
+    ],
+    "day_of_week": "MON",
+    "start_time": "08:00:00",
+    "end_time": "17:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 350,
+  "fields": {
+    "user": [
+      "gravess"
+    ],
+    "day_of_week": "TUE",
+    "start_time": "08:00:00",
+    "end_time": "13:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 351,
+  "fields": {
+    "user": [
+      "gravess"
+    ],
+    "day_of_week": "TUE",
+    "start_time": "13:00:00",
+    "end_time": "17:00:00",
+    "availability_type": "PREFERRED"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 352,
+  "fields": {
+    "user": [
+      "gravess"
+    ],
+    "day_of_week": "WED",
+    "start_time": "08:00:00",
+    "end_time": "13:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 353,
+  "fields": {
+    "user": [
+      "gravess"
+    ],
+    "day_of_week": "WED",
+    "start_time": "13:00:00",
+    "end_time": "17:00:00",
+    "availability_type": "PREFERRED"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 354,
+  "fields": {
+    "user": [
+      "gravess"
+    ],
+    "day_of_week": "THU",
+    "start_time": "08:00:00",
+    "end_time": "17:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 355,
+  "fields": {
+    "user": [
+      "gravess"
+    ],
+    "day_of_week": "FRI",
+    "start_time": "08:00:00",
+    "end_time": "15:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 356,
+  "fields": {
+    "user": [
+      "kinnardr"
+    ],
+    "day_of_week": "THU",
+    "start_time": "09:00:00",
+    "end_time": "13:00:00",
+    "availability_type": "PREFERRED"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 357,
+  "fields": {
+    "user": [
+      "kinnardr"
+    ],
+    "day_of_week": "MON",
+    "start_time": "08:00:00",
+    "end_time": "14:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 358,
+  "fields": {
+    "user": [
+      "kinnardr"
+    ],
+    "day_of_week": "WED",
+    "start_time": "10:00:00",
+    "end_time": "15:00:00",
+    "availability_type": "PREFERRED"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 359,
+  "fields": {
+    "user": [
+      "kinnardr"
+    ],
+    "day_of_week": "TUE",
+    "start_time": "08:00:00",
+    "end_time": "12:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 360,
+  "fields": {
+    "user": [
+      "lands"
+    ],
+    "day_of_week": "TUE",
+    "start_time": "09:00:00",
+    "end_time": "13:00:00",
+    "availability_type": "PREFERRED"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 361,
+  "fields": {
+    "user": [
+      "lands"
+    ],
+    "day_of_week": "MON",
+    "start_time": "08:00:00",
+    "end_time": "13:00:00",
+    "availability_type": "PREFERRED"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 362,
+  "fields": {
+    "user": [
+      "lands"
+    ],
+    "day_of_week": "THU",
+    "start_time": "09:00:00",
+    "end_time": "13:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 363,
+  "fields": {
+    "user": [
+      "lands"
+    ],
+    "day_of_week": "WED",
+    "start_time": "08:00:00",
+    "end_time": "13:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 364,
+  "fields": {
+    "user": [
+      "leeb"
+    ],
+    "day_of_week": "MON",
+    "start_time": "13:00:00",
+    "end_time": "17:00:00",
+    "availability_type": "PREFERRED"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 365,
+  "fields": {
+    "user": [
+      "leeb"
+    ],
+    "day_of_week": "WED",
+    "start_time": "10:00:00",
+    "end_time": "14:00:00",
+    "availability_type": "PREFERRED"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 366,
+  "fields": {
+    "user": [
+      "leeb"
+    ],
+    "day_of_week": "FRI",
+    "start_time": "08:00:00",
+    "end_time": "12:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 367,
+  "fields": {
+    "user": [
+      "leeb"
+    ],
+    "day_of_week": "TUE",
+    "start_time": "09:00:00",
+    "end_time": "15:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 368,
+  "fields": {
+    "user": [
+      "leeb"
+    ],
+    "day_of_week": "THU",
+    "start_time": "11:00:00",
+    "end_time": "17:00:00",
+    "availability_type": "PREFERRED"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 369,
+  "fields": {
+    "user": [
+      "leet"
+    ],
+    "day_of_week": "MON",
+    "start_time": "08:00:00",
+    "end_time": "12:00:00",
+    "availability_type": "PREFERRED"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 370,
+  "fields": {
+    "user": [
+      "leet"
+    ],
+    "day_of_week": "MON",
+    "start_time": "12:00:00",
+    "end_time": "17:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 371,
+  "fields": {
+    "user": [
+      "leet"
+    ],
+    "day_of_week": "TUE",
+    "start_time": "08:00:00",
+    "end_time": "17:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 372,
+  "fields": {
+    "user": [
+      "leet"
+    ],
+    "day_of_week": "WED",
+    "start_time": "08:00:00",
+    "end_time": "12:00:00",
+    "availability_type": "PREFERRED"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 373,
+  "fields": {
+    "user": [
+      "leet"
+    ],
+    "day_of_week": "WED",
+    "start_time": "12:00:00",
+    "end_time": "17:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 374,
+  "fields": {
+    "user": [
+      "leet"
+    ],
+    "day_of_week": "THU",
+    "start_time": "08:00:00",
+    "end_time": "17:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 375,
+  "fields": {
+    "user": [
+      "leet"
+    ],
+    "day_of_week": "FRI",
+    "start_time": "08:00:00",
+    "end_time": "15:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 376,
+  "fields": {
+    "user": [
+      "lindseym"
+    ],
+    "day_of_week": "WED",
+    "start_time": "11:00:00",
+    "end_time": "17:00:00",
+    "availability_type": "PREFERRED"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 377,
+  "fields": {
+    "user": [
+      "lindseym"
+    ],
+    "day_of_week": "FRI",
+    "start_time": "08:00:00",
+    "end_time": "12:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 378,
+  "fields": {
+    "user": [
+      "lindseym"
+    ],
+    "day_of_week": "TUE",
+    "start_time": "08:00:00",
+    "end_time": "13:00:00",
+    "availability_type": "PREFERRED"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 379,
+  "fields": {
+    "user": [
+      "lindseym"
+    ],
+    "day_of_week": "MON",
+    "start_time": "13:00:00",
+    "end_time": "17:00:00",
+    "availability_type": "PREFERRED"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 380,
+  "fields": {
+    "user": [
+      "lindseym"
+    ],
+    "day_of_week": "THU",
+    "start_time": "10:00:00",
+    "end_time": "14:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 381,
+  "fields": {
+    "user": [
+      "lorenzt"
+    ],
+    "day_of_week": "WED",
+    "start_time": "11:00:00",
+    "end_time": "15:00:00",
+    "availability_type": "PREFERRED"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 382,
+  "fields": {
+    "user": [
+      "lorenzt"
+    ],
+    "day_of_week": "TUE",
+    "start_time": "12:00:00",
+    "end_time": "17:00:00",
+    "availability_type": "PREFERRED"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 383,
+  "fields": {
+    "user": [
+      "lorenzt"
+    ],
+    "day_of_week": "FRI",
+    "start_time": "08:00:00",
+    "end_time": "12:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 384,
+  "fields": {
+    "user": [
+      "lorenzt"
+    ],
+    "day_of_week": "THU",
+    "start_time": "11:00:00",
+    "end_time": "16:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 385,
+  "fields": {
+    "user": [
+      "lorenzt"
+    ],
+    "day_of_week": "MON",
+    "start_time": "12:00:00",
+    "end_time": "17:00:00",
+    "availability_type": "PREFERRED"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 386,
+  "fields": {
+    "user": [
+      "macmahonm"
+    ],
+    "day_of_week": "FRI",
+    "start_time": "08:00:00",
+    "end_time": "12:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 387,
+  "fields": {
+    "user": [
+      "macmahonm"
+    ],
+    "day_of_week": "WED",
+    "start_time": "08:00:00",
+    "end_time": "13:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 388,
+  "fields": {
+    "user": [
+      "macmahonm"
+    ],
+    "day_of_week": "TUE",
+    "start_time": "09:00:00",
+    "end_time": "14:00:00",
+    "availability_type": "PREFERRED"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 389,
+  "fields": {
+    "user": [
+      "macmahonm"
+    ],
+    "day_of_week": "THU",
+    "start_time": "09:00:00",
+    "end_time": "13:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 390,
+  "fields": {
+    "user": [
+      "macmahonm"
+    ],
+    "day_of_week": "MON",
+    "start_time": "10:00:00",
+    "end_time": "14:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 391,
+  "fields": {
+    "user": [
+      "mcconnellb"
+    ],
+    "day_of_week": "TUE",
+    "start_time": "09:00:00",
+    "end_time": "14:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 392,
+  "fields": {
+    "user": [
+      "mcconnellb"
+    ],
+    "day_of_week": "MON",
+    "start_time": "09:00:00",
+    "end_time": "16:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 393,
+  "fields": {
+    "user": [
+      "mcconnellb"
+    ],
+    "day_of_week": "WED",
+    "start_time": "08:00:00",
+    "end_time": "13:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 394,
+  "fields": {
+    "user": [
+      "mcconnellb"
+    ],
+    "day_of_week": "THU",
+    "start_time": "09:00:00",
+    "end_time": "14:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 395,
+  "fields": {
+    "user": [
+      "metcalfh"
+    ],
+    "day_of_week": "FRI",
+    "start_time": "08:00:00",
+    "end_time": "12:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 396,
+  "fields": {
+    "user": [
+      "metcalfh"
+    ],
+    "day_of_week": "TUE",
+    "start_time": "10:00:00",
+    "end_time": "15:00:00",
+    "availability_type": "PREFERRED"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 397,
+  "fields": {
+    "user": [
+      "metcalfh"
+    ],
+    "day_of_week": "MON",
+    "start_time": "10:00:00",
+    "end_time": "16:00:00",
+    "availability_type": "PREFERRED"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 398,
+  "fields": {
+    "user": [
+      "metcalfh"
+    ],
+    "day_of_week": "THU",
+    "start_time": "09:00:00",
+    "end_time": "13:00:00",
+    "availability_type": "PREFERRED"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 399,
+  "fields": {
+    "user": [
+      "metcalfh"
+    ],
+    "day_of_week": "WED",
+    "start_time": "09:00:00",
+    "end_time": "13:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 400,
+  "fields": {
+    "user": [
+      "pattersonе"
+    ],
+    "day_of_week": "MON",
+    "start_time": "08:00:00",
+    "end_time": "17:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 401,
+  "fields": {
+    "user": [
+      "pattersonе"
+    ],
+    "day_of_week": "TUE",
+    "start_time": "08:00:00",
+    "end_time": "17:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 402,
+  "fields": {
+    "user": [
+      "pattersonе"
+    ],
+    "day_of_week": "WED",
+    "start_time": "08:00:00",
+    "end_time": "17:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 403,
+  "fields": {
+    "user": [
+      "pattersonе"
+    ],
+    "day_of_week": "THU",
+    "start_time": "08:00:00",
+    "end_time": "13:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 404,
+  "fields": {
+    "user": [
+      "pattersonе"
+    ],
+    "day_of_week": "THU",
+    "start_time": "13:00:00",
+    "end_time": "17:00:00",
+    "availability_type": "PREFERRED"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 405,
+  "fields": {
+    "user": [
+      "pattersonе"
+    ],
+    "day_of_week": "FRI",
+    "start_time": "08:00:00",
+    "end_time": "15:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 406,
+  "fields": {
+    "user": [
+      "priesterc"
+    ],
+    "day_of_week": "MON",
+    "start_time": "13:00:00",
+    "end_time": "17:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 407,
+  "fields": {
+    "user": [
+      "priesterc"
+    ],
+    "day_of_week": "THU",
+    "start_time": "08:00:00",
+    "end_time": "14:00:00",
+    "availability_type": "PREFERRED"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 408,
+  "fields": {
+    "user": [
+      "priesterc"
+    ],
+    "day_of_week": "FRI",
+    "start_time": "08:00:00",
+    "end_time": "12:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 409,
+  "fields": {
+    "user": [
+      "priesterc"
+    ],
+    "day_of_week": "WED",
+    "start_time": "09:00:00",
+    "end_time": "14:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 410,
+  "fields": {
+    "user": [
+      "priesterc"
+    ],
+    "day_of_week": "TUE",
+    "start_time": "10:00:00",
+    "end_time": "15:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 411,
+  "fields": {
+    "user": [
+      "quinnm"
+    ],
+    "day_of_week": "MON",
+    "start_time": "08:00:00",
+    "end_time": "12:00:00",
+    "availability_type": "PREFERRED"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 412,
+  "fields": {
+    "user": [
+      "quinnm"
+    ],
+    "day_of_week": "MON",
+    "start_time": "12:00:00",
+    "end_time": "17:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 413,
+  "fields": {
+    "user": [
+      "quinnm"
+    ],
+    "day_of_week": "TUE",
+    "start_time": "08:00:00",
+    "end_time": "12:00:00",
+    "availability_type": "PREFERRED"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 414,
+  "fields": {
+    "user": [
+      "quinnm"
+    ],
+    "day_of_week": "TUE",
+    "start_time": "12:00:00",
+    "end_time": "17:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 415,
+  "fields": {
+    "user": [
+      "quinnm"
+    ],
+    "day_of_week": "WED",
+    "start_time": "08:00:00",
+    "end_time": "17:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 416,
+  "fields": {
+    "user": [
+      "quinnm"
+    ],
+    "day_of_week": "THU",
+    "start_time": "08:00:00",
+    "end_time": "17:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 417,
+  "fields": {
+    "user": [
+      "quinnm"
+    ],
+    "day_of_week": "FRI",
+    "start_time": "08:00:00",
+    "end_time": "15:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 418,
+  "fields": {
+    "user": [
+      "ricew"
+    ],
+    "day_of_week": "TUE",
+    "start_time": "10:00:00",
+    "end_time": "16:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 419,
+  "fields": {
+    "user": [
+      "ricew"
+    ],
+    "day_of_week": "FRI",
+    "start_time": "08:00:00",
+    "end_time": "12:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 420,
+  "fields": {
+    "user": [
+      "ricew"
+    ],
+    "day_of_week": "WED",
+    "start_time": "10:00:00",
+    "end_time": "15:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 421,
+  "fields": {
+    "user": [
+      "ricew"
+    ],
+    "day_of_week": "THU",
+    "start_time": "10:00:00",
+    "end_time": "16:00:00",
+    "availability_type": "PREFERRED"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 422,
+  "fields": {
+    "user": [
+      "rousej"
+    ],
+    "day_of_week": "WED",
+    "start_time": "12:00:00",
+    "end_time": "17:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 423,
+  "fields": {
+    "user": [
+      "rousej"
+    ],
+    "day_of_week": "FRI",
+    "start_time": "08:00:00",
+    "end_time": "12:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 424,
+  "fields": {
+    "user": [
+      "rousej"
+    ],
+    "day_of_week": "THU",
+    "start_time": "12:00:00",
+    "end_time": "17:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 425,
+  "fields": {
+    "user": [
+      "rousej"
+    ],
+    "day_of_week": "TUE",
+    "start_time": "12:00:00",
+    "end_time": "17:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 426,
+  "fields": {
+    "user": [
+      "rousej"
+    ],
+    "day_of_week": "MON",
+    "start_time": "12:00:00",
+    "end_time": "17:00:00",
+    "availability_type": "PREFERRED"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 427,
+  "fields": {
+    "user": [
+      "rowana"
+    ],
+    "day_of_week": "MON",
+    "start_time": "08:00:00",
+    "end_time": "13:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 428,
+  "fields": {
+    "user": [
+      "rowana"
+    ],
+    "day_of_week": "MON",
+    "start_time": "13:00:00",
+    "end_time": "17:00:00",
+    "availability_type": "PREFERRED"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 429,
+  "fields": {
+    "user": [
+      "rowana"
+    ],
+    "day_of_week": "TUE",
+    "start_time": "08:00:00",
+    "end_time": "17:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 430,
+  "fields": {
+    "user": [
+      "rowana"
+    ],
+    "day_of_week": "WED",
+    "start_time": "08:00:00",
+    "end_time": "17:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 431,
+  "fields": {
+    "user": [
+      "rowana"
+    ],
+    "day_of_week": "THU",
+    "start_time": "08:00:00",
+    "end_time": "12:00:00",
+    "availability_type": "PREFERRED"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 432,
+  "fields": {
+    "user": [
+      "rowana"
+    ],
+    "day_of_week": "THU",
+    "start_time": "12:00:00",
+    "end_time": "17:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 433,
+  "fields": {
+    "user": [
+      "rowana"
+    ],
+    "day_of_week": "FRI",
+    "start_time": "08:00:00",
+    "end_time": "15:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 434,
+  "fields": {
+    "user": [
+      "sidwello"
+    ],
+    "day_of_week": "WED",
+    "start_time": "10:00:00",
+    "end_time": "15:00:00",
+    "availability_type": "PREFERRED"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 435,
+  "fields": {
+    "user": [
+      "sidwello"
+    ],
+    "day_of_week": "FRI",
+    "start_time": "08:00:00",
+    "end_time": "12:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 436,
+  "fields": {
+    "user": [
+      "sidwello"
+    ],
+    "day_of_week": "TUE",
+    "start_time": "08:00:00",
+    "end_time": "12:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 437,
+  "fields": {
+    "user": [
+      "sidwello"
+    ],
+    "day_of_week": "MON",
+    "start_time": "08:00:00",
+    "end_time": "14:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 438,
+  "fields": {
+    "user": [
+      "sidwello"
+    ],
+    "day_of_week": "THU",
+    "start_time": "09:00:00",
+    "end_time": "14:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 439,
+  "fields": {
+    "user": [
+      "smitha"
+    ],
+    "day_of_week": "MON",
+    "start_time": "08:00:00",
+    "end_time": "12:00:00",
+    "availability_type": "PREFERRED"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 440,
+  "fields": {
+    "user": [
+      "smitha"
+    ],
+    "day_of_week": "MON",
+    "start_time": "12:00:00",
+    "end_time": "17:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 441,
+  "fields": {
+    "user": [
+      "smitha"
+    ],
+    "day_of_week": "TUE",
+    "start_time": "08:00:00",
+    "end_time": "12:00:00",
+    "availability_type": "PREFERRED"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 442,
+  "fields": {
+    "user": [
+      "smitha"
+    ],
+    "day_of_week": "TUE",
+    "start_time": "12:00:00",
+    "end_time": "17:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 443,
+  "fields": {
+    "user": [
+      "smitha"
+    ],
+    "day_of_week": "WED",
+    "start_time": "08:00:00",
+    "end_time": "17:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 444,
+  "fields": {
+    "user": [
+      "smitha"
+    ],
+    "day_of_week": "THU",
+    "start_time": "08:00:00",
+    "end_time": "17:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 445,
+  "fields": {
+    "user": [
+      "smitha"
+    ],
+    "day_of_week": "FRI",
+    "start_time": "08:00:00",
+    "end_time": "15:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 446,
+  "fields": {
+    "user": [
+      "snodgrassc"
+    ],
+    "day_of_week": "MON",
+    "start_time": "08:00:00",
+    "end_time": "12:00:00",
+    "availability_type": "PREFERRED"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 447,
+  "fields": {
+    "user": [
+      "snodgrassc"
+    ],
+    "day_of_week": "MON",
+    "start_time": "12:00:00",
+    "end_time": "17:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 448,
+  "fields": {
+    "user": [
+      "snodgrassc"
+    ],
+    "day_of_week": "TUE",
+    "start_time": "08:00:00",
+    "end_time": "17:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 449,
+  "fields": {
+    "user": [
+      "snodgrassc"
+    ],
+    "day_of_week": "WED",
+    "start_time": "08:00:00",
+    "end_time": "17:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 450,
+  "fields": {
+    "user": [
+      "snodgrassc"
+    ],
+    "day_of_week": "THU",
+    "start_time": "08:00:00",
+    "end_time": "17:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 451,
+  "fields": {
+    "user": [
+      "snodgrassc"
+    ],
+    "day_of_week": "FRI",
+    "start_time": "08:00:00",
+    "end_time": "15:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 452,
+  "fields": {
+    "user": [
+      "spindlerj"
+    ],
+    "day_of_week": "TUE",
+    "start_time": "13:00:00",
+    "end_time": "17:00:00",
+    "availability_type": "PREFERRED"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 453,
+  "fields": {
+    "user": [
+      "spindlerj"
+    ],
+    "day_of_week": "WED",
+    "start_time": "11:00:00",
+    "end_time": "17:00:00",
+    "availability_type": "PREFERRED"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 454,
+  "fields": {
+    "user": [
+      "spindlerj"
+    ],
+    "day_of_week": "MON",
+    "start_time": "13:00:00",
+    "end_time": "17:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 455,
+  "fields": {
+    "user": [
+      "spindlerj"
+    ],
+    "day_of_week": "THU",
+    "start_time": "12:00:00",
+    "end_time": "17:00:00",
+    "availability_type": "PREFERRED"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 456,
+  "fields": {
+    "user": [
+      "swearingena"
+    ],
+    "day_of_week": "MON",
+    "start_time": "08:00:00",
+    "end_time": "17:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 457,
+  "fields": {
+    "user": [
+      "swearingena"
+    ],
+    "day_of_week": "TUE",
+    "start_time": "08:00:00",
+    "end_time": "13:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 458,
+  "fields": {
+    "user": [
+      "swearingena"
+    ],
+    "day_of_week": "TUE",
+    "start_time": "13:00:00",
+    "end_time": "17:00:00",
+    "availability_type": "PREFERRED"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 459,
+  "fields": {
+    "user": [
+      "swearingena"
+    ],
+    "day_of_week": "WED",
+    "start_time": "08:00:00",
+    "end_time": "17:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 460,
+  "fields": {
+    "user": [
+      "swearingena"
+    ],
+    "day_of_week": "THU",
+    "start_time": "08:00:00",
+    "end_time": "13:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 461,
+  "fields": {
+    "user": [
+      "swearingena"
+    ],
+    "day_of_week": "THU",
+    "start_time": "13:00:00",
+    "end_time": "17:00:00",
+    "availability_type": "PREFERRED"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 462,
+  "fields": {
+    "user": [
+      "swearingena"
+    ],
+    "day_of_week": "FRI",
+    "start_time": "08:00:00",
+    "end_time": "15:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 463,
+  "fields": {
+    "user": [
+      "templetond"
+    ],
+    "day_of_week": "MON",
+    "start_time": "08:00:00",
+    "end_time": "17:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 464,
+  "fields": {
+    "user": [
+      "templetond"
+    ],
+    "day_of_week": "TUE",
+    "start_time": "08:00:00",
+    "end_time": "17:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 465,
+  "fields": {
+    "user": [
+      "templetond"
+    ],
+    "day_of_week": "WED",
+    "start_time": "08:00:00",
+    "end_time": "12:00:00",
+    "availability_type": "PREFERRED"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 466,
+  "fields": {
+    "user": [
+      "templetond"
+    ],
+    "day_of_week": "WED",
+    "start_time": "12:00:00",
+    "end_time": "17:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 467,
+  "fields": {
+    "user": [
+      "templetond"
+    ],
+    "day_of_week": "THU",
+    "start_time": "08:00:00",
+    "end_time": "12:00:00",
+    "availability_type": "PREFERRED"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 468,
+  "fields": {
+    "user": [
+      "templetond"
+    ],
+    "day_of_week": "THU",
+    "start_time": "12:00:00",
+    "end_time": "17:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 469,
+  "fields": {
+    "user": [
+      "templetond"
+    ],
+    "day_of_week": "FRI",
+    "start_time": "08:00:00",
+    "end_time": "15:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 470,
+  "fields": {
+    "user": [
+      "tuckw"
+    ],
+    "day_of_week": "TUE",
+    "start_time": "09:00:00",
+    "end_time": "14:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 471,
+  "fields": {
+    "user": [
+      "tuckw"
+    ],
+    "day_of_week": "MON",
+    "start_time": "08:00:00",
+    "end_time": "15:00:00",
+    "availability_type": "PREFERRED"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 472,
+  "fields": {
+    "user": [
+      "tuckw"
+    ],
+    "day_of_week": "WED",
+    "start_time": "08:00:00",
+    "end_time": "14:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 473,
+  "fields": {
+    "user": [
+      "welchs"
+    ],
+    "day_of_week": "MON",
+    "start_time": "08:00:00",
+    "end_time": "13:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 474,
+  "fields": {
+    "user": [
+      "welchs"
+    ],
+    "day_of_week": "MON",
+    "start_time": "13:00:00",
+    "end_time": "17:00:00",
+    "availability_type": "PREFERRED"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 475,
+  "fields": {
+    "user": [
+      "welchs"
+    ],
+    "day_of_week": "TUE",
+    "start_time": "08:00:00",
+    "end_time": "17:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 476,
+  "fields": {
+    "user": [
+      "welchs"
+    ],
+    "day_of_week": "WED",
+    "start_time": "08:00:00",
+    "end_time": "17:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 477,
+  "fields": {
+    "user": [
+      "welchs"
+    ],
+    "day_of_week": "THU",
+    "start_time": "08:00:00",
+    "end_time": "17:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 478,
+  "fields": {
+    "user": [
+      "welchs"
+    ],
+    "day_of_week": "FRI",
+    "start_time": "08:00:00",
+    "end_time": "15:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 479,
+  "fields": {
+    "user": [
+      "westbrookm"
+    ],
+    "day_of_week": "TUE",
+    "start_time": "09:00:00",
+    "end_time": "14:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 480,
+  "fields": {
+    "user": [
+      "westbrookm"
+    ],
+    "day_of_week": "THU",
+    "start_time": "08:00:00",
+    "end_time": "13:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 481,
+  "fields": {
+    "user": [
+      "westbrookm"
+    ],
+    "day_of_week": "FRI",
+    "start_time": "08:00:00",
+    "end_time": "12:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 482,
+  "fields": {
+    "user": [
+      "westbrookm"
+    ],
+    "day_of_week": "WED",
+    "start_time": "08:00:00",
+    "end_time": "13:00:00",
+    "availability_type": "PREFERRED"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 483,
+  "fields": {
+    "user": [
+      "westbrookm"
+    ],
+    "day_of_week": "MON",
+    "start_time": "08:00:00",
+    "end_time": "13:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 484,
+  "fields": {
+    "user": [
+      "worthamg"
+    ],
+    "day_of_week": "TUE",
+    "start_time": "09:00:00",
+    "end_time": "14:00:00",
+    "availability_type": "PREFERRED"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 485,
+  "fields": {
+    "user": [
+      "worthamg"
+    ],
+    "day_of_week": "WED",
+    "start_time": "08:00:00",
+    "end_time": "14:00:00",
+    "availability_type": "PREFERRED"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 486,
+  "fields": {
+    "user": [
+      "worthamg"
+    ],
+    "day_of_week": "MON",
+    "start_time": "09:00:00",
+    "end_time": "15:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 487,
+  "fields": {
+    "user": [
+      "worthamg"
+    ],
+    "day_of_week": "FRI",
+    "start_time": "08:00:00",
+    "end_time": "12:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.operatinghours",
+  "pk": 1,
+  "fields": {
+    "day_of_week": "MON",
+    "start_time": "08:00:00",
+    "end_time": "17:00:00"
+  }
+},
+{
+  "model": "scheduling.operatinghours",
+  "pk": 2,
+  "fields": {
+    "day_of_week": "TUE",
+    "start_time": "08:00:00",
+    "end_time": "17:00:00"
+  }
+},
+{
+  "model": "scheduling.operatinghours",
+  "pk": 3,
+  "fields": {
+    "day_of_week": "WED",
+    "start_time": "08:00:00",
+    "end_time": "17:00:00"
+  }
+},
+{
+  "model": "scheduling.operatinghours",
+  "pk": 4,
+  "fields": {
+    "day_of_week": "THU",
+    "start_time": "08:00:00",
+    "end_time": "17:00:00"
+  }
+},
+{
+  "model": "scheduling.operatinghours",
+  "pk": 5,
+  "fields": {
+    "day_of_week": "FRI",
+    "start_time": "08:00:00",
+    "end_time": "15:00:00"
+  }
+},
+{
+  "model": "scheduling.subject",
+  "pk": 1,
+  "fields": {
+    "department": 2,
+    "name": "Math",
+    "locations": "Drop-in,Coach",
+    "account_subject_code": "MTH"
+  }
+},
+{
+  "model": "scheduling.subject",
+  "pk": 2,
+  "fields": {
+    "department": 2,
+    "name": "Accounting",
+    "locations": "",
+    "account_subject_code": "ACC"
+  }
+},
+{
+  "model": "scheduling.subject",
+  "pk": 3,
+  "fields": {
+    "department": 2,
+    "name": "CIS",
+    "locations": "",
+    "account_subject_code": "CIS"
+  }
+},
+{
+  "model": "scheduling.subject",
+  "pk": 4,
+  "fields": {
+    "department": 2,
+    "name": "Writing",
+    "locations": "",
+    "account_subject_code": "WRI"
+  }
+},
+{
+  "model": "scheduling.subject",
+  "pk": 5,
+  "fields": {
+    "department": 2,
+    "name": "Speech",
+    "locations": "",
+    "account_subject_code": "SPC"
+  }
+},
+{
+  "model": "scheduling.subject",
+  "pk": 6,
+  "fields": {
+    "department": 2,
+    "name": "Science",
+    "locations": "",
+    "account_subject_code": "SCI"
+  }
+},
+{
+  "model": "scheduling.subject",
+  "pk": 7,
+  "fields": {
+    "department": 2,
+    "name": "Academic Coaching",
+    "locations": "",
+    "account_subject_code": "ACD"
+  }
+}
+]

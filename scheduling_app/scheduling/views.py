@@ -11,7 +11,7 @@ from .forms import OpenHoursForm, DateOperatingHoursForm
 
 
 DEPT_LOCATIONS = {
-    'Arc Assistant I': ['WC', 'TLC', 'ZOOM'],
+    'Arc Assistant I': ['WC', 'TLC', 'ZOOM', 'LIB'],
 }
 
 PARTTIME_WEEKLY_MAX = 19.5  # hours — applies to all part-time employees
