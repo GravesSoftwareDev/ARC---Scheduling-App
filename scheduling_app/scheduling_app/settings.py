@@ -36,6 +36,11 @@ DEBUG = env_bool(os.environ.get('DJANGO_DEBUG', 'True'))
 
 ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', 'localhost 127.0.0.1').split() + ['healthcheck.railway.app']
 
+# Railway injects RAILWAY_PUBLIC_DOMAIN automatically — no manual env var needed
+_railway_domain = os.environ.get('RAILWAY_PUBLIC_DOMAIN')
+if _railway_domain:
+    ALLOWED_HOSTS.append(_railway_domain)
+
 
 # Application definition
 
