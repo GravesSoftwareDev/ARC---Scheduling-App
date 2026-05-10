@@ -105,7 +105,13 @@
       </div>
       {% endif %}
 
-      <div class="hourly-calendar schedule-calendar">
+      <div class="mobile-day-nav" id="mobile-day-nav">
+        <button class="day-nav-btn" id="day-nav-prev" aria-label="Previous day">&#8592;</button>
+        <span class="day-nav-label" id="day-nav-label"></span>
+        <button class="day-nav-btn" id="day-nav-next" aria-label="Next day">&#8594;</button>
+      </div>
+
+      <div class="hourly-calendar schedule-calendar" id="schedule-calendar">
         <div class="calendar-header" style="grid-template-columns: 72px repeat(5, 1fr);">
           <div class="hour-column"></div>
           {% for day in days_display %}
@@ -151,4 +157,59 @@
     </div>
   </div>
 </div>
+
+<script>
+(function () {
+  var cal = document.getElementById('schedule-calendar');
+  if (!cal) return;
+
+  var labelEl = document.getElementById('day-nav-label');
+  var prevBtn = document.getElementById('day-nav-prev');
+  var nextBtn = document.getElementById('day-nav-next');
+  var dayHeaders = cal.querySelectorAll('.calendar-header .day-header');
+  var numDays = dayHeaders.length;
+  var mq = window.matchMedia('(max-width: 625px)');
+
+  var todayIdx = 0;
+  dayHeaders.forEach(function (h, i) {
+    if (h.classList.contains('day-header-today')) todayIdx = i;
+  });
+  var activeDay = todayIdx;
+
+  function updateLabel() {
+    var h = dayHeaders[activeDay];
+    var full = h.querySelector('.day-full') ? h.querySelector('.day-full').textContent.trim() : '';
+    var date = h.querySelector('.day-date-num') ? h.querySelector('.day-date-num').textContent.trim() : '';
+    labelEl.textContent = full + (date ? ' · ' + date : '');
+    prevBtn.disabled = activeDay === 0;
+    nextBtn.disabled = activeDay === numDays - 1;
+  }
+
+  function setDay(idx) {
+    activeDay = idx;
+    cal.dataset.activeDay = idx;
+    updateLabel();
+  }
+
+  function applyBreakpoint() {
+    if (mq.matches) {
+      setDay(activeDay);
+    } else {
+      delete cal.dataset.activeDay;
+    }
+    updateLabel();
+  }
+
+  prevBtn.addEventListener('click', function () {
+    if (activeDay > 0) setDay(activeDay - 1);
+  });
+
+  nextBtn.addEventListener('click', function () {
+    if (activeDay < numDays - 1) setDay(activeDay + 1);
+  });
+
+  mq.addEventListener('change', applyBreakpoint);
+  applyBreakpoint();
+}());
+</script>
 {% endblock %}

@@ -604,6 +604,83 @@ a:hover {
     }
 }
 
+/* Mobile day navigator */
+.mobile-day-nav {
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%);
+    color: white;
+    border-radius: 8px 8px 0 0;
+    padding: 8px 12px;
+}
+
+.day-nav-btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    font-size: 18px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+    flex-shrink: 0;
+}
+
+.day-nav-btn:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.35);
+}
+
+.day-nav-btn:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
+.day-nav-label {
+    font-weight: 600;
+    font-size: 15px;
+    text-align: center;
+}
+
+@media (max-width: 625px) {
+    .mobile-day-nav {
+        display: flex;
+    }
+
+    .mobile-day-nav + .hourly-calendar {
+        border-radius: 0 0 8px 8px;
+    }
+
+    .schedule-calendar[data-active-day] .calendar-header,
+    .schedule-calendar[data-active-day] .calendar-row {
+        grid-template-columns: 72px 1fr !important;
+    }
+
+    .schedule-calendar[data-active-day] .calendar-header .day-header,
+    .schedule-calendar[data-active-day] .calendar-row .hour-cell {
+        display: none;
+    }
+
+    .schedule-calendar[data-active-day="0"] .calendar-header .day-header:nth-child(2),
+    .schedule-calendar[data-active-day="0"] .calendar-row .hour-cell:nth-child(2) { display: block; }
+
+    .schedule-calendar[data-active-day="1"] .calendar-header .day-header:nth-child(3),
+    .schedule-calendar[data-active-day="1"] .calendar-row .hour-cell:nth-child(3) { display: block; }
+
+    .schedule-calendar[data-active-day="2"] .calendar-header .day-header:nth-child(4),
+    .schedule-calendar[data-active-day="2"] .calendar-row .hour-cell:nth-child(4) { display: block; }
+
+    .schedule-calendar[data-active-day="3"] .calendar-header .day-header:nth-child(5),
+    .schedule-calendar[data-active-day="3"] .calendar-row .hour-cell:nth-child(5) { display: block; }
+
+    .schedule-calendar[data-active-day="4"] .calendar-header .day-header:nth-child(6),
+    .schedule-calendar[data-active-day="4"] .calendar-row .hour-cell:nth-child(6) { display: block; }
+}
+
 
 /* Registration & Admin Forms */
 .registration-container {
