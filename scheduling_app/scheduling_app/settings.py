@@ -34,7 +34,12 @@ SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-fallback-secre
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env_bool(os.environ.get('DJANGO_DEBUG', 'False'))
 
-ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', 'localhost 127.0.0.1').split() + ['healthcheck.railway.app', 'arc.gravessoftware.dev']
+_allowed = os.environ.get('DJANGO_ALLOWED_HOSTS', 'localhost 127.0.0.1 arc.gravessoftware.dev').split()
+_railway_domain = os.environ.get('RAILWAY_PRIVATE_DOMAIN')
+if _railway_domain:
+    _allowed.append(_railway_domain)
+_allowed.extend(['healthcheck.railway.app'])
+ALLOWED_HOSTS = _allowed
 
 # Application definition
 
