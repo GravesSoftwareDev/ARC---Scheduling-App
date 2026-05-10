@@ -101,6 +101,16 @@ def _is_admin(user):
     return user.is_authenticated and user.role == 'ADMIN'
 
 
+def _is_parttime(emp):
+    """True if emp is subject to the 19.5 hr/week scheduling cap."""
+    dept_names = {d.name for d in emp.departments.all()}
+    if emp.role in ('ADMIN', 'SCHEDULER'):
+        return False
+    if dept_names & {'Supervisor', 'Director'}:
+        return False
+    return True
+
+
 # ── availability ─────────────────────────────────────────────────────────────
 
 @login_required
@@ -302,7 +312,7 @@ def schedule_builder(request):
     # Employees visible in the sidebar — filtered by dept, then narrowed by subject
     # when the subject has an account_subject_code link set
     if active_dept:
-        emp_qs = Employee.objects.filter(departments=active_dept).distinct()
+        emp_qs = Employee.objects.filter(departments=active_dept).distinct().prefetch_related('departments')
         if active_subject and active_subject.account_subject_code:
             emp_qs = emp_qs.filter(subjects__code=active_subject.account_subject_code)
         visible_employees = list(emp_qs.order_by('last_name', 'first_name'))
@@ -346,6 +356,23 @@ def schedule_builder(request):
     else:
         conflict_data = {}
 
+    # Part-time flag + hours already scheduled in other contexts this week
+    parttime_flags = {}
+    other_hours_map = {}
+    if visible_employees:
+        for emp in visible_employees:
+            is_pt = _is_parttime(emp)
+            parttime_flags[emp.pk] = is_pt
+            if is_pt:
+                total_mins = sum(
+                    (e.end_time.hour * 60 + e.end_time.minute)
+                    - (e.start_time.hour * 60 + e.start_time.minute)
+                    for e in conflict_qs.filter(user=emp)
+                )
+                other_hours_map[emp.pk] = round(total_mins / 60, 2)
+            else:
+                other_hours_map[emp.pk] = 0
+
     # Operating hours per day
     day_hours = {}
     for d in week_dates:
@@ -370,14 +397,69 @@ def schedule_builder(request):
         else:
             post_locs = DEPT_LOCATIONS.get(post_dept.name, ['']) if post_dept else ['']
         post_has_locs = bool(post_locs[0])
-        post_emps = list(Employee.objects.filter(departments=post_dept).distinct()) if post_dept else []
+        post_emps = list(
+            Employee.objects.filter(departments=post_dept).distinct().prefetch_related('departments')
+        ) if post_dept else []
+        emp_lookup = {str(e.pk): e for e in post_emps}
+
+        # ── Part-time hour-limit check (before any DB changes) ────────────────
+        new_slots = {}
+        for d in week_dates:
+            dh = day_hours[d]
+            if dh['closed'] or not dh['start']:
+                continue
+            for loc in post_locs:
+                ls = _loc_slug(loc)
+                for slot in slots:
+                    key = (
+                        f"slot_{d.isoformat()}_{slot.hour:02d}_{slot.minute:02d}_{ls}"
+                        if post_has_locs else
+                        f"slot_{d.isoformat()}_{slot.hour:02d}_{slot.minute:02d}"
+                    )
+                    epk = request.POST.get(key, '')
+                    if epk and epk in emp_lookup:
+                        new_slots.setdefault(epk, set()).add(
+                            (d.isoformat(), f"{slot.hour:02d}_{slot.minute:02d}")
+                        )
+
+        violations = []
+        for epk, slot_set in new_slots.items():
+            emp = emp_lookup[epk]
+            if not _is_parttime(emp):
+                continue
+            new_mins = len(slot_set) * 15
+            other_qs = ScheduleEntry.objects.filter(user=emp, date__in=week_dates)
+            if post_subject:
+                other_qs = other_qs.exclude(department=post_dept, subject=post_subject)
+            else:
+                other_qs = other_qs.exclude(department=post_dept)
+            other_mins = sum(
+                (e.end_time.hour * 60 + e.end_time.minute)
+                - (e.start_time.hour * 60 + e.start_time.minute)
+                for e in other_qs
+            )
+            total_hrs = (new_mins + other_mins) / 60
+            if total_hrs > PARTTIME_WEEKLY_MAX:
+                violations.append(
+                    f"{emp.first_name} {emp.last_name}: {total_hrs:.1f} hrs scheduled "
+                    f"(limit {PARTTIME_WEEKLY_MAX})"
+                )
+
+        if violations:
+            for v in violations:
+                messages.error(request, f"Over weekly limit — {v}")
+            after_save = request.POST.get('redirect_after_save', '')
+            subj_qs = f"&subject={post_subject_pk}" if post_subject_pk else ""
+            redirect_url = (
+                after_save if after_save.startswith('?')
+                else f"?week={week_start.isoformat()}&dept={post_dept_pk}{subj_qs}"
+            )
+            return redirect(f"{request.path}{redirect_url}")
 
         # Delete only entries for this dept + subject this week
         del_qs = ScheduleEntry.objects.filter(date__in=week_dates, department=post_dept)
         del_qs = del_qs.filter(subject=post_subject)
         del_qs.delete()
-
-        emp_lookup = {str(e.pk): e for e in post_emps}
 
         for d in week_dates:
             dh = day_hours[d]
@@ -496,6 +578,8 @@ def schedule_builder(request):
         'employee_availability_json': json.dumps(avail_data),
         'employee_conflicts_json': json.dumps(conflict_data),
         'date_day_map_json': json.dumps(date_day_map),
+        'employee_is_parttime_json': json.dumps({str(k): v for k, v in parttime_flags.items()}),
+        'employee_other_hours_json': json.dumps({str(k): v for k, v in other_hours_map.items()}),
         'is_admin': is_admin, 'today': today,
     })
 
