@@ -32,7 +32,7 @@ def env_bool(value, default=False):
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-fallback-secret-key')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = env_bool(os.environ.get('DJANGO_DEBUG', 'True'))
+DEBUG = env_bool(os.environ.get('DJANGO_DEBUG', 'False'))
 
 ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', 'localhost 127.0.0.1').split() + ['healthcheck.railway.app']
 
