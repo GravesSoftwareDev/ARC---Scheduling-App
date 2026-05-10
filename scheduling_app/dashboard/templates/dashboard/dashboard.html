@@ -27,6 +27,7 @@
       </div>
 
       <div class="card-links">
+        <a href="{% url 'account:edit_profile' %}" class="card-link-item">Edit Profile</a>
         <a href="{% url 'scheduling:manage_availability' %}" class="card-link-item">Manage Availability</a>
         <a href="{% url 'account:password_change' %}" class="card-link-item">Change Password</a>
         {% if user.role == 'SCHEDULER' or user.role == 'ADMIN' %}

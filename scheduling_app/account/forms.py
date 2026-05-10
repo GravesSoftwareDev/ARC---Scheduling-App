@@ -5,6 +5,21 @@ from .models import Subject, Department
 
 User = get_user_model()
 
+class EditProfileForm(forms.ModelForm):
+    birthdate = forms.DateField(required=False, widget=forms.DateInput(attrs={'type': 'date'}))
+
+    class Meta:
+        model = User
+        fields = ('first_name', 'last_name', 'email', 'birthdate')
+
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+        qs = User.objects.filter(email=email).exclude(pk=self.instance.pk)
+        if email and qs.exists():
+            raise forms.ValidationError('That email is already in use.')
+        return email
+
+
 class RegistrationForm(UserCreationForm):
     email = forms.EmailField(required=True)
     birthdate = forms.DateField(required=True)

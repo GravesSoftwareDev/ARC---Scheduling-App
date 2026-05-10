@@ -112,6 +112,7 @@ EMAIL_USE_TLS = env_bool(os.environ.get('EMAIL_USE_TLS', 'True'))
 EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', 'graves_tech@outlook.com')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+EMAIL_TIMEOUT = 10
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 

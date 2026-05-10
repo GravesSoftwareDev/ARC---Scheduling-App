@@ -1,0 +1,54 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Edit Profile – Academic Resource Center{% endblock %}
+
+{% block content %}
+<div class="auth-wrapper">
+    <div class="auth-card">
+        <h2>Edit Profile</h2>
+        {% if messages %}
+        <div class="form-messages">
+            {% for message in messages %}
+            <p class="form-message-success">{{ message }}</p>
+            {% endfor %}
+        </div>
+        {% endif %}
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="id_first_name">First Name</label>
+                <input type="text" name="first_name" id="id_first_name"
+                       value="{{ form.first_name.value|default_if_none:'' }}" maxlength="150">
+                {% if form.first_name.errors %}
+                <p class="form-field-error">{{ form.first_name.errors|join:", " }}</p>
+                {% endif %}
+            </div>
+            <div class="form-group">
+                <label for="id_last_name">Last Name</label>
+                <input type="text" name="last_name" id="id_last_name"
+                       value="{{ form.last_name.value|default_if_none:'' }}" maxlength="150">
+                {% if form.last_name.errors %}
+                <p class="form-field-error">{{ form.last_name.errors|join:", " }}</p>
+                {% endif %}
+            </div>
+            <div class="form-group">
+                <label for="id_email">Email Address</label>
+                <input type="email" name="email" id="id_email"
+                       value="{{ form.email.value|default_if_none:'' }}">
+                {% if form.email.errors %}
+                <p class="form-field-error">{{ form.email.errors|join:", " }}</p>
+                {% endif %}
+            </div>
+            <div class="form-group">
+                <label for="id_birthdate">Birthday</label>
+                <input type="date" name="birthdate" id="id_birthdate"
+                       value="{{ form.birthdate.value|default_if_none:'' }}">
+                {% if form.birthdate.errors %}
+                <p class="form-field-error">{{ form.birthdate.errors|join:", " }}</p>
+                {% endif %}
+            </div>
+            <button type="submit" class="auth-btn">Save Changes</button>
+            <a href="{% url 'dashboard:dashboard' %}" class="auth-btn-secondary">Cancel</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

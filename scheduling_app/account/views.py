@@ -2,11 +2,24 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
 from django.db.models import Prefetch
-from .forms import RegistrationForm
+from .forms import RegistrationForm, EditProfileForm
 from .models import Employee, Department, Subject
 
 
 _admin_check = lambda u: u.role == 'ADMIN'
+
+
+@login_required
+def edit_profile(request):
+    if request.method == 'POST':
+        form = EditProfileForm(request.POST, instance=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Profile updated successfully.')
+            return redirect('account:edit_profile')
+    else:
+        form = EditProfileForm(instance=request.user)
+    return render(request, 'account/registration/edit_profile.html', {'form': form})
 
 
 @login_required

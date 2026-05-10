@@ -548,6 +548,50 @@ a:hover {
     text-decoration: none;
 }
 
+.auth-btn-secondary {
+    width: 100%;
+    padding: 11px;
+    background: transparent;
+    color: var(--primary-color);
+    border: 2px solid var(--primary-color);
+    border-radius: 5px;
+    font-family: var(--font-family);
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 8px;
+    transition: background 0.2s ease, color 0.2s ease;
+    display: block;
+    text-align: center;
+    box-sizing: border-box;
+    text-decoration: none;
+}
+
+.auth-btn-secondary:hover {
+    background: var(--primary-color);
+    color: white;
+    text-decoration: none;
+}
+
+.form-messages {
+    margin-bottom: 16px;
+}
+
+.form-message-success {
+    color: #2e7d32;
+    background: #f0faf0;
+    border-left: 4px solid #2e7d32;
+    padding: 8px 12px;
+    border-radius: 4px;
+    margin: 0;
+}
+
+.form-field-error {
+    color: var(--danger-color);
+    font-size: 13px;
+    margin: 4px 0 0;
+}
+
 .error-messages {
     margin-top: 18px;
     padding: 12px 14px;

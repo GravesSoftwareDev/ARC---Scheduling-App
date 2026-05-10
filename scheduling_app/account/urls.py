@@ -27,6 +27,7 @@ urlpatterns = [
         token_generator=password_reset_token,
     ), name='password_reset_confirm'),
     path('password-reset/complete/', auth_views.PasswordResetCompleteView.as_view(template_name='account/registration/password_reset_complete.html'), name='password_reset_complete'),
+    path('profile/edit/', views.edit_profile, name='edit_profile'),
     path('registration/', views.registration, name='registration'),
     path('employees/', views.employee_list, name='employee_list'),
     path('roster/', views.roster, name='roster'),
