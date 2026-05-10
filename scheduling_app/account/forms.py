@@ -5,6 +5,18 @@ from .models import Subject, Department
 
 User = get_user_model()
 
+class PasswordResetRequestForm(forms.Form):
+    first_name = forms.CharField(max_length=150, label='First Name')
+    last_name = forms.CharField(max_length=150, label='Last Name')
+    email = forms.EmailField(label='OTC Email Address')
+
+    def clean_email(self):
+        email = self.cleaned_data['email'].lower()
+        if not email.endswith('@otc.edu'):
+            raise forms.ValidationError('Please enter your OTC email address (@otc.edu).')
+        return email
+
+
 class EditProfileForm(forms.ModelForm):
     birthdate = forms.DateField(required=False, widget=forms.DateInput(attrs={'type': 'date'}))
 

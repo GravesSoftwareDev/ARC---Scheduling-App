@@ -1,12 +1,38 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
+from django.core.mail import send_mail
+from django.conf import settings
 from django.db.models import Prefetch
-from .forms import RegistrationForm, EditProfileForm
+from .forms import RegistrationForm, EditProfileForm, PasswordResetRequestForm
 from .models import Employee, Department, Subject
 
 
 _admin_check = lambda u: u.role == 'ADMIN'
+
+
+def password_reset_request(request):
+    if request.method == 'POST':
+        form = PasswordResetRequestForm(request.POST)
+        if form.is_valid():
+            first = form.cleaned_data['first_name']
+            last = form.cleaned_data['last_name']
+            email = form.cleaned_data['email']
+            send_mail(
+                subject=f'Password Reset Request – {first} {last}',
+                message=(
+                    f'{first} {last} ({email}) has requested a password reset.\n\n'
+                    f'Go to the admin panel to reset their password:\n'
+                    f'https://arc.gravessoftware.dev/admin/account/employee/'
+                ),
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[settings.DEFAULT_FROM_EMAIL],
+                fail_silently=True,
+            )
+            return redirect('account:password_reset_done')
+    else:
+        form = PasswordResetRequestForm()
+    return render(request, 'account/registration/password_reset_form.html', {'form': form})
 
 
 @login_required

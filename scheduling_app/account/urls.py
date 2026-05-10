@@ -1,7 +1,7 @@
 from django.urls import path, reverse_lazy
 from django.contrib.auth import views as auth_views
 from . import views
-from .tokens import password_reset_token
+from .tokens import password_reset_token  # still used by confirm/complete URLs
 
 app_name = 'account'
 
@@ -14,14 +14,7 @@ urlpatterns = [
         success_url=reverse_lazy('account:password_change_done'),
     ), name='password_change'),
     path('password-change/done/', auth_views.PasswordChangeDoneView.as_view(template_name='account/registration/password_change_done.html'), name='password_change_done'),
-    path('password-reset/', auth_views.PasswordResetView.as_view(
-        template_name='account/registration/password_reset_form.html',
-        email_template_name='account/registration/password_reset_email.html',
-        html_email_template_name='account/registration/password_reset_email_html.html',
-        subject_template_name='account/registration/password_reset_subject.txt',
-        success_url=reverse_lazy('account:password_reset_done'),
-        token_generator=password_reset_token,
-    ), name='password_reset'),
+    path('password-reset/', views.password_reset_request, name='password_reset'),
     path('password-reset/done/', auth_views.PasswordResetDoneView.as_view(template_name='account/registration/password_reset_done.html'), name='password_reset_done'),
     path('password-reset/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(
         template_name='account/registration/password_reset_confirm.html',
