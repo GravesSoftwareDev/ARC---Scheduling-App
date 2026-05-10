@@ -34,7 +34,7 @@ SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-fallback-secre
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env_bool(os.environ.get('DJANGO_DEBUG', 'True'))
 
-ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', 'localhost 127.0.0.1').split()
+ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', 'localhost 127.0.0.1').split() + ['healthcheck.railway.app']
 
 
 # Application definition
@@ -161,6 +161,9 @@ EMAIL_PORT = int(os.environ.get('EMAIL_PORT', 587))
 EMAIL_USE_TLS = env_bool(os.environ.get('EMAIL_USE_TLS', 'True'))
 EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
+
+# Trust Railway's proxy to forward the original protocol
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # Security settings for production
 if not DEBUG:
