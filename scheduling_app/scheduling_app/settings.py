@@ -21,7 +21,7 @@ for _var in ('RAILWAY_PUBLIC_DOMAIN', 'RAILWAY_PRIVATE_DOMAIN'):
     _domain = os.environ.get(_var)
     if _domain:
         _allowed.append(_domain)
-_allowed.extend(['healthcheck.railway.app', 'arc.gravessoftware.dev'])
+_allowed.extend(['healthcheck.railway.app', 'arc.gravessoftware.dev', 'arc-demo.gravessoftware.dev'])
 ALLOWED_HOSTS = _allowed
 
 INSTALLED_APPS = [

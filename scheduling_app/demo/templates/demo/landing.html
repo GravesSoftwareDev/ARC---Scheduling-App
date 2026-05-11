@@ -77,134 +77,90 @@
             text-transform: uppercase;
         }
 
-        /* ── Role cards ────────────────────────────────────────── */
+        /* ── Role menu ─────────────────────────────────────────── */
         .roles-section {
-            padding: 56px 24px;
-            max-width: 1100px;
+            padding: 48px 24px;
+            max-width: 520px;
             margin: 0 auto;
             width: 100%;
         }
 
         .roles-section > h2 {
-            font-size: 24px;
-            font-weight: 700;
+            font-size: 16px;
+            font-weight: 600;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 4px;
             text-align: center;
-            color: var(--blue);
-            margin-bottom: 8px;
         }
 
         .roles-section > p {
             text-align: center;
             color: #666;
-            margin-bottom: 36px;
-            font-size: 15px;
+            margin-bottom: 24px;
+            font-size: 14px;
         }
 
-        .cards {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
-            gap: 24px;
-        }
-
-        .card {
+        .role-menu {
             background: var(--white);
             border: 1px solid var(--gray-border);
-            border-radius: 12px;
-            padding: 28px;
-            text-decoration: none;
-            color: var(--text);
-            display: flex;
-            flex-direction: column;
-            transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
-            position: relative;
+            border-radius: 10px;
             overflow: hidden;
         }
 
-        .card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 10px 30px rgba(0,63,127,0.12);
-            border-color: var(--blue-light);
+        .role-menu a {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 16px 20px;
+            text-decoration: none;
+            color: var(--text);
+            border-bottom: 1px solid var(--gray-border);
+            transition: background 0.12s ease;
+        }
+
+        .role-menu a:last-child {
+            border-bottom: none;
+        }
+
+        .role-menu a:hover {
+            background: var(--blue-pale);
             text-decoration: none;
             color: var(--text);
         }
 
-        .card.featured {
-            border-color: var(--blue);
-            border-width: 2px;
-        }
-
-        .card.featured::before {
-            content: "Most Features";
-            position: absolute;
-            top: 14px;
-            right: -24px;
-            background: var(--blue);
-            color: white;
-            font-size: 11px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            padding: 4px 32px;
-            transform: rotate(45deg) translateX(8px);
-        }
-
-        .card-icon {
-            font-size: 32px;
-            margin-bottom: 12px;
-        }
-
-        .card h3 {
+        .role-icon {
             font-size: 20px;
-            font-weight: 700;
-            color: var(--blue);
-            margin-bottom: 10px;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--blue-pale);
+            border-radius: 8px;
+            flex-shrink: 0;
         }
 
-        .card > p {
-            font-size: 14px;
-            color: #555;
-            margin-bottom: 16px;
+        .role-info {
             flex: 1;
         }
 
-        .feature-list {
-            list-style: none;
-            margin-bottom: 24px;
-        }
-
-        .feature-list li {
-            font-size: 13px;
-            color: #444;
-            padding: 3px 0 3px 18px;
-            position: relative;
-        }
-
-        .feature-list li::before {
-            content: "✓";
-            position: absolute;
-            left: 0;
-            color: var(--green);
-            font-weight: 700;
-        }
-
-        .card-btn {
-            display: block;
-            text-align: center;
-            background: var(--blue);
-            color: var(--white);
-            border-radius: 8px;
-            padding: 11px 20px;
-            font-size: 14px;
+        .role-name {
+            font-size: 15px;
             font-weight: 600;
-            transition: background 0.15s ease;
+            color: var(--blue);
         }
 
-        .card:hover .card-btn {
-            background: var(--blue-light);
+        .role-desc {
+            font-size: 13px;
+            color: #666;
+            margin-top: 1px;
         }
 
-        .card.featured .card-btn {
-            background: var(--blue);
+        .role-arrow {
+            color: #bbb;
+            font-size: 16px;
         }
 
         /* ── Tech stack ────────────────────────────────────────── */
@@ -266,48 +222,36 @@
     </div>
 
     <div class="roles-section">
-        <h2>Explore the Demo</h2>
-        <p>Pick a role to instantly log in as a demo user. All data is fake — interact freely.</p>
+        <h2>Select a Role</h2>
+        <p>All data is fake — interact freely.</p>
 
-        <div class="cards">
+        <div class="role-menu">
 
-            <a href="{% url 'demo:set_role' 'employee' %}" class="card">
-                <div class="card-icon">👤</div>
-                <h3>Employee</h3>
-                <p>The view every staff member sees — a personal weekly calendar with schedule and availability overlaid on one grid.</p>
-                <ul class="feature-list">
-                    <li>Weekly schedule calendar</li>
-                    <li>Paint availability by dragging time blocks</li>
-                    <li>Navigate forward and back by week</li>
-                    <li>Color-coded location legend</li>
-                </ul>
-                <span class="card-btn">View as Employee →</span>
+            <a href="{% url 'demo:set_role' 'employee' %}">
+                <div class="role-icon">👤</div>
+                <div class="role-info">
+                    <div class="role-name">Employee</div>
+                    <div class="role-desc">Personal schedule &amp; availability calendar</div>
+                </div>
+                <span class="role-arrow">›</span>
             </a>
 
-            <a href="{% url 'demo:set_role' 'scheduler' %}" class="card featured">
-                <div class="card-icon">📅</div>
-                <h3>Scheduler</h3>
-                <p>Build weekly schedules with a drag-to-paint grid. Employee availability is overlaid in real time so conflicts are impossible to miss.</p>
-                <ul class="feature-list">
-                    <li>Drag-to-paint schedule grid</li>
-                    <li>Availability &amp; conflict overlay</li>
-                    <li>Multi-department &amp; subject tabs</li>
-                    <li>Part-time hour-limit enforcement</li>
-                </ul>
-                <span class="card-btn">View as Scheduler →</span>
+            <a href="{% url 'demo:set_role' 'scheduler' %}">
+                <div class="role-icon">📅</div>
+                <div class="role-info">
+                    <div class="role-name">Scheduler</div>
+                    <div class="role-desc">Drag-to-paint weekly schedule builder</div>
+                </div>
+                <span class="role-arrow">›</span>
             </a>
 
-            <a href="{% url 'demo:set_role' 'admin' %}" class="card">
-                <div class="card-icon">⚙️</div>
-                <h3>Admin</h3>
-                <p>Full access to manage the organization — employees, department rosters, subject assignments, and operating hours.</p>
-                <ul class="feature-list">
-                    <li>Employee list &amp; deactivation</li>
-                    <li>Department &amp; subject roster management</li>
-                    <li>Default operating hours editor</li>
-                    <li>Holiday / date overrides</li>
-                </ul>
-                <span class="card-btn">View as Admin →</span>
+            <a href="{% url 'demo:set_role' 'admin' %}">
+                <div class="role-icon">⚙️</div>
+                <div class="role-info">
+                    <div class="role-name">Admin</div>
+                    <div class="role-desc">Employees, rosters, and operating hours</div>
+                </div>
+                <span class="role-arrow">›</span>
             </a>
 
         </div>
