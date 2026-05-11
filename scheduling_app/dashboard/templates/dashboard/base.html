@@ -6,8 +6,83 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Academic Resource Center{% endblock %}</title>
     <link rel="stylesheet" href="{% static 'account/css/styles.css' %}">
+    {% if is_demo %}
+    <style>
+        .demo-bar {
+            background: #003F7F;
+            color: rgba(255,255,255,0.9);
+            padding: 7px 20px;
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            font-size: 13px;
+            font-family: 'Segoe UI', sans-serif;
+            border-bottom: 2px solid #E8F0F7;
+        }
+        .demo-bar .demo-pill {
+            background: #c0392b;
+            color: #fff;
+            font-weight: 700;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            padding: 2px 9px;
+            border-radius: 10px;
+        }
+        .demo-bar .demo-who {
+            opacity: 0.85;
+            flex: 1;
+            white-space: nowrap;
+        }
+        .demo-bar .demo-switch {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .demo-bar .demo-switch span {
+            opacity: 0.6;
+            font-size: 12px;
+        }
+        .demo-bar .demo-btn {
+            background: rgba(255,255,255,0.15);
+            color: #fff;
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 6px;
+            padding: 3px 11px;
+            font-size: 12px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: background 0.15s;
+            white-space: nowrap;
+        }
+        .demo-bar .demo-btn:hover {
+            background: rgba(255,255,255,0.28);
+            text-decoration: none;
+            color: #fff;
+        }
+        .demo-bar .demo-btn.exit {
+            border-color: rgba(255,255,255,0.5);
+            opacity: 0.75;
+        }
+    </style>
+    {% endif %}
 </head>
 <body>
+    {% if is_demo %}
+    <div class="demo-bar">
+        <span class="demo-pill">Demo</span>
+        <span class="demo-who">{{ demo_user_name }} &mdash; {{ demo_role_display }}</span>
+        <div class="demo-switch">
+            <span>Switch role:</span>
+            <a href="{% url 'demo:set_role' 'employee' %}" class="demo-btn">Employee</a>
+            <a href="{% url 'demo:set_role' 'scheduler' %}" class="demo-btn">Scheduler</a>
+            <a href="{% url 'demo:set_role' 'admin' %}" class="demo-btn">Admin</a>
+            <a href="{% url 'demo:landing' %}" class="demo-btn exit">&#8592; Landing</a>
+        </div>
+    </div>
+    {% endif %}
     <nav class="navbar">
         <a href="{% url 'dashboard:dashboard' %}" class="navbar-logo">
             <!-- Replace with <img> tag when you have a logo -->

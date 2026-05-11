@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ARC Scheduling App — Portfolio Demo</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --blue:        #003F7F;
+            --blue-light:  #0052A3;
+            --blue-pale:   #E8F0F7;
+            --white:       #FFFFFF;
+            --gray-light:  #F5F7FA;
+            --gray-border: #D0D8E0;
+            --text:        #333333;
+            --green:       #2E8B57;
+            --font:        'Segoe UI', 'Helvetica Neue', sans-serif;
+        }
+
+        body {
+            font-family: var(--font);
+            background: var(--gray-light);
+            color: var(--text);
+            line-height: 1.6;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ── Hero ──────────────────────────────────────────────── */
+        .hero {
+            background: linear-gradient(135deg, var(--blue) 0%, var(--blue-light) 100%);
+            color: var(--white);
+            padding: 64px 24px 48px;
+            text-align: center;
+        }
+
+        .hero-logo {
+            display: inline-block;
+            width: 64px;
+            height: 64px;
+            background: rgba(255,255,255,0.15);
+            border: 2px solid rgba(255,255,255,0.4);
+            border-radius: 14px;
+            font-size: 22px;
+            font-weight: 800;
+            letter-spacing: 1px;
+            line-height: 60px;
+            margin-bottom: 20px;
+        }
+
+        .hero h1 {
+            font-size: clamp(26px, 4vw, 38px);
+            font-weight: 700;
+            margin-bottom: 14px;
+            letter-spacing: -0.3px;
+        }
+
+        .hero p {
+            font-size: 16px;
+            opacity: 0.88;
+            max-width: 560px;
+            margin: 0 auto 28px;
+        }
+
+        .demo-badge {
+            display: inline-block;
+            background: rgba(255,255,255,0.18);
+            border: 1px solid rgba(255,255,255,0.35);
+            border-radius: 20px;
+            padding: 5px 16px;
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        /* ── Role cards ────────────────────────────────────────── */
+        .roles-section {
+            padding: 56px 24px;
+            max-width: 1100px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .roles-section > h2 {
+            font-size: 24px;
+            font-weight: 700;
+            text-align: center;
+            color: var(--blue);
+            margin-bottom: 8px;
+        }
+
+        .roles-section > p {
+            text-align: center;
+            color: #666;
+            margin-bottom: 36px;
+            font-size: 15px;
+        }
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+            gap: 24px;
+        }
+
+        .card {
+            background: var(--white);
+            border: 1px solid var(--gray-border);
+            border-radius: 12px;
+            padding: 28px;
+            text-decoration: none;
+            color: var(--text);
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 30px rgba(0,63,127,0.12);
+            border-color: var(--blue-light);
+            text-decoration: none;
+            color: var(--text);
+        }
+
+        .card.featured {
+            border-color: var(--blue);
+            border-width: 2px;
+        }
+
+        .card.featured::before {
+            content: "Most Features";
+            position: absolute;
+            top: 14px;
+            right: -24px;
+            background: var(--blue);
+            color: white;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 4px 32px;
+            transform: rotate(45deg) translateX(8px);
+        }
+
+        .card-icon {
+            font-size: 32px;
+            margin-bottom: 12px;
+        }
+
+        .card h3 {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--blue);
+            margin-bottom: 10px;
+        }
+
+        .card > p {
+            font-size: 14px;
+            color: #555;
+            margin-bottom: 16px;
+            flex: 1;
+        }
+
+        .feature-list {
+            list-style: none;
+            margin-bottom: 24px;
+        }
+
+        .feature-list li {
+            font-size: 13px;
+            color: #444;
+            padding: 3px 0 3px 18px;
+            position: relative;
+        }
+
+        .feature-list li::before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: var(--green);
+            font-weight: 700;
+        }
+
+        .card-btn {
+            display: block;
+            text-align: center;
+            background: var(--blue);
+            color: var(--white);
+            border-radius: 8px;
+            padding: 11px 20px;
+            font-size: 14px;
+            font-weight: 600;
+            transition: background 0.15s ease;
+        }
+
+        .card:hover .card-btn {
+            background: var(--blue-light);
+        }
+
+        .card.featured .card-btn {
+            background: var(--blue);
+        }
+
+        /* ── Tech stack ────────────────────────────────────────── */
+        .tech-section {
+            background: var(--white);
+            border-top: 1px solid var(--gray-border);
+            padding: 40px 24px;
+            text-align: center;
+        }
+
+        .tech-section h2 {
+            font-size: 16px;
+            font-weight: 600;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 20px;
+        }
+
+        .tech-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .tech-chips span {
+            background: var(--blue-pale);
+            color: var(--blue);
+            border: 1px solid rgba(0,63,127,0.15);
+            border-radius: 20px;
+            padding: 6px 16px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        /* ── Footer ────────────────────────────────────────────── */
+        footer {
+            background: var(--blue);
+            color: rgba(255,255,255,0.7);
+            text-align: center;
+            padding: 20px 24px;
+            font-size: 13px;
+            margin-top: auto;
+        }
+
+        footer a {
+            color: rgba(255,255,255,0.9);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="hero">
+        <div class="hero-logo">ARC</div>
+        <h1>Academic Resource Center<br>Scheduling App</h1>
+        <p>A full-stack scheduling management system built with Django — role-based access, availability tracking, and a drag-to-paint schedule builder.</p>
+        <span class="demo-badge">Interactive Demo — No Login Required</span>
+    </div>
+
+    <div class="roles-section">
+        <h2>Explore the Demo</h2>
+        <p>Pick a role to instantly log in as a demo user. All data is fake — interact freely.</p>
+
+        <div class="cards">
+
+            <a href="{% url 'demo:set_role' 'employee' %}" class="card">
+                <div class="card-icon">👤</div>
+                <h3>Employee</h3>
+                <p>The view every staff member sees — a personal weekly calendar with schedule and availability overlaid on one grid.</p>
+                <ul class="feature-list">
+                    <li>Weekly schedule calendar</li>
+                    <li>Paint availability by dragging time blocks</li>
+                    <li>Navigate forward and back by week</li>
+                    <li>Color-coded location legend</li>
+                </ul>
+                <span class="card-btn">View as Employee →</span>
+            </a>
+
+            <a href="{% url 'demo:set_role' 'scheduler' %}" class="card featured">
+                <div class="card-icon">📅</div>
+                <h3>Scheduler</h3>
+                <p>Build weekly schedules with a drag-to-paint grid. Employee availability is overlaid in real time so conflicts are impossible to miss.</p>
+                <ul class="feature-list">
+                    <li>Drag-to-paint schedule grid</li>
+                    <li>Availability &amp; conflict overlay</li>
+                    <li>Multi-department &amp; subject tabs</li>
+                    <li>Part-time hour-limit enforcement</li>
+                </ul>
+                <span class="card-btn">View as Scheduler →</span>
+            </a>
+
+            <a href="{% url 'demo:set_role' 'admin' %}" class="card">
+                <div class="card-icon">⚙️</div>
+                <h3>Admin</h3>
+                <p>Full access to manage the organization — employees, department rosters, subject assignments, and operating hours.</p>
+                <ul class="feature-list">
+                    <li>Employee list &amp; deactivation</li>
+                    <li>Department &amp; subject roster management</li>
+                    <li>Default operating hours editor</li>
+                    <li>Holiday / date overrides</li>
+                </ul>
+                <span class="card-btn">View as Admin →</span>
+            </a>
+
+        </div>
+    </div>
+
+    <div class="tech-section">
+        <h2>Built With</h2>
+        <div class="tech-chips">
+            <span>Django 5</span>
+            <span>Python</span>
+            <span>PostgreSQL</span>
+            <span>HTML / CSS</span>
+            <span>Vanilla JS</span>
+            <span>WhiteNoise</span>
+            <span>Railway</span>
+        </div>
+    </div>
+
+    <footer>
+        <p>Portfolio demo &mdash; data resets nightly &mdash; built by <strong style="color:white;">Shanna Graves</strong></p>
+    </footer>
+
+</body>
+</html>

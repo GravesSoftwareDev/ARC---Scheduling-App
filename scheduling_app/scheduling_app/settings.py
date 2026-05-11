@@ -34,6 +34,7 @@ INSTALLED_APPS = [
     'account',
     'scheduling',
     'dashboard',
+    'demo',
 ]
 
 AUTH_USER_MODEL = 'account.Employee'
@@ -61,6 +62,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'demo.context_processors.demo_context',
             ],
         },
     },
@@ -99,9 +101,9 @@ STORAGES = {
     'staticfiles': {'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage'},
 }
 
-LOGIN_URL = 'account:login'
+LOGIN_URL = 'demo:landing'
 LOGIN_REDIRECT_URL = 'dashboard:dashboard'
-LOGOUT_REDIRECT_URL = 'account:login'
+LOGOUT_REDIRECT_URL = 'demo:landing'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
