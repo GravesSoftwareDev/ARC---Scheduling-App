@@ -1430,6 +1430,24 @@ a:hover {
     color: #aaa;
     line-height: 1.4;
 }
+.sb2-override-btn {
+    width: 100%;
+    padding: 6px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    background: var(--light-color);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    color: #666;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+    text-align: center;
+}
+.sb2-override-btn.sb2-override-active {
+    background: #c62828;
+    color: white;
+    border-color: #c62828;
+}
 
 /* Color key */
 .sb2-key-section { background: var(--light-color); }
@@ -1482,6 +1500,10 @@ a:hover {
     cursor: not-allowed !important;
     background-color: rgba(200, 200, 200, 0.45) !important;
     box-shadow: inset 0 0 0 1px rgba(200, 50, 50, 0.35);
+}
+.sb2-cell.sb2-avail-override {
+    cursor: crosshair !important;
+    background-color: rgba(220, 20, 20, 0.55) !important;
 }
 .sb2-cell.sb2-avail-ok {
     box-shadow: inset 0 0 0 1px rgba(30, 140, 60, 0.20);

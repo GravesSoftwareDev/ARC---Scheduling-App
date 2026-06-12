@@ -336,21 +336,28 @@ function applyAvailabilityHighlight(empPk) {
     if (inAvail) {
       cell.classList.add(isPreferred ? 'sb2-avail-preferred' : 'sb2-avail-ok');
     } else {
-      cell.classList.add('sb2-avail-blocked');
+      cell.classList.add(overrideAvailability ? 'sb2-avail-override' : 'sb2-avail-blocked');
     }
   });
 }
 
 function clearAvailabilityHighlight() {
   document.querySelectorAll(
-    '.sb2-avail-ok, .sb2-avail-blocked, .sb2-avail-preferred, .sb2-sched-conflict'
+    '.sb2-avail-ok, .sb2-avail-blocked, .sb2-avail-preferred, .sb2-sched-conflict, .sb2-avail-override'
   ).forEach(c => {
-    c.classList.remove('sb2-avail-ok', 'sb2-avail-blocked', 'sb2-avail-preferred', 'sb2-sched-conflict');
+    c.classList.remove('sb2-avail-ok', 'sb2-avail-blocked', 'sb2-avail-preferred', 'sb2-sched-conflict', 'sb2-avail-override');
     c.style.removeProperty('--conflict-bg');
     c.style.removeProperty('--conflict-border');
     c.title = '';
     c.querySelectorAll('.sb2-conflict-label').forEach(el => el.remove());
   });
+}
+
+// ── Override availability toggle ───────────────────────────────────────────
+function toggleOverride() {
+  overrideAvailability = !overrideAvailability;
+  document.getElementById('toggle-override').classList.toggle('sb2-override-active', overrideAvailability);
+  if (activeEmpPk) applyAvailabilityHighlight(activeEmpPk);
 }
 
 // ── Draw mode ──────────────────────────────────────────────────────────────
