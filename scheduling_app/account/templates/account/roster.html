@@ -25,13 +25,25 @@
     <!-- ── Left: Employee Roster ─────────────────────────────────────── -->
     <div class="roster-emp-panel">
       <h2 class="roster-panel-title">Employees</h2>
-      <p class="roster-panel-hint">Drag an employee onto a Members or Schedulers zone.</p>
+
+      <input type="text" id="emp-search" class="roster-emp-search" placeholder="Search name…">
+
+      <div class="roster-role-filters">
+        <button class="roster-role-btn active" data-role="">All</button>
+        <button class="roster-role-btn" data-role="admin">Admin</button>
+        <button class="roster-role-btn" data-role="arc_assistant">ARC Asst</button>
+        <button class="roster-role-btn" data-role="tutor">Tutor</button>
+      </div>
+
+      <p class="roster-panel-hint">Click to select · drag to add<span id="roster-sel-count"></span></p>
+
       <div class="roster-emp-list">
         {% for emp in all_employees %}
         <div class="roster-emp-card"
              draggable="true"
              data-emp-pk="{{ emp.pk }}"
-             data-emp-name="{{ emp.last_name }}, {{ emp.first_name }}">
+             data-emp-name="{{ emp.last_name }}, {{ emp.first_name }}"
+             data-role="{{ emp.role|lower }}">
           <span class="roster-emp-role role-{{ emp.role|lower }}">{{ emp.get_role_display }}</span>
           {{ emp.last_name }}, {{ emp.first_name }}
         </div>
@@ -132,14 +144,63 @@
 
 <script>
 const CSRF = '{{ csrf_token }}';
-let draggedEmpPk   = null;
-let draggedEmpName = null;
 
-// ── Drag source: employee cards ────────────────────────────────────────────
+// ── Selection state ────────────────────────────────────────────────────────
+const selectedEmps = new Map(); // pk → name
+
+function updateSelCount() {
+  const el = document.getElementById('roster-sel-count');
+  el.textContent = selectedEmps.size > 0 ? ` · ${selectedEmps.size} selected` : '';
+}
+
+document.querySelectorAll('.roster-emp-card').forEach(card => {
+  card.addEventListener('click', () => {
+    const pk = card.dataset.empPk;
+    if (selectedEmps.has(pk)) {
+      selectedEmps.delete(pk);
+      card.classList.remove('roster-emp-selected');
+    } else {
+      selectedEmps.set(pk, card.dataset.empName);
+      card.classList.add('roster-emp-selected');
+    }
+    updateSelCount();
+  });
+});
+
+// ── Search & role filter ───────────────────────────────────────────────────
+let activeRole = '';
+
+function filterCards() {
+  const q = document.getElementById('emp-search').value.toLowerCase();
+  document.querySelectorAll('.roster-emp-card').forEach(card => {
+    const nameOk = card.dataset.empName.toLowerCase().includes(q);
+    const roleOk = !activeRole || card.dataset.role === activeRole;
+    card.style.display = (nameOk && roleOk) ? '' : 'none';
+  });
+}
+
+document.getElementById('emp-search').addEventListener('input', filterCards);
+
+document.querySelectorAll('.roster-role-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.roster-role-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    activeRole = btn.dataset.role;
+    filterCards();
+  });
+});
+
+// ── Drag ──────────────────────────────────────────────────────────────────
+let dragPayload = []; // [{pk, name}]
+
 document.querySelectorAll('.roster-emp-card').forEach(card => {
   card.addEventListener('dragstart', e => {
-    draggedEmpPk   = card.dataset.empPk;
-    draggedEmpName = card.dataset.empName;
+    const pk = card.dataset.empPk;
+    if (selectedEmps.has(pk)) {
+      dragPayload = Array.from(selectedEmps.entries()).map(([p, n]) => ({pk: p, name: n}));
+    } else {
+      dragPayload = [{pk, name: card.dataset.empName}];
+    }
     card.classList.add('dragging');
     e.dataTransfer.effectAllowed = 'copy';
   });
@@ -157,55 +218,43 @@ document.querySelectorAll('.drop-zone').forEach(zone => {
   zone.addEventListener('drop', async e => {
     e.preventDefault();
     zone.classList.remove('drop-zone-active');
-    if (!draggedEmpPk) return;
+    if (!dragPayload.length) return;
 
-    const schedulePk = zone.dataset.schedulePk;
-    const action     = zone.dataset.action;
-    const listId     = zone.dataset.listId;
-    const list       = document.getElementById(listId);
-
-    // Don't add if already in the list
-    if (list.querySelector(`[data-emp-pk="${draggedEmpPk}"]`)) return;
-
-    const body = new URLSearchParams({
-      csrfmiddlewaretoken: CSRF,
-      action,
-      employee: draggedEmpPk,
-      schedule: schedulePk,
-    });
-
-    const res = await fetch('', {
-      method: 'POST',
-      headers: {
-        'X-Requested-With': 'XMLHttpRequest',
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body,
-    });
-
-    if (!res.ok) return;
-
-    // Remove the "drop here" placeholder if present
-    const placeholder = list.querySelector('.roster-empty-drop');
-    if (placeholder) placeholder.remove();
-
-    // Determine remove action for the injected button
+    const schedulePk  = zone.dataset.schedulePk;
+    const action      = zone.dataset.action;
+    const list        = document.getElementById(zone.dataset.listId);
     const removeAction = action === 'add_member' ? 'remove_member' : 'remove_scheduler';
 
-    // Inject the new member row
-    const li = document.createElement('li');
-    li.className = 'roster-member-item';
-    li.dataset.empPk = draggedEmpPk;
-    li.innerHTML = `
-      <span>${draggedEmpName}</span>
-      <form method="post" class="inline-form">
-        <input type="hidden" name="csrfmiddlewaretoken" value="${CSRF}">
-        <input type="hidden" name="action" value="${removeAction}">
-        <input type="hidden" name="employee" value="${draggedEmpPk}">
-        <input type="hidden" name="schedule" value="${schedulePk}">
-        <button type="submit" class="btn-icon btn-icon-remove" title="Remove">&#10005;</button>
-      </form>`;
-    list.appendChild(li);
+    for (const {pk, name} of dragPayload) {
+      if (list.querySelector(`[data-emp-pk="${pk}"]`)) continue;
+
+      const res = await fetch('', {
+        method: 'POST',
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest',
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({csrfmiddlewaretoken: CSRF, action, employee: pk, schedule: schedulePk}),
+      });
+      if (!res.ok) continue;
+
+      const placeholder = list.querySelector('.roster-empty-drop');
+      if (placeholder) placeholder.remove();
+
+      const li = document.createElement('li');
+      li.className = 'roster-member-item';
+      li.dataset.empPk = pk;
+      li.innerHTML = `
+        <span>${name}</span>
+        <form method="post" class="inline-form">
+          <input type="hidden" name="csrfmiddlewaretoken" value="${CSRF}">
+          <input type="hidden" name="action" value="${removeAction}">
+          <input type="hidden" name="employee" value="${pk}">
+          <input type="hidden" name="schedule" value="${schedulePk}">
+          <button type="submit" class="btn-icon btn-icon-remove" title="Remove">&#10005;</button>
+        </form>`;
+      list.appendChild(li);
+    }
   });
 });
 </script>
