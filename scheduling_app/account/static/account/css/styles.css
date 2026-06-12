@@ -289,6 +289,26 @@ a:hover {
     font-weight: 700;
 }
 
+.btn-export-ics {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+    background: #fff;
+    color: var(--primary-color);
+    text-decoration: none;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+.btn-export-ics:hover {
+    background: var(--accent-color);
+    border-color: var(--primary-color);
+}
+
 .schedule-legend {
     display: flex;
     align-items: center;

@@ -1,6 +1,7 @@
 from django.shortcuts import render
+from django.http import HttpResponse
 from scheduling.models import WeeklyAvailability, OperatingHours, ScheduleEntry, DateOperatingHours
-from datetime import time, date, timedelta
+from datetime import time, date, timedelta, datetime, timezone as dt_timezone
 from django.contrib.auth.decorators import login_required
 from django.utils.dateparse import parse_date
 
@@ -201,3 +202,69 @@ def dashboard(request):
         'next_week': next_week,
         'today': today,
     })
+
+
+def _ics_escape(value):
+    return value.replace('\\', '\\\\').replace(';', '\\;').replace(',', '\\,').replace('\n', '\\n')
+
+
+def _ics_fold(line):
+    """Fold long ICS lines to max 75 octets per RFC 5545."""
+    encoded = line.encode('utf-8')
+    if len(encoded) <= 75:
+        return line
+    result = []
+    while len(line.encode('utf-8')) > 75:
+        chunk = line[:75]
+        while len(chunk.encode('utf-8')) > 75:
+            chunk = chunk[:-1]
+        result.append(chunk)
+        line = ' ' + line[len(chunk):]
+    result.append(line)
+    return '\r\n'.join(result)
+
+
+@login_required
+def export_schedule_ics(request):
+    entries = (
+        ScheduleEntry.objects
+        .filter(user=request.user)
+        .select_related('schedule')
+        .order_by('date', 'start_time')
+    )
+
+    dtstamp = datetime.now(dt_timezone.utc).strftime('%Y%m%dT%H%M%SZ')
+    user_slug = request.user.username
+
+    lines = [
+        'BEGIN:VCALENDAR',
+        'VERSION:2.0',
+        'PRODID:-//ARC Scheduling App//EN',
+        'CALSCALE:GREGORIAN',
+        'METHOD:PUBLISH',
+    ]
+
+    for entry in entries:
+        dtstart = entry.date.strftime('%Y%m%d') + 'T' + entry.start_time.strftime('%H%M%S')
+        dtend   = entry.date.strftime('%Y%m%d') + 'T' + entry.end_time.strftime('%H%M%S')
+        uid     = f'scheduleentry-{entry.pk}-{user_slug}@arc-scheduling'
+        summary = _ics_escape(entry.schedule.name)
+
+        lines += [
+            'BEGIN:VEVENT',
+            f'UID:{uid}',
+            f'DTSTAMP:{dtstamp}',
+            f'DTSTART:{dtstart}',
+            f'DTEND:{dtend}',
+            f'SUMMARY:{summary}',
+        ]
+        if entry.location:
+            lines.append(f'LOCATION:{_ics_escape(entry.location)}')
+        lines.append('END:VEVENT')
+
+    lines.append('END:VCALENDAR')
+
+    content = '\r\n'.join(_ics_fold(line) for line in lines) + '\r\n'
+    response = HttpResponse(content, content_type='text/calendar; charset=utf-8')
+    response['Content-Disposition'] = f'attachment; filename="arc-schedule-{user_slug}.ics"'
+    return response

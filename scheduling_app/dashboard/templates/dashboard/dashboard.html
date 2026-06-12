@@ -79,6 +79,7 @@
     <div class="calendar-section">
       <div class="schedule-header">
         <h2>My Schedule</h2>
+        <a href="{% url 'dashboard:export_ics' %}" class="btn-export-ics" title="Download all shifts as a calendar file">&#x1F4C5; Export .ics</a>
         <div class="schedule-legend">
           {% for item in schedule_legend %}
           <span class="schedule-legend-item">
