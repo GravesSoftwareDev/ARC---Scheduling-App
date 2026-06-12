@@ -251,7 +251,7 @@ def delete_special_hours(request, pk):
 @login_required
 @user_passes_test(_is_scheduler_or_admin)
 def schedule_builder(request):
-    from account.models import Department, Employee
+    from account.models import Employee
 
     today = date.today()
     week_start = parse_date(request.GET.get('week', '')) or _week_start(today)
@@ -261,21 +261,20 @@ def schedule_builder(request):
 
     is_admin = request.user.role == 'ADMIN'
     if is_admin:
-        allowed_departments = list(Department.objects.all().order_by('name'))
+        allowed_schedules = list(Schedule.objects.all().order_by('name'))
     else:
-        allowed_departments = list(request.user.departments.all().order_by('name'))
+        allowed_schedules = list(request.user.scheduler_of.all().order_by('name'))
 
-    # ── Active department (required to paint; defaults to first in list) ──────
-    dept_pk_param = request.GET.get('dept') or (str(allowed_departments[0].pk) if allowed_departments else '')
-    active_dept = next((d for d in allowed_departments if str(d.pk) == dept_pk_param), None)
-    if not active_dept and allowed_departments:
-        active_dept = allowed_departments[0]
-        dept_pk_param = str(active_dept.pk)
+    # Active schedule (defaults to first in list)
+    schedule_pk_param = request.GET.get('schedule') or (str(allowed_schedules[0].pk) if allowed_schedules else '')
+    active_schedule = next((s for s in allowed_schedules if str(s.pk) == schedule_pk_param), None)
+    if not active_schedule and allowed_schedules:
+        active_schedule = allowed_schedules[0]
+        schedule_pk_param = str(active_schedule.pk)
 
-    # Stable per-employee colors (across ALL allowed employees so colors don't
-    # shift when switching departments)
+    # Stable per-employee colors across all allowed employees
     all_allowed_employees = list(
-        Employee.objects.filter(departments__in=allowed_departments)
+        Employee.objects.filter(member_of__in=allowed_schedules)
         .distinct().order_by('pk')
     ) if not is_admin else list(Employee.objects.all().order_by('pk'))
     employee_colors = {
@@ -286,21 +285,12 @@ def schedule_builder(request):
     # date → day abbreviation (MON/TUE/…) for the current week
     date_day_map = {d.isoformat(): d.strftime('%a').upper() for d in week_dates}
 
-    # Subjects for the active department (e.g. Math, Writing under Tutor)
-    dept_subjects = list(Subject.objects.filter(department=active_dept)) if active_dept else []
-    subject_pk_param = request.GET.get('subject', '')
-    active_subject = next((s for s in dept_subjects if str(s.pk) == subject_pk_param), None)
-    if not active_subject and dept_subjects:
-        active_subject = dept_subjects[0]
-        subject_pk_param = str(active_subject.pk)
-
-    # Employees visible in the sidebar — filtered by dept, then narrowed by subject
-    # when the subject has an account_subject_code link set
-    if active_dept:
-        emp_qs = Employee.objects.filter(departments=active_dept).distinct().prefetch_related('departments')
-        if active_subject and active_subject.account_subject_code:
-            emp_qs = emp_qs.filter(subjects__code=active_subject.account_subject_code)
-        visible_employees = list(emp_qs.order_by('last_name', 'first_name'))
+    # Employees visible in the sidebar — members of the active schedule
+    if active_schedule:
+        visible_employees = list(
+            Employee.objects.filter(member_of=active_schedule)
+            .distinct().order_by('last_name', 'first_name')
+        )
     else:
         visible_employees = []
 
@@ -314,23 +304,15 @@ def schedule_builder(request):
             'type': a.availability_type,
         })
 
-    # Sub-locations: from subject (if dept has subjects) or from DEPT_LOCATIONS
-    if dept_subjects and active_subject:
-        dept_locs = active_subject.get_locations()
-    else:
-        dept_locs = DEPT_LOCATIONS.get(active_dept.name, ['']) if active_dept else ['']
-    has_locs = bool(dept_locs[0])
+    dept_locs = ['']
+    has_locs = False
 
-    # Already-scheduled entries for visible employees in OTHER contexts this week
-    # (different dept or different subject) — used to show conflict overlay in JS
+    # Already-scheduled entries for visible employees on OTHER schedules this week
+    # — used to show conflict overlay in JS
     if visible_employees:
         conflict_qs = ScheduleEntry.objects.filter(
             user__in=visible_employees, date__in=week_dates,
-        )
-        if active_subject:
-            conflict_qs = conflict_qs.exclude(department=active_dept, subject=active_subject)
-        else:
-            conflict_qs = conflict_qs.exclude(department=active_dept)
+        ).exclude(schedule=active_schedule)
         conflict_data = {}
         for e in conflict_qs.select_related('user'):
             conflict_data.setdefault(str(e.user_id), []).append({
@@ -371,43 +353,28 @@ def schedule_builder(request):
     ) if open_days else (time(8, 0), time(17, 0))
     slots = _build_time_slots(grid_start, grid_end)
 
-    # ── POST: rebuild schedule for this dept/subject/week ────────────────────
+    # ── POST: rebuild schedule for this schedule/week ────────────────────────
     if request.method == 'POST':
-        post_dept_pk = request.POST.get('active_dept_pk', dept_pk_param)
-        post_dept = next((d for d in allowed_departments if str(d.pk) == post_dept_pk), active_dept)
-        post_subject_pk = request.POST.get('active_subject_pk', '')
-        post_subject = Subject.objects.filter(pk=post_subject_pk).first() if post_subject_pk else None
-        post_dept_subjects = list(Subject.objects.filter(department=post_dept)) if post_dept else []
-        if post_dept_subjects and post_subject:
-            post_locs = post_subject.get_locations()
-        else:
-            post_locs = DEPT_LOCATIONS.get(post_dept.name, ['']) if post_dept else ['']
-        post_has_locs = bool(post_locs[0])
+        post_schedule_pk = request.POST.get('active_schedule_pk', schedule_pk_param)
+        post_schedule = next((s for s in allowed_schedules if str(s.pk) == post_schedule_pk), active_schedule)
         post_emps = list(
-            Employee.objects.filter(departments=post_dept).distinct().prefetch_related('departments')
-        ) if post_dept else []
+            Employee.objects.filter(member_of=post_schedule).distinct()
+        ) if post_schedule else []
         emp_lookup = {str(e.pk): e for e in post_emps}
 
         # ── Part-time hour-limit check (before any DB changes) ────────────────
-        # Collect unique (emp, date, slot) tuples from POST to count new hours
         new_slots = {}   # emp_pk_str → set of (date_iso, slot_key)
         for d in week_dates:
             dh = day_hours[d]
             if dh['closed'] or not dh['start']:
                 continue
-            for loc in post_locs:
-                ls = _loc_slug(loc)
-                for slot in slots:
-                    key = (
-                        f"slot_{d.isoformat()}_{slot.hour:02d}_{slot.minute:02d}_{ls}"
-                        if post_has_locs else
-                        f"slot_{d.isoformat()}_{slot.hour:02d}_{slot.minute:02d}"
+            for slot in slots:
+                key = f"slot_{d.isoformat()}_{slot.hour:02d}_{slot.minute:02d}"
+                epk = request.POST.get(key, '')
+                if epk and epk in emp_lookup:
+                    new_slots.setdefault(epk, set()).add(
+                        (d.isoformat(), f"{slot.hour:02d}_{slot.minute:02d}")
                     )
-                    epk = request.POST.get(key, '')
-                    if epk and epk in emp_lookup:
-                        new_slots.setdefault(epk, set()).add(
-                            (d.isoformat(), f"{slot.hour:02d}_{slot.minute:02d}")
-                        )
 
         violations = []
         for epk, slot_set in new_slots.items():
@@ -415,12 +382,9 @@ def schedule_builder(request):
             if not emp.part_time:
                 continue
             new_mins = len(slot_set) * 15
-            # Hours in other dept/subjects this week (unchanged by this save)
-            other_qs = ScheduleEntry.objects.filter(user=emp, date__in=week_dates)
-            if post_subject:
-                other_qs = other_qs.exclude(department=post_dept, subject=post_subject)
-            else:
-                other_qs = other_qs.exclude(department=post_dept)
+            other_qs = ScheduleEntry.objects.filter(
+                user=emp, date__in=week_dates
+            ).exclude(schedule=post_schedule)
             other_mins = sum(
                 (e.end_time.hour * 60 + e.end_time.minute)
                 - (e.start_time.hour * 60 + e.start_time.minute)
@@ -436,45 +400,33 @@ def schedule_builder(request):
         if violations:
             for v in violations:
                 messages.error(request, f"Over weekly limit — {v}")
-            after_save = request.POST.get('redirect_after_save', '')
-            subj_qs = f"&subject={post_subject_pk}" if post_subject_pk else ""
-            redirect_url = (
-                after_save if after_save.startswith('?')
-                else f"?week={week_start.isoformat()}&dept={post_dept_pk}{subj_qs}"
-            )
+            redirect_url = f"?week={week_start.isoformat()}&schedule={post_schedule_pk}"
             return redirect(f"{request.path}{redirect_url}")
 
-        # Delete only entries for this dept + subject this week
-        del_qs = ScheduleEntry.objects.filter(date__in=week_dates, department=post_dept)
-        del_qs = del_qs.filter(subject=post_subject)
-        del_qs.delete()
+        # Delete existing entries for this schedule this week, then rebuild
+        ScheduleEntry.objects.filter(date__in=week_dates, schedule=post_schedule).delete()
 
         for d in week_dates:
             dh = day_hours[d]
             if dh['closed'] or not dh['start']:
                 continue
-            for loc in post_locs:
-                ls = _loc_slug(loc)
-                emp_slots = {}
-                for slot in slots:
-                    if post_has_locs:
-                        key = f"slot_{d.isoformat()}_{slot.hour:02d}_{slot.minute:02d}_{ls}"
-                    else:
-                        key = f"slot_{d.isoformat()}_{slot.hour:02d}_{slot.minute:02d}"
-                    emp_pk_str = request.POST.get(key, '')
-                    if emp_pk_str and emp_pk_str in emp_lookup:
-                        emp_slots[slot] = emp_pk_str
-                _slots_to_entries(emp_slots, slots, post_dept, loc, d, emp_lookup, request.user, post_subject)
+            emp_slots = {}
+            for slot in slots:
+                key = f"slot_{d.isoformat()}_{slot.hour:02d}_{slot.minute:02d}"
+                emp_pk_str = request.POST.get(key, '')
+                if emp_pk_str and emp_pk_str in emp_lookup:
+                    emp_slots[slot] = emp_pk_str
+            _slots_to_entries(emp_slots, slots, post_schedule, d, emp_lookup, request.user)
 
-        messages.success(request, f"Schedule saved for {post_dept}{f' – {post_subject.name}' if post_subject else ''}.")
+        messages.success(request, f"Schedule saved for {post_schedule}.")
         after_save = request.POST.get('redirect_after_save', '')
-        redirect_url = after_save if after_save.startswith('?') else f"?week={week_start.isoformat()}&dept={post_dept_pk}"
+        redirect_url = after_save if after_save.startswith('?') else f"?week={week_start.isoformat()}&schedule={post_schedule_pk}"
         return redirect(f"{request.path}{redirect_url}")
 
     # ── GET: load existing entries into cell state ────────────────────────────
     entries_qs = ScheduleEntry.objects.filter(
-        date__in=week_dates, department=active_dept, subject=active_subject,
-    ).select_related('user') if active_dept else []
+        date__in=week_dates, schedule=active_schedule,
+    ).select_related('user') if active_schedule else []
     entries = list(entries_qs)
 
     # cell_state[(date_iso, slot_key, loc_slug)] → {emp_pk, color}
@@ -553,16 +505,12 @@ def schedule_builder(request):
         'loc_header_cells': loc_header_cells,
         'has_locs': has_locs,
         'grid': grid,
-        'allowed_departments': allowed_departments,
+        'allowed_schedules': allowed_schedules,
         'visible_employees': visible_employees,
         'employee_colors': employee_colors,
         'employee_colors_json': json.dumps(employee_colors),
-        'active_dept': active_dept,
-        'active_dept_pk': dept_pk_param,
-        'dept_subjects': dept_subjects,
-        'active_subject': active_subject,
-        'active_subject_pk': subject_pk_param,
-        'dept_locs_json': json.dumps(dept_locs),
+        'active_schedule': active_schedule,
+        'active_schedule_pk': schedule_pk_param,
         'employee_availability_json': json.dumps(avail_data),
         'employee_conflicts_json': json.dumps(conflict_data),
         'date_day_map_json': json.dumps(date_day_map),
@@ -572,7 +520,7 @@ def schedule_builder(request):
     })
 
 
-def _slots_to_entries(emp_slots, all_slots, dept, loc, d, emp_lookup, created_by, subject=None):
+def _slots_to_entries(emp_slots, all_slots, schedule, d, emp_lookup, created_by):
     """Convert a {slot: emp_pk_str} mapping into contiguous ScheduleEntry objects."""
     by_emp = {}
     for slot, epk in emp_slots.items():
@@ -597,7 +545,7 @@ def _slots_to_entries(emp_slots, all_slots, dept, loc, d, emp_lookup, created_by
                         (prev_slot.hour * 60 + prev_slot.minute + 15) % 60,
                     )
                     ScheduleEntry.objects.create(
-                        user=emp, department=dept, subject=subject, location=loc,
+                        user=emp, schedule=schedule,
                         date=d, start_time=block_start, end_time=end_t,
                         created_by=created_by,
                     )
@@ -611,7 +559,7 @@ def _slots_to_entries(emp_slots, all_slots, dept, loc, d, emp_lookup, created_by
             )
             if block_start < end_t:
                 ScheduleEntry.objects.create(
-                    user=emp, department=dept, subject=subject, location=loc,
+                    user=emp, schedule=schedule,
                     date=d, start_time=block_start, end_time=end_t,
                     created_by=created_by,
                 )
