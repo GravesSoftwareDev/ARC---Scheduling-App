@@ -1,6 +1,8 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
+from django.http import JsonResponse
+from django.db.models import Case, IntegerField, Value, When
 from .forms import RegistrationForm
 from .models import Employee
 
@@ -54,6 +56,7 @@ def employee_list(request):
 @user_passes_test(_admin_check)
 def roster(request):
     from scheduling.models import Schedule
+    from scheduling.forms import ScheduleForm
 
     if request.method == 'POST':
         action = request.POST.get('action')
@@ -63,7 +66,21 @@ def roster(request):
         emp = get_object_or_404(Employee, pk=emp_pk) if emp_pk else None
         schedule = get_object_or_404(Schedule, pk=schedule_pk) if schedule_pk else None
 
-        if action == 'add_member' and emp and schedule:
+        if action == 'create_schedule':
+            form = ScheduleForm(request.POST)
+            if form.is_valid():
+                form.save()
+                messages.success(request, f"Schedule '{form.cleaned_data['name']}' created.")
+        elif action == 'edit_schedule' and schedule:
+            form = ScheduleForm(request.POST, instance=schedule)
+            if form.is_valid():
+                form.save()
+                messages.success(request, f"Schedule renamed to '{form.cleaned_data['name']}'.")
+        elif action == 'delete_schedule' and schedule:
+            name = schedule.name
+            schedule.delete()
+            messages.success(request, f"Schedule '{name}' deleted.")
+        elif action == 'add_member' and emp and schedule:
             schedule.members.add(emp)
             messages.success(request, f"Added {emp.get_full_name()} to {schedule.name}.")
         elif action == 'remove_member' and emp and schedule:
@@ -76,12 +93,25 @@ def roster(request):
             schedule.schedulers.remove(emp)
             messages.success(request, f"Removed {emp.get_full_name()} as scheduler of {schedule.name}.")
 
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'ok': True})
         return redirect('account:roster')
 
     schedules = Schedule.objects.prefetch_related('members', 'schedulers').order_by('name')
-    all_employees = list(Employee.objects.filter(is_active=True).order_by('last_name', 'first_name'))
+    all_employees = list(
+        Employee.objects.filter(is_active=True).annotate(
+            role_order=Case(
+                When(role='ADMIN', then=Value(0)),
+                When(role='ARC_ASSISTANT', then=Value(1)),
+                When(role='TUTOR', then=Value(2)),
+                default=Value(3),
+                output_field=IntegerField(),
+            )
+        ).order_by('role_order', 'first_name')
+    )
 
     return render(request, 'account/roster.html', {
         'schedules': schedules,
         'all_employees': all_employees,
+        'schedule_form': ScheduleForm(),
     })

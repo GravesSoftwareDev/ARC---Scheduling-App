@@ -2105,3 +2105,170 @@ select.form-control { cursor: pointer; }
 .sb2-hours-shake {
     animation: sb2-shake 0.45s ease;
 }
+
+/* ── Drag-and-drop Roster ──────────────────────────────────────────────────── */
+
+.roster-create-bar {
+    margin-bottom: 28px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.roster-layout {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    gap: 28px;
+    align-items: start;
+}
+
+/* Left panel — employee list */
+.roster-emp-panel {
+    position: sticky;
+    top: 20px;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 18px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    max-height: calc(100vh - 120px);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.roster-panel-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--primary-color);
+    margin: 0;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.roster-panel-hint {
+    font-size: 12px;
+    color: #888;
+    margin: 0;
+    font-style: italic;
+}
+
+.roster-emp-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.roster-emp-card {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: 7px;
+    background: var(--accent-color);
+    border: 1px solid #d0dce8;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--dark-color);
+    cursor: grab;
+    user-select: none;
+    transition: box-shadow 0.15s, opacity 0.15s;
+}
+
+.roster-emp-card:hover {
+    box-shadow: 0 2px 8px rgba(0,63,127,0.15);
+    border-color: var(--primary-color);
+}
+
+.roster-emp-card.dragging {
+    opacity: 0.45;
+    cursor: grabbing;
+}
+
+.roster-emp-role {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+    background: var(--primary-color);
+    color: #fff;
+}
+
+.roster-emp-role.role-admin {
+    background: #B71C1C;
+}
+
+.roster-emp-role.role-arc_assistant {
+    background: #2E7D32;
+}
+
+.roster-emp-role.role-tutor {
+    background: var(--primary-color);
+}
+
+/* Right panel — schedules */
+.roster-schedules-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 36px;
+}
+
+.roster-section-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+
+.roster-rename-input {
+    width: 200px;
+    font-size: 13px;
+    padding: 6px 10px;
+    border: 1px solid #d0d0d0;
+    border-radius: 6px;
+}
+
+/* Drop zones */
+.drop-zone {
+    margin-top: 10px;
+    padding: 10px;
+    border: 2px dashed #c0cfe0;
+    border-radius: 8px;
+    text-align: center;
+    font-size: 12px;
+    color: #aaa;
+    font-style: italic;
+    transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+
+.drop-zone-active {
+    border-color: var(--primary-color);
+    background: var(--accent-color);
+    color: var(--primary-color);
+    font-style: normal;
+    font-weight: 600;
+}
+
+.roster-empty-drop {
+    font-size: 12px;
+    color: #bbb;
+    font-style: italic;
+    padding: 4px 6px;
+    list-style: none;
+}
+
+@media (max-width: 768px) {
+    .roster-layout {
+        grid-template-columns: 1fr;
+    }
+    .roster-emp-panel {
+        position: static;
+        max-height: 260px;
+    }
+}
+}

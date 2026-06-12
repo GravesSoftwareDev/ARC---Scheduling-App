@@ -3,91 +3,215 @@
 
 {% block content %}
 <div class="roster-container">
+
   <div class="roster-page-header">
     <h1>Schedule Roster</h1>
     <a href="{% url 'dashboard:dashboard' %}" class="btn btn-secondary">Back to Dashboard</a>
   </div>
 
-  {% for schedule in schedules %}
-  <section class="roster-section">
-    <h2 class="roster-section-title">{{ schedule.name }}</h2>
-    <div class="roster-card-grid">
+  <!-- Create new schedule -->
+  <div class="roster-create-bar">
+    <form method="post" class="roster-add-form">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="create_schedule">
+      {{ schedule_form.name }}
+      <button type="submit" class="btn btn-add">+ New Schedule</button>
+    </form>
+  </div>
 
-      <!-- Members -->
-      <div class="roster-card">
-        <h3 class="roster-card-title">Members</h3>
-        <ul class="roster-member-list">
-          {% for emp in schedule.members.all %}
-          <li class="roster-member-item">
-            <span>{{ emp.last_name }}, {{ emp.first_name }}</span>
-            <form method="post" class="inline-form">
-              {% csrf_token %}
-              <input type="hidden" name="action" value="remove_member">
-              <input type="hidden" name="employee" value="{{ emp.pk }}">
-              <input type="hidden" name="schedule" value="{{ schedule.pk }}">
-              <button type="submit" class="btn-icon btn-icon-remove" title="Remove from {{ schedule.name }}">&#10005;</button>
-            </form>
-          </li>
-          {% empty %}
-          <li class="roster-empty">No members assigned.</li>
-          {% endfor %}
-        </ul>
-        <form method="post" class="roster-add-form">
-          {% csrf_token %}
-          <input type="hidden" name="action" value="add_member">
-          <input type="hidden" name="schedule" value="{{ schedule.pk }}">
-          <select name="employee" class="roster-select" required>
-            <option value="" disabled selected>Add member&hellip;</option>
-            {% for emp in all_employees %}
-            {% if emp not in schedule.members.all %}
-            <option value="{{ emp.pk }}">{{ emp.last_name }}, {{ emp.first_name }}</option>
-            {% endif %}
-            {% endfor %}
-          </select>
-          <button type="submit" class="btn btn-add">Add</button>
-        </form>
+  <div class="roster-layout">
+
+    <!-- ── Left: Employee Roster ─────────────────────────────────────── -->
+    <div class="roster-emp-panel">
+      <h2 class="roster-panel-title">Employees</h2>
+      <p class="roster-panel-hint">Drag an employee onto a Members or Schedulers zone.</p>
+      <div class="roster-emp-list">
+        {% for emp in all_employees %}
+        <div class="roster-emp-card"
+             draggable="true"
+             data-emp-pk="{{ emp.pk }}"
+             data-emp-name="{{ emp.last_name }}, {{ emp.first_name }}">
+          <span class="roster-emp-role role-{{ emp.role|lower }}">{{ emp.get_role_display }}</span>
+          {{ emp.last_name }}, {{ emp.first_name }}
+        </div>
+        {% empty %}
+        <p class="roster-empty">No active employees.</p>
+        {% endfor %}
       </div>
-
-      <!-- Schedulers -->
-      <div class="roster-card">
-        <h3 class="roster-card-title">Schedulers</h3>
-        <ul class="roster-member-list">
-          {% for emp in schedule.schedulers.all %}
-          <li class="roster-member-item">
-            <span>{{ emp.last_name }}, {{ emp.first_name }}</span>
-            <form method="post" class="inline-form">
-              {% csrf_token %}
-              <input type="hidden" name="action" value="remove_scheduler">
-              <input type="hidden" name="employee" value="{{ emp.pk }}">
-              <input type="hidden" name="schedule" value="{{ schedule.pk }}">
-              <button type="submit" class="btn-icon btn-icon-remove" title="Remove scheduler">&#10005;</button>
-            </form>
-          </li>
-          {% empty %}
-          <li class="roster-empty">No schedulers assigned.</li>
-          {% endfor %}
-        </ul>
-        <form method="post" class="roster-add-form">
-          {% csrf_token %}
-          <input type="hidden" name="action" value="add_scheduler">
-          <input type="hidden" name="schedule" value="{{ schedule.pk }}">
-          <select name="employee" class="roster-select" required>
-            <option value="" disabled selected>Add scheduler&hellip;</option>
-            {% for emp in all_employees %}
-            {% if emp not in schedule.schedulers.all %}
-            <option value="{{ emp.pk }}">{{ emp.last_name }}, {{ emp.first_name }}</option>
-            {% endif %}
-            {% endfor %}
-          </select>
-          <button type="submit" class="btn btn-add">Add</button>
-        </form>
-      </div>
-
     </div>
-  </section>
-  {% empty %}
-  <p class="roster-empty">No schedules have been created yet.</p>
-  {% endfor %}
 
-</div>
+    <!-- ── Right: Schedules ──────────────────────────────────────────── -->
+    <div class="roster-schedules-panel">
+      {% for schedule in schedules %}
+      <section class="roster-section">
+
+        <!-- Schedule header with rename / delete -->
+        <div class="roster-section-header">
+          <form method="post" class="roster-add-form">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="edit_schedule">
+            <input type="hidden" name="schedule" value="{{ schedule.pk }}">
+            <input type="text" name="name" value="{{ schedule.name }}" class="form-control roster-rename-input">
+            <button type="submit" class="btn btn-add">Rename</button>
+          </form>
+          <form method="post" class="inline-form"
+                onsubmit="return confirm('Delete {{ schedule.name }}? This cannot be undone.');">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="delete_schedule">
+            <input type="hidden" name="schedule" value="{{ schedule.pk }}">
+            <button type="submit" class="btn btn-deactivate">Delete</button>
+          </form>
+        </div>
+
+        <div class="roster-card-grid">
+
+          <!-- Members drop zone -->
+          <div class="roster-card">
+            <h3 class="roster-card-title">Members</h3>
+            <ul class="roster-member-list"
+                id="members-{{ schedule.pk }}"
+                data-schedule-pk="{{ schedule.pk }}"
+                data-action="add_member">
+              {% for emp in schedule.members.all %}
+              <li class="roster-member-item" data-emp-pk="{{ emp.pk }}">
+                <span>{{ emp.last_name }}, {{ emp.first_name }}</span>
+                <form method="post" class="inline-form">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="remove_member">
+                  <input type="hidden" name="employee" value="{{ emp.pk }}">
+                  <input type="hidden" name="schedule" value="{{ schedule.pk }}">
+                  <button type="submit" class="btn-icon btn-icon-remove" title="Remove">&#10005;</button>
+                </form>
+              </li>
+              {% empty %}
+              <li class="roster-empty-drop">Drop employees here</li>
+              {% endfor %}
+            </ul>
+            <div class="drop-zone"
+                 data-schedule-pk="{{ schedule.pk }}"
+                 data-action="add_member"
+                 data-list-id="members-{{ schedule.pk }}">
+              Drop to add member
+            </div>
+          </div>
+
+          <!-- Schedulers drop zone -->
+          <div class="roster-card">
+            <h3 class="roster-card-title">Schedulers</h3>
+            <ul class="roster-member-list"
+                id="schedulers-{{ schedule.pk }}"
+                data-schedule-pk="{{ schedule.pk }}"
+                data-action="add_scheduler">
+              {% for emp in schedule.schedulers.all %}
+              <li class="roster-member-item" data-emp-pk="{{ emp.pk }}">
+                <span>{{ emp.last_name }}, {{ emp.first_name }}</span>
+                <form method="post" class="inline-form">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="remove_scheduler">
+                  <input type="hidden" name="employee" value="{{ emp.pk }}">
+                  <input type="hidden" name="schedule" value="{{ schedule.pk }}">
+                  <button type="submit" class="btn-icon btn-icon-remove" title="Remove">&#10005;</button>
+                </form>
+              </li>
+              {% empty %}
+              <li class="roster-empty-drop">Drop employees here</li>
+              {% endfor %}
+            </ul>
+            <div class="drop-zone"
+                 data-schedule-pk="{{ schedule.pk }}"
+                 data-action="add_scheduler"
+                 data-list-id="schedulers-{{ schedule.pk }}">
+              Drop to add scheduler
+            </div>
+          </div>
+
+        </div>
+      </section>
+      {% empty %}
+      <p class="roster-empty">No schedules yet. Create one above.</p>
+      {% endfor %}
+    </div>
+
+  </div><!-- .roster-layout -->
+</div><!-- .roster-container -->
+
+<script>
+const CSRF = '{{ csrf_token }}';
+let draggedEmpPk   = null;
+let draggedEmpName = null;
+
+// ── Drag source: employee cards ────────────────────────────────────────────
+document.querySelectorAll('.roster-emp-card').forEach(card => {
+  card.addEventListener('dragstart', e => {
+    draggedEmpPk   = card.dataset.empPk;
+    draggedEmpName = card.dataset.empName;
+    card.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'copy';
+  });
+  card.addEventListener('dragend', () => card.classList.remove('dragging'));
+});
+
+// ── Drop zones ─────────────────────────────────────────────────────────────
+document.querySelectorAll('.drop-zone').forEach(zone => {
+  zone.addEventListener('dragover', e => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+    zone.classList.add('drop-zone-active');
+  });
+  zone.addEventListener('dragleave', () => zone.classList.remove('drop-zone-active'));
+  zone.addEventListener('drop', async e => {
+    e.preventDefault();
+    zone.classList.remove('drop-zone-active');
+    if (!draggedEmpPk) return;
+
+    const schedulePk = zone.dataset.schedulePk;
+    const action     = zone.dataset.action;
+    const listId     = zone.dataset.listId;
+    const list       = document.getElementById(listId);
+
+    // Don't add if already in the list
+    if (list.querySelector(`[data-emp-pk="${draggedEmpPk}"]`)) return;
+
+    const body = new URLSearchParams({
+      csrfmiddlewaretoken: CSRF,
+      action,
+      employee: draggedEmpPk,
+      schedule: schedulePk,
+    });
+
+    const res = await fetch('', {
+      method: 'POST',
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest',
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body,
+    });
+
+    if (!res.ok) return;
+
+    // Remove the "drop here" placeholder if present
+    const placeholder = list.querySelector('.roster-empty-drop');
+    if (placeholder) placeholder.remove();
+
+    // Determine remove action for the injected button
+    const removeAction = action === 'add_member' ? 'remove_member' : 'remove_scheduler';
+
+    // Inject the new member row
+    const li = document.createElement('li');
+    li.className = 'roster-member-item';
+    li.dataset.empPk = draggedEmpPk;
+    li.innerHTML = `
+      <span>${draggedEmpName}</span>
+      <form method="post" class="inline-form">
+        <input type="hidden" name="csrfmiddlewaretoken" value="${CSRF}">
+        <input type="hidden" name="action" value="${removeAction}">
+        <input type="hidden" name="employee" value="${draggedEmpPk}">
+        <input type="hidden" name="schedule" value="${schedulePk}">
+        <button type="submit" class="btn-icon btn-icon-remove" title="Remove">&#10005;</button>
+      </form>`;
+    list.appendChild(li);
+  });
+});
+</script>
 {% endblock %}

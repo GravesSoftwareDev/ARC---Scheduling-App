@@ -1,5 +1,5 @@
 from django import forms
-from .models import OperatingHours, ScheduleEntry, DateOperatingHours
+from .models import OperatingHours, ScheduleEntry, DateOperatingHours, Schedule
 
 
 class OpenHoursForm(forms.ModelForm):
@@ -40,7 +40,6 @@ class ScheduleEntryForm(forms.ModelForm):
 
         self.fields['user'].label_from_instance = lambda u: f"{u.last_name}, {u.first_name} ({u.username})"
 
-
 class DateOperatingHoursForm(forms.ModelForm):
     class Meta:
         model = DateOperatingHours
@@ -52,3 +51,12 @@ class DateOperatingHoursForm(forms.ModelForm):
             'note': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g. Holiday, Special Event'}),
             'is_closed': forms.CheckboxInput(attrs={'class': 'form-check-input', 'id': 'id_is_closed'}),
         }
+
+class ScheduleForm(forms.ModelForm):
+    class Meta:
+        model = Schedule
+        fields = ['name']
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control','placeholder':'Schedule name'})
+        }
+

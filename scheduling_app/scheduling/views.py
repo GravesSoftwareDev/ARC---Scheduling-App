@@ -45,7 +45,6 @@ def _build_time_slots(start_time, end_time):
         current = time(total_minutes // 60, total_minutes % 60)
     return slots
 
-
 def _slot_display(t):
     h, m = t.hour, t.minute
     if h == 0:
@@ -57,9 +56,7 @@ def _slot_display(t):
     else:
         return f"{h - 12}:{m:02d} PM"
 
-
 _DOW_CODE = {0: 'MON', 1: 'TUE', 2: 'WED', 3: 'THU', 4: 'FRI', 5: 'SAT', 6: 'SUN'}
-
 
 def _get_operating_hours_for_date(d):
     """Return (start_time, end_time, is_closed) for a specific date.
@@ -82,7 +79,6 @@ def _get_operating_hours_for_date(d):
 
     # System default if nothing configured
     return time(8, 0), time(17, 0), False
-
 
 def _week_start(d):
     """Return Monday of the week containing date d."""
@@ -190,7 +186,6 @@ def manage_availability(request):
     }
     return render(request, 'scheduling/availability.html', context)
 
-
 # ── operating hours (admin, calendar-aware) ───────────────────────────────────
 
 @login_required
@@ -235,7 +230,6 @@ def operating_hours(request):
         'special_hours': special_hours,
     })
 
-
 @login_required
 @user_passes_test(_is_admin)
 def delete_special_hours(request, pk):
@@ -244,7 +238,6 @@ def delete_special_hours(request, pk):
         entry.delete()
         messages.success(request, "Special date removed.")
     return redirect('scheduling:operating_hours')
-
 
 # ── schedule builder (schedulers + admins, drag-to-paint grid) ───────────────
 
@@ -518,7 +511,6 @@ def schedule_builder(request):
         'employee_other_hours_json': json.dumps({str(k): v for k, v in other_hours_map.items()}),
         'is_admin': is_admin, 'today': today,
     })
-
 
 def _slots_to_entries(emp_slots, all_slots, schedule, d, emp_lookup, created_by):
     """Convert a {slot: emp_pk_str} mapping into contiguous ScheduleEntry objects."""
