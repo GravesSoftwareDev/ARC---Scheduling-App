@@ -11,6 +11,10 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        migrations.RunSQL(
+            "DELETE FROM scheduling_scheduleentry WHERE schedule_id IS NULL;",
+            reverse_sql=migrations.RunSQL.noop,
+        ),
         migrations.AlterField(
             model_name='scheduleentry',
             name='schedule',
