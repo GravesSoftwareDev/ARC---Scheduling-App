@@ -8,22 +8,17 @@ import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-local-dev-key-do-not-use-in-production')
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', os.environ.get('SECRET_KEY', 'django-insecure-local-dev-key-do-not-use-in-production'))
 
-DEBUG = os.environ.get('DEBUG', 'False') == 'True'
+DEBUG = os.environ.get('DJANGO_DEBUG', os.environ.get('DEBUG', 'False')) == 'True'
 
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
-ALLOWED_HOSTS += [
-    '.railway.app',
-]
+_allowed_raw = os.environ.get('DJANGO_ALLOWED_HOSTS', os.environ.get('ALLOWED_HOSTS', 'localhost 127.0.0.1'))
+ALLOWED_HOSTS = _allowed_raw.replace(',', ' ').split() + ['.railway.app']
 
 CSRF_TRUSTED_ORIGINS = [
-    h for h in [
-        os.environ.get('RAILWAY_PUBLIC_DOMAIN', ''),
-        os.environ.get('RAILWAY_PRIVATE_DOMAIN', ''),
-    ] if h
+    f'https://{h}' for h in ALLOWED_HOSTS
+    if h not in ('localhost', '127.0.0.1') and not h.startswith('.')
 ]
-CSRF_TRUSTED_ORIGINS = [f'https://{h}' if not h.startswith('http') else h for h in CSRF_TRUSTED_ORIGINS if h]
 
 
 INSTALLED_APPS = [
@@ -114,7 +109,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 EMAIL_BACKEND = os.environ.get(
     'EMAIL_BACKEND',
-    'django.core.mail.backends.console.EmailBackend'
+    'django.core.mail.backends.smtp.EmailBackend' if os.environ.get('EMAIL_HOST') else 'django.core.mail.backends.console.EmailBackend'
 )
 EMAIL_HOST = os.environ.get('EMAIL_HOST', '')
 EMAIL_PORT = int(os.environ.get('EMAIL_PORT', 587))
