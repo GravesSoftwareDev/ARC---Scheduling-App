@@ -240,6 +240,7 @@ function applySnapshot(snap) {
   });
   markUnsaved();
   updateHoursCounter();
+  updateAvailabilityWarnings();
 }
 
 function pushUndo() {
@@ -335,7 +336,8 @@ function applyAvailabilityHighlight(empPk) {
     }
     if (inAvail) {
       cell.classList.add(isPreferred ? 'sb2-avail-preferred' : 'sb2-avail-ok');
-    } else {
+    } else if (!cell._emps.has(empPk)) {
+      // Only grey/override-color empty cells — painted cells use the red outline warning instead
       cell.classList.add(overrideAvailability ? 'sb2-avail-override' : 'sb2-avail-blocked');
     }
   });
@@ -357,6 +359,7 @@ function clearAvailabilityHighlight() {
 function toggleOverride() {
   overrideAvailability = !overrideAvailability;
   document.getElementById('toggle-override').classList.toggle('sb2-override-active', overrideAvailability);
+  updateAvailabilityWarnings();
   if (activeEmpPk) applyAvailabilityHighlight(activeEmpPk);
 }
 
@@ -420,6 +423,32 @@ function showHoursLimitWarning() {
   hoursWarnTimeout = setTimeout(() => counter.classList.remove('sb2-hours-shake'), 500);
 }
 
+// ── Out-of-availability warning (always-on red outline on painted cells) ──
+function updateAvailabilityWarnings() {
+  document.querySelectorAll('.sb2-cell.sb2-in-hours').forEach(cell => {
+    cell.classList.remove('sb2-out-of-avail');
+  });
+  if (overrideAvailability || !Object.keys(employeeAvailability).length) return;
+
+  const [h0, m0] = [0, 0]; // unused but kept for clarity
+  document.querySelectorAll('.sb2-cell.sb2-in-hours').forEach(cell => {
+    if (!cell._emps || cell._emps.size === 0) return;
+    const [h, m] = cell.dataset.slot.split('_').map(Number);
+    const slotMin = h * 60 + m;
+    const day = dateDayMap[cell.dataset.date];
+    for (const empPk of cell._emps.keys()) {
+      const avail = employeeAvailability[empPk];
+      const blocks = (avail && avail[day]) ? avail[day] : [];
+      const inAvail = blocks.some(b => {
+        const [bh, bm] = b.start.split(':').map(Number);
+        const [eh, em] = b.end.split(':').map(Number);
+        return slotMin >= bh * 60 + bm && slotMin < eh * 60 + em;
+      });
+      if (!inAvail) { cell.classList.add('sb2-out-of-avail'); break; }
+    }
+  });
+}
+
 // ── Cell rendering ─────────────────────────────────────────────────────────
 function renderCell(cell) {
   cell.querySelectorAll('.sb2-cell-input').forEach(e => e.remove());
@@ -464,6 +493,7 @@ function paintCell(cell) {
       renderCell(cell);
       markUnsaved();
       updateHoursCounter();
+      updateAvailabilityWarnings();
     }
     return;
   }
@@ -488,6 +518,7 @@ function paintCell(cell) {
   renderCell(cell);
   markUnsaved();
   updateHoursCounter();
+  updateAvailabilityWarnings();
 }
 
 // Wire up all cells on DOMContentLoaded
@@ -513,6 +544,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (isDragging && (drawMode === 'erase' || activeEmpPk)) paintCell(cell);
     });
   });
+  updateAvailabilityWarnings();
 });
 
 document.addEventListener('mouseup', () => { isDragging = false; });
