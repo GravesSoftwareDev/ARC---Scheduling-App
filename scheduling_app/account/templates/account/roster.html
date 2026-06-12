@@ -83,7 +83,8 @@
           <ul class="roster-member-list"
               id="members-{{ schedule.pk }}"
               data-schedule-pk="{{ schedule.pk }}"
-              data-action="add_member">
+              data-action="add_member"
+              data-remove-action="remove_member">
             {% for emp in schedule.members.all %}
             <li class="roster-member-item" data-emp-pk="{{ emp.pk }}">
               <span>{{ emp.last_name }}, {{ emp.first_name }}</span>
@@ -99,10 +100,13 @@
             <li class="roster-empty-drop">Drop employees here</li>
             {% endfor %}
           </ul>
-          <div class="drop-zone"
-               data-schedule-pk="{{ schedule.pk }}"
-               data-action="add_member"
-               data-list-id="members-{{ schedule.pk }}">+ member</div>
+          <div class="roster-zone-footer">
+            <div class="drop-zone"
+                 data-schedule-pk="{{ schedule.pk }}"
+                 data-action="add_member"
+                 data-list-id="members-{{ schedule.pk }}">+ member</div>
+            <button type="button" class="roster-remove-sel-btn" data-list-id="members-{{ schedule.pk }}" style="display:none;">Remove selected</button>
+          </div>
         </div>
 
         <!-- Schedulers -->
@@ -111,7 +115,8 @@
           <ul class="roster-member-list"
               id="schedulers-{{ schedule.pk }}"
               data-schedule-pk="{{ schedule.pk }}"
-              data-action="add_scheduler">
+              data-action="add_scheduler"
+              data-remove-action="remove_scheduler">
             {% for emp in schedule.schedulers.all %}
             <li class="roster-member-item" data-emp-pk="{{ emp.pk }}">
               <span>{{ emp.last_name }}, {{ emp.first_name }}</span>
@@ -127,10 +132,13 @@
             <li class="roster-empty-drop">Drop employees here</li>
             {% endfor %}
           </ul>
-          <div class="drop-zone"
-               data-schedule-pk="{{ schedule.pk }}"
-               data-action="add_scheduler"
-               data-list-id="schedulers-{{ schedule.pk }}">+ scheduler</div>
+          <div class="roster-zone-footer">
+            <div class="drop-zone"
+                 data-schedule-pk="{{ schedule.pk }}"
+                 data-action="add_scheduler"
+                 data-list-id="schedulers-{{ schedule.pk }}">+ scheduler</div>
+            <button type="button" class="roster-remove-sel-btn" data-list-id="schedulers-{{ schedule.pk }}" style="display:none;">Remove selected</button>
+          </div>
         </div>
 
       </section>
@@ -221,6 +229,51 @@ document.querySelectorAll('.roster-emp-card').forEach(card => {
     e.dataTransfer.effectAllowed = 'copy';
   });
   card.addEventListener('dragend', () => card.classList.remove('dragging'));
+});
+
+// ── Member item selection (event delegation handles dynamically added items) ──
+document.querySelector('.roster-schedules-panel').addEventListener('click', e => {
+  if (e.target.closest('form')) return; // ignore clicks on the ✕ button
+  const item = e.target.closest('.roster-member-item');
+  if (!item) return;
+
+  item.classList.toggle('roster-member-selected');
+
+  const list = item.closest('.roster-member-list');
+  const btn  = list.closest('.roster-zone').querySelector('.roster-remove-sel-btn');
+  btn.style.display = list.querySelector('.roster-member-selected') ? '' : 'none';
+});
+
+// ── Remove selected from a zone ───────────────────────────────────────────
+document.querySelectorAll('.roster-remove-sel-btn').forEach(btn => {
+  btn.addEventListener('click', async () => {
+    const list    = document.getElementById(btn.dataset.listId);
+    const items   = [...list.querySelectorAll('.roster-member-selected')];
+    if (!items.length) return;
+
+    const schedulePk   = list.dataset.schedulePk;
+    const removeAction = list.dataset.removeAction;
+
+    for (const item of items) {
+      const res = await fetch('', {
+        method: 'POST',
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest',
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({csrfmiddlewaretoken: CSRF, action: removeAction, employee: item.dataset.empPk, schedule: schedulePk}),
+      });
+      if (res.ok) item.remove();
+    }
+
+    btn.style.display = 'none';
+    if (!list.querySelector('.roster-member-item')) {
+      const li = document.createElement('li');
+      li.className = 'roster-empty-drop';
+      li.textContent = 'Drop employees here';
+      list.appendChild(li);
+    }
+  });
 });
 
 // ── Drop zones ─────────────────────────────────────────────────────────────

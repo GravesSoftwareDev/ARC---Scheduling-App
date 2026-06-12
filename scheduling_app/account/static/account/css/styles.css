@@ -1866,6 +1866,36 @@ select.form-control { cursor: pointer; }
     flex: 1;
     max-height: none;
 }
+
+.roster-zone-footer {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 4px;
+}
+
+.roster-zone-footer .drop-zone {
+    flex: 1;
+    margin-top: 0;
+}
+
+.roster-remove-sel-btn {
+    padding: 3px 8px;
+    font-size: 11px;
+    font-weight: 600;
+    border-radius: 4px;
+    border: 1px solid var(--danger-color);
+    background: #fff;
+    color: var(--danger-color);
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.roster-remove-sel-btn:hover {
+    background: var(--danger-color);
+    color: #fff;
+}
+
 .roster-zone-title {
     font-size: 10px;
     font-weight: 700;
@@ -1918,7 +1948,14 @@ select.form-control { cursor: pointer; }
     border-radius: 4px;
     background: #fff;
     border: 1px solid #eee;
+    cursor: pointer;
 }
+
+.roster-member-item.roster-member-selected {
+    background: #fde8ea;
+    border-color: var(--danger-color);
+}
+
 .roster-empty {
     font-size: 13px;
     color: #aaa;
