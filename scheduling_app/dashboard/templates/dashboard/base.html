@@ -27,9 +27,12 @@
 
     <main>
         {% if messages %}
-        <div class="messages-container">
+        <div class="toast-container">
             {% for message in messages %}
-            <div class="message message-{{ message.tags }}">{{ message }}</div>
+            <div class="toast toast-{{ message.tags }}">
+                <span>{{ message }}</span>
+                <button type="button" class="toast-close" aria-label="Dismiss">&times;</button>
+            </div>
             {% endfor %}
         </div>
         {% endif %}
@@ -40,5 +43,21 @@
     <footer class="footer">
         <p>&copy; {% now "Y" %} Academic Resource Center</p>
     </footer>
+
+<script>
+(function () {
+  function dismissToast(toast) {
+    toast.classList.add('toast-hiding');
+    toast.addEventListener('transitionend', () => toast.remove(), {once: true});
+  }
+
+  document.querySelectorAll('.toast').forEach((toast, i) => {
+    // Auto-dismiss: stagger each toast by 500ms so they don't all vanish at once
+    setTimeout(() => dismissToast(toast), 4000 + i * 500);
+
+    toast.querySelector('.toast-close').addEventListener('click', () => dismissToast(toast));
+  });
+})();
+</script>
 </body>
 </html>

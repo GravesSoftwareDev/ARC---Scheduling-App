@@ -1803,21 +1803,62 @@ select.form-control { cursor: pointer; }
 }
 
 /* Messages (Django messages framework) */
-.messages-container {
-    max-width: 1100px;
-    margin: 16px auto 0;
-    padding: 0 20px;
+.toast-container {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-width: 340px;
+    pointer-events: none;
 }
-.message {
-    padding: 10px 16px;
-    border-radius: 6px;
-    font-size: 14px;
+
+.toast {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 13px;
     font-weight: 500;
-    margin-bottom: 8px;
+    box-shadow: 0 3px 12px rgba(0,0,0,0.15);
+    pointer-events: all;
+    opacity: 1;
+    transition: opacity 0.4s ease, transform 0.4s ease;
+    animation: toast-in 0.25s ease;
 }
-.message-success { background: #E8F5E9; color: #2E7D32; border-left: 4px solid #4CAF50; }
-.message-error { background: #FFEBEE; color: var(--danger-color); border-left: 4px solid var(--danger-color); }
-.message-warning { background: #FFF8E1; color: #E65100; border-left: 4px solid var(--warning-color); }
+
+@keyframes toast-in {
+    from { opacity: 0; transform: translateX(30px); }
+    to   { opacity: 1; transform: translateX(0); }
+}
+
+.toast.toast-hiding {
+    opacity: 0;
+    transform: translateX(30px);
+}
+
+.toast-success { background: #E8F5E9; color: #2E7D32; border-left: 4px solid #4CAF50; }
+.toast-error   { background: #FFEBEE; color: var(--danger-color); border-left: 4px solid var(--danger-color); }
+.toast-warning { background: #FFF8E1; color: #E65100; border-left: 4px solid var(--warning-color); }
+.toast-info    { background: #E3F2FD; color: #1565C0; border-left: 4px solid #1565C0; }
+
+.toast-close {
+    background: none;
+    border: none;
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+    color: inherit;
+    opacity: 0.6;
+    padding: 0;
+    flex-shrink: 0;
+}
+
+.toast-close:hover { opacity: 1; }
 /* =====================================================
    ROSTER PAGE
    ===================================================== */
