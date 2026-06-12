@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
 from django.http import JsonResponse
 from django.db.models import Case, IntegerField, Value, When
-from .forms import RegistrationForm
+from .forms import RegistrationForm, EditEmployeeForm
 from .models import Employee
 
 
@@ -50,6 +50,21 @@ def employee_list(request):
         .order_by('last_name', 'first_name')
     )
     return render(request, 'account/employee_list.html', {'employees': employees})
+
+
+@login_required
+@user_passes_test(_admin_check)
+def edit_employee(request, pk):
+    emp = get_object_or_404(Employee, pk=pk)
+    if request.method == 'POST':
+        form = EditEmployeeForm(request.POST, instance=emp)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f"{emp.get_full_name()} updated.")
+            return redirect('account:employee_list')
+    else:
+        form = EditEmployeeForm(instance=emp)
+    return render(request, 'account/edit_employee.html', {'form': form, 'emp': emp})
 
 
 @login_required

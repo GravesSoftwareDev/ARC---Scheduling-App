@@ -31,6 +31,7 @@
           </td>
           <td>{% if emp.part_time %}Yes{% else %}No{% endif %}</td>
           <td class="emp-actions">
+            <a href="{% url 'account:edit_employee' emp.pk %}" class="btn btn-add">Edit</a>
             <form method="post"
                   onsubmit="return confirm('Permanently delete {{ emp.first_name }} {{ emp.last_name }}?\n\nThis will also delete all of their schedule entries and availability.\n\nThis cannot be undone.');">
               {% csrf_token %}

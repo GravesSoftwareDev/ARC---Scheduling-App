@@ -3,6 +3,16 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import UserCreationForm
 User = get_user_model()
 
+class EditEmployeeForm(forms.ModelForm):
+    birthdate = forms.DateField(required=False, widget=forms.DateInput(attrs={'type': 'date'}))
+    part_time = forms.BooleanField(required=False)
+    role = forms.ChoiceField(choices=User.Role.choices, required=True)
+
+    class Meta:
+        model = User
+        fields = ('username', 'email', 'first_name', 'last_name', 'birthdate', 'part_time', 'role')
+
+
 class RegistrationForm(UserCreationForm):
     email = forms.EmailField(required=True)
     birthdate = forms.DateField(required=True)
