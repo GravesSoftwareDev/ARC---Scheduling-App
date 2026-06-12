@@ -92,6 +92,14 @@
         <p class="sb2-mode-hint">Ctrl+Z undo &nbsp;·&nbsp; Ctrl+Y redo</p>
       </div>
 
+      <!-- Override availability -->
+      <div class="sb2-sidebar-section">
+        <div class="sb2-sidebar-label">Options</div>
+        <button type="button" id="toggle-override" class="sb2-override-btn" onclick="toggleOverride()">
+          Override Availability
+        </button>
+      </div>
+
       <!-- Color key -->
       <div class="sb2-sidebar-section sb2-key-section">
         <div class="sb2-sidebar-label">Color Key</div>
@@ -206,6 +214,7 @@ let drawMode  = 'draw';
 let isDragging = false;
 let hasUnsaved = false;
 let pendingNavUrl = null;
+let overrideAvailability = false;
 
 // ── Undo / Redo ────────────────────────────────────────────────────────────
 const MAX_HISTORY = 60;
@@ -299,8 +308,11 @@ function applyAvailabilityHighlight(empPk) {
       return slotMin >= sh * 60 + sm && slotMin < eh * 60 + em;
     });
     if (conflictMatches.length > 0) {
-      cell.classList.add('sb2-sched-conflict');
+      const color = conflictMatches[0].schedule_color;
       const names = [...new Set(conflictMatches.map(c => c.schedule))].join(', ');
+      cell.classList.add('sb2-sched-conflict');
+      cell.style.setProperty('--conflict-bg', color + '22');
+      cell.style.setProperty('--conflict-border', color);
       cell.title = names;
       const label = document.createElement('span');
       label.className = 'sb2-conflict-label';
@@ -334,6 +346,8 @@ function clearAvailabilityHighlight() {
     '.sb2-avail-ok, .sb2-avail-blocked, .sb2-avail-preferred, .sb2-sched-conflict'
   ).forEach(c => {
     c.classList.remove('sb2-avail-ok', 'sb2-avail-blocked', 'sb2-avail-preferred', 'sb2-sched-conflict');
+    c.style.removeProperty('--conflict-bg');
+    c.style.removeProperty('--conflict-border');
     c.title = '';
     c.querySelectorAll('.sb2-conflict-label').forEach(el => el.remove());
   });
