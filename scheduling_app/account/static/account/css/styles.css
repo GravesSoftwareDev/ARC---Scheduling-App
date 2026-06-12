@@ -1822,9 +1822,9 @@ select.form-control { cursor: pointer; }
    ROSTER PAGE
    ===================================================== */
 .roster-container {
-    max-width: 1200px;
+    max-width: 1400px;
     margin: 0 auto;
-    padding: 32px 24px;
+    padding: 24px 24px;
 }
 .roster-page-header {
     display: flex;
@@ -1840,15 +1840,31 @@ select.form-control { cursor: pointer; }
     margin: 0;
 }
 .roster-section {
-    margin-bottom: 48px;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
+    padding: 12px 14px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
 }
-.roster-section-title {
-    font-size: 18px;
+.roster-zone {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    background: #f8f9fb;
+    border: 1px solid #eaeaea;
+    border-radius: 7px;
+    padding: 8px 10px;
+}
+.roster-zone-title {
+    font-size: 10px;
     font-weight: 700;
-    color: var(--primary-dark);
-    border-bottom: 2px solid var(--primary-light);
-    padding-bottom: 8px;
-    margin-bottom: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #888;
+    margin: 0 0 4px;
 }
 .roster-card-grid {
     display: grid;
@@ -1879,18 +1895,19 @@ select.form-control { cursor: pointer; }
     padding: 0;
     display: flex;
     flex-direction: column;
-    gap: 6px;
-    min-height: 32px;
+    gap: 3px;
+    min-height: 20px;
 }
 .roster-member-item {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 8px;
-    font-size: 13px;
-    padding: 4px 6px;
-    border-radius: 5px;
-    background: #f7f9fb;
+    gap: 6px;
+    font-size: 12px;
+    padding: 2px 4px;
+    border-radius: 4px;
+    background: #fff;
+    border: 1px solid #eee;
 }
 .roster-empty {
     font-size: 13px;
@@ -2237,47 +2254,55 @@ select.form-control { cursor: pointer; }
 
 /* Right panel — schedules */
 .roster-schedules-panel {
-    display: flex;
-    flex-direction: column;
-    gap: 36px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    align-items: start;
 }
 
 .roster-section-header {
     display: flex;
     align-items: center;
-    gap: 10px;
-    margin-bottom: 16px;
+    gap: 6px;
     flex-wrap: wrap;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #f0f0f0;
 }
 
 .roster-rename-input {
-    width: 200px;
-    font-size: 13px;
-    padding: 6px 10px;
+    width: 110px;
+    font-size: 12px;
+    padding: 4px 7px;
     border: 1px solid #d0d0d0;
-    border-radius: 6px;
+    border-radius: 5px;
+    min-width: 0;
 }
 
 .roster-color-input {
-    width: 40px;
-    height: 34px;
-    padding: 2px;
+    width: 30px;
+    height: 26px;
+    padding: 1px;
     border: 1px solid #d0d0d0;
-    border-radius: 6px;
+    border-radius: 5px;
     cursor: pointer;
     flex-shrink: 0;
 }
 
+.btn-xs {
+    font-size: 11px !important;
+    padding: 3px 8px !important;
+    border-radius: 5px !important;
+}
+
 /* Drop zones */
 .drop-zone {
-    margin-top: 10px;
-    padding: 10px;
-    border: 2px dashed #c0cfe0;
-    border-radius: 8px;
+    margin-top: 4px;
+    padding: 5px 8px;
+    border: 1px dashed #c0cfe0;
+    border-radius: 5px;
     text-align: center;
-    font-size: 12px;
-    color: #aaa;
-    font-style: italic;
+    font-size: 11px;
+    color: #bbb;
     transition: border-color 0.15s, background 0.15s, color 0.15s;
 }
 
@@ -2297,6 +2322,11 @@ select.form-control { cursor: pointer; }
     list-style: none;
 }
 
+@media (max-width: 1100px) {
+    .roster-schedules-panel {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
 @media (max-width: 768px) {
     .roster-layout {
         grid-template-columns: 1fr;
@@ -2304,6 +2334,9 @@ select.form-control { cursor: pointer; }
     .roster-emp-panel {
         position: static;
         max-height: 260px;
+    }
+    .roster-schedules-panel {
+        grid-template-columns: 1fr;
     }
 }
 }
