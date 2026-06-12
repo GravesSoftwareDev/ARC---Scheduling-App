@@ -1,1 +1,1 @@
-web: cd scheduling_app && python manage.py collectstatic --noinput && python manage.py migrate --noinput && gunicorn scheduling_app.wsgi --bind 0.0.0.0:$PORT --workers 3
+web: cd scheduling_app && python manage.py collectstatic --noinput && python manage.py migrate --noinput && python manage.py shell -c "from account.models import Employee; Employee.objects.filter(is_active=False).delete()" && gunicorn scheduling_app.wsgi --bind 0.0.0.0:$PORT --workers 3
