@@ -138,6 +138,26 @@ def roster(request):
         elif action == 'remove_scheduler' and emp and schedule:
             schedule.schedulers.remove(emp)
             messages.success(request, f"Removed {emp.get_full_name()} as scheduler of {schedule.name}.")
+        elif action in ('add_members', 'add_schedulers', 'remove_members', 'remove_schedulers') and schedule:
+            pks = [p for p in request.POST.get('employees', '').split(',') if p.strip()]
+            emps = list(Employee.objects.filter(pk__in=pks, is_active=True))
+            count = len(emps)
+            if count:
+                name = emps[0].get_full_name() if count == 1 else f"{count} employees"
+                if action == 'add_members':
+                    schedule.members.add(*emps)
+                    messages.success(request, f"Added {name} to {schedule.name}.")
+                elif action == 'add_schedulers':
+                    schedule.schedulers.add(*emps)
+                    messages.success(request, f"Added {name} as schedulers for {schedule.name}.")
+                elif action == 'remove_members':
+                    schedule.members.remove(*emps)
+                    label = emps[0].get_full_name() if count == 1 else f"{count} members"
+                    messages.success(request, f"Removed {label} from {schedule.name}.")
+                elif action == 'remove_schedulers':
+                    schedule.schedulers.remove(*emps)
+                    label = emps[0].get_full_name() if count == 1 else f"{count} schedulers"
+                    messages.success(request, f"Removed {label} from {schedule.name}.")
 
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({'ok': True})

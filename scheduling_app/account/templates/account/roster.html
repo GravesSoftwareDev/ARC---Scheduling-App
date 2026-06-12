@@ -252,19 +252,17 @@ document.querySelectorAll('.roster-remove-sel-btn').forEach(btn => {
     if (!items.length) return;
 
     const schedulePk   = list.dataset.schedulePk;
-    const removeAction = list.dataset.removeAction;
+    const batchAction  = list.dataset.removeAction + 's'; // remove_member → remove_members
 
-    for (const item of items) {
-      const res = await fetch('', {
-        method: 'POST',
-        headers: {
-          'X-Requested-With': 'XMLHttpRequest',
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: new URLSearchParams({csrfmiddlewaretoken: CSRF, action: removeAction, employee: item.dataset.empPk, schedule: schedulePk}),
-      });
-      if (res.ok) item.remove();
-    }
+    const res = await fetch('', {
+      method: 'POST',
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest',
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({csrfmiddlewaretoken: CSRF, action: batchAction, employees: items.map(i => i.dataset.empPk).join(','), schedule: schedulePk}),
+    });
+    if (res.ok) items.forEach(item => item.remove());
 
     btn.style.display = 'none';
     if (!list.querySelector('.roster-member-item')) {
@@ -293,23 +291,26 @@ document.querySelectorAll('.drop-zone').forEach(zone => {
     const action      = zone.dataset.action;
     const list        = document.getElementById(zone.dataset.listId);
     const removeAction = action === 'add_member' ? 'remove_member' : 'remove_scheduler';
+    const batchAction  = action === 'add_member' ? 'add_members' : 'add_schedulers';
 
-    for (const {pk, name} of dragPayload) {
-      if (list.querySelector(`[data-emp-pk="${pk}"]`)) continue;
+    // Filter out employees already in the list
+    const toAdd = dragPayload.filter(({pk}) => !list.querySelector(`[data-emp-pk="${pk}"]`));
+    if (!toAdd.length) return;
 
-      const res = await fetch('', {
-        method: 'POST',
-        headers: {
-          'X-Requested-With': 'XMLHttpRequest',
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: new URLSearchParams({csrfmiddlewaretoken: CSRF, action, employee: pk, schedule: schedulePk}),
-      });
-      if (!res.ok) continue;
+    const res = await fetch('', {
+      method: 'POST',
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest',
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({csrfmiddlewaretoken: CSRF, action: batchAction, employees: toAdd.map(e => e.pk).join(','), schedule: schedulePk}),
+    });
+    if (!res.ok) return;
 
-      const placeholder = list.querySelector('.roster-empty-drop');
-      if (placeholder) placeholder.remove();
+    const placeholder = list.querySelector('.roster-empty-drop');
+    if (placeholder) placeholder.remove();
 
+    for (const {pk, name} of toAdd) {
       const li = document.createElement('li');
       li.className = 'roster-member-item';
       li.dataset.empPk = pk;
