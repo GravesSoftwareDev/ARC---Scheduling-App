@@ -20,6 +20,22 @@ class DayOfWeek(models.TextChoices):
     THURSDAY = 'THU', 'Thursday'
     FRIDAY = 'FRI', 'Friday'
 
+class Schedule(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    schedulers = models.ManyToManyField(
+        settings.AUTH_USER_MODEL,
+        blank = True,
+        related_name='scheduler_of'
+    )
+    members = models.ManyToManyField(
+        settings.AUTH_USER_MODEL,
+        blank = True,
+        related_name='member_of'
+    )
+
+    def __str__(self):
+        return self.name
+    
 class WeeklyAvailability(models.Model):
 
     class AvailabilityType(models.TextChoices):
@@ -89,10 +105,10 @@ class WeeklySchedule(models.Model):
         on_delete=models.CASCADE,
         related_name = 'scheduled_blocks'
     )
-    department = models.ForeignKey(
-        'account.Department',
+    schedule = models.ForeignKey(
+        'Schedule',
         on_delete=models.PROTECT,
-        related_name='scheduled_blocks'
+        related_name = 'scheduled_blocks'
     )
     day_of_week = models.CharField(
         max_length=3, 
@@ -121,41 +137,6 @@ class WeeklySchedule(models.Model):
     class Meta:
         ordering = [DAY_ORDER, 'start_time']
 
-
-class Subject(models.Model):
-    """A schedulable subject within a department (e.g. Math under Tutor)."""
-    department = models.ForeignKey(
-        'account.Department',
-        on_delete=models.CASCADE,
-        related_name='subjects'
-    )
-    name = models.CharField(max_length=100)
-    locations = models.CharField(
-        max_length=200,
-        blank=True,
-        default='',
-        help_text="Comma-separated sub-column labels, e.g. Drop-in,Coach. Leave blank for no sub-columns.",
-    )
-    account_subject_code = models.CharField(
-        max_length=3,
-        blank=True,
-        default='',
-        help_text="account.Subject code to filter which employees appear (e.g. MTH, SCI, CIS).",
-    )
-
-    def get_locations(self):
-        if self.locations.strip():
-            return [l.strip() for l in self.locations.split(',') if l.strip()]
-        return ['']
-
-    def __str__(self):
-        return f"{self.department.name} – {self.name}"
-
-    class Meta:
-        ordering = ['name']
-        unique_together = [['department', 'name']]
-
-
 class ScheduleEntry(models.Model):
     """A specific dated shift assigned to an employee."""
     user = models.ForeignKey(
@@ -163,16 +144,9 @@ class ScheduleEntry(models.Model):
         on_delete=models.CASCADE,
         related_name='schedule_entries'
     )
-    department = models.ForeignKey(
-        'account.Department',
+    schedule = models.ForeignKey(
+        'Schedule',
         on_delete=models.PROTECT,
-        related_name='schedule_entries'
-    )
-    subject = models.ForeignKey(
-        'Subject',
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
         related_name='schedule_entries'
     )
     date = models.DateField()
@@ -201,7 +175,7 @@ class ScheduleEntry(models.Model):
                 raise ValidationError("This shift overlaps with an existing schedule entry.")
 
     def __str__(self):
-        return f"{self.user} – {self.department} on {self.date} {self.start_time}–{self.end_time}"
+        return f"{self.user} – {self.schedule} on {self.date} {self.start_time}–{self.end_time}"
 
     class Meta:
         ordering = ['date', 'start_time']
