@@ -1848,6 +1848,8 @@ select.form-control { cursor: pointer; }
     display: flex;
     flex-direction: column;
     gap: 10px;
+    height: 420px;
+    box-sizing: border-box;
 }
 .roster-zone {
     display: flex;
@@ -1857,6 +1859,12 @@ select.form-control { cursor: pointer; }
     border: 1px solid #eaeaea;
     border-radius: 7px;
     padding: 8px 10px;
+    flex: 1;
+    min-height: 0;
+}
+.roster-zone .roster-member-list {
+    flex: 1;
+    max-height: none;
 }
 .roster-zone-title {
     font-size: 10px;
