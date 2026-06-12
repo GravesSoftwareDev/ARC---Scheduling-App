@@ -35,7 +35,7 @@
         <button class="roster-role-btn" data-role="tutor">Tutor</button>
       </div>
 
-      <p class="roster-panel-hint">Click to select · drag to add<span id="roster-sel-count"></span><button type="button" id="roster-clear-sel" class="roster-clear-btn" style="display:none;">Clear</button></p>
+      <p class="roster-panel-hint">Click to select · drag to add<span id="roster-sel-count"></span><button type="button" id="roster-sel-all" class="roster-clear-btn">All</button><button type="button" id="roster-clear-sel" class="roster-clear-btn" style="display:none;">Clear</button></p>
 
       <div class="roster-emp-list">
         {% for emp in all_employees %}
@@ -153,6 +153,15 @@ function updateSelCount() {
   document.getElementById('roster-sel-count').textContent = count > 0 ? ` · ${count} selected` : '';
   document.getElementById('roster-clear-sel').style.display = count > 0 ? '' : 'none';
 }
+
+document.getElementById('roster-sel-all').addEventListener('click', () => {
+  document.querySelectorAll('.roster-emp-card').forEach(card => {
+    if (card.style.display === 'none') return;
+    selectedEmps.set(card.dataset.empPk, card.dataset.empName);
+    card.classList.add('roster-emp-selected');
+  });
+  updateSelCount();
+});
 
 document.getElementById('roster-clear-sel').addEventListener('click', () => {
   selectedEmps.clear();
