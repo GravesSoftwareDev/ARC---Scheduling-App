@@ -82,7 +82,7 @@
         <div class="schedule-legend">
           {% for item in schedule_legend %}
           <span class="schedule-legend-item">
-            <span class="legend-pip" style="background:{{ item.location|location_bg }};border:2px solid {{ item.location|location_border }};"></span>
+            <span class="legend-pip" style="background:{{ item.color }};border:2px solid {{ item.color }};"></span>
             {{ item.label }}
           </span>
           {% endfor %}
@@ -125,13 +125,10 @@
             <div class="hour-cell {% if day.closed %}out-of-hours day-col-closed{% elif not cell.in_hours %}out-of-hours{% endif %}">
               {% for block in cell.blocks %}
               <div class="sched-block"
-                   style="background:{{ block.location|location_bg }};border-left-color:{{ block.location|location_border }};">
+                   style="background:{{ block.schedule.color }}22;border-left-color:{{ block.schedule.color }};">
                 {% if block.start_time == row.time %}
                 <div class="sched-block-header">
-                  <span class="sched-block-title">
-                    {{ block.schedule.name }}
-                  </span>
-                  {% if block.location %}<span class="sched-block-loc-badge" style="background:{{ block.location|location_border }};color:#fff;">{{ block.location }}</span>{% endif %}
+                  <span class="sched-block-title">{{ block.schedule.name }}</span>
                   <span class="sched-block-time">{{ block.start_time|time:"g:i A" }}&ndash;{{ block.end_time|time:"g:i A" }}</span>
                 </div>
                 {% endif %}

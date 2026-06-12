@@ -307,11 +307,13 @@ def schedule_builder(request):
             user__in=visible_employees, date__in=week_dates,
         ).exclude(schedule=active_schedule)
         conflict_data = {}
-        for e in conflict_qs.select_related('user'):
+        for e in conflict_qs.select_related('user', 'schedule'):
             conflict_data.setdefault(str(e.user_id), []).append({
                 'date': e.date.isoformat(),
                 'start': e.start_time.strftime('%H:%M'),
                 'end': e.end_time.strftime('%H:%M'),
+                'schedule': e.schedule.name,
+                'schedule_color': e.schedule.color,
             })
     else:
         conflict_data = {}
@@ -363,11 +365,11 @@ def schedule_builder(request):
                 continue
             for slot in slots:
                 key = f"slot_{d.isoformat()}_{slot.hour:02d}_{slot.minute:02d}"
-                epk = request.POST.get(key, '')
-                if epk and epk in emp_lookup:
-                    new_slots.setdefault(epk, set()).add(
-                        (d.isoformat(), f"{slot.hour:02d}_{slot.minute:02d}")
-                    )
+                for epk in request.POST.getlist(key):
+                    if epk in emp_lookup:
+                        new_slots.setdefault(epk, set()).add(
+                            (d.isoformat(), f"{slot.hour:02d}_{slot.minute:02d}")
+                        )
 
         violations = []
         for epk, slot_set in new_slots.items():
@@ -403,13 +405,14 @@ def schedule_builder(request):
             dh = day_hours[d]
             if dh['closed'] or not dh['start']:
                 continue
-            emp_slots = {}
+            per_emp = {}
             for slot in slots:
                 key = f"slot_{d.isoformat()}_{slot.hour:02d}_{slot.minute:02d}"
-                emp_pk_str = request.POST.get(key, '')
-                if emp_pk_str and emp_pk_str in emp_lookup:
-                    emp_slots[slot] = emp_pk_str
-            _slots_to_entries(emp_slots, slots, post_schedule, d, emp_lookup, request.user)
+                for epk in request.POST.getlist(key):
+                    if epk in emp_lookup:
+                        per_emp.setdefault(epk, {})[slot] = epk
+            for emp_slots in per_emp.values():
+                _slots_to_entries(emp_slots, slots, post_schedule, d, emp_lookup, request.user)
 
         messages.success(request, f"Schedule saved for {post_schedule}.")
         after_save = request.POST.get('redirect_after_save', '')
@@ -422,7 +425,7 @@ def schedule_builder(request):
     ).select_related('user') if active_schedule else []
     entries = list(entries_qs)
 
-    # cell_state[(date_iso, slot_key, loc_slug)] → {emp_pk, color}
+    # cell_state[(date_iso, slot_key, loc_slug)] → list of {emp_pk, color}
     cell_state = {}
     for entry in entries:
         ls = _loc_slug(entry.location)
@@ -430,10 +433,10 @@ def schedule_builder(request):
         for slot in slots:
             if entry.start_time <= slot < entry.end_time:
                 sk = f"{slot.hour:02d}_{slot.minute:02d}"
-                cell_state[(entry.date.isoformat(), sk, ls)] = {
+                cell_state.setdefault((entry.date.isoformat(), sk, ls), []).append({
                     'emp_pk': str(entry.user.pk),
                     'color': color,
-                }
+                })
 
     # Build flat cell list per grid row
     num_locs = len(dept_locs)
@@ -465,7 +468,6 @@ def schedule_builder(request):
             in_hours = not dh['closed'] and dh['start'] is not None and dh['start'] <= slot < dh['end']
             for loc in dept_locs:
                 ls = _loc_slug(loc)
-                c = cell_state.get((d.isoformat(), sk, ls), {})
                 if has_locs:
                     inp_name = f"slot_{d.isoformat()}_{sk}_{ls}"
                     inp_id = f"inp_{d.isoformat()}_{sk}_{ls}"
@@ -476,11 +478,9 @@ def schedule_builder(request):
                     'date_iso': d.isoformat(),
                     'loc_slug': ls,
                     'in_hours': in_hours,
-                    'emp_pk': c.get('emp_pk', ''),
-                    'color': c.get('color', ''),
+                    'assignments': cell_state.get((d.isoformat(), sk, ls), []),
                     'inp_name': inp_name,
                     'inp_id': inp_id,
-                    'value': c['emp_pk'] if c.get('emp_pk') else '',
                 })
         grid.append({
             'time': slot, 'slot_key': sk,

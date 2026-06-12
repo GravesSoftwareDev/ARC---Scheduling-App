@@ -78,13 +78,12 @@ def dashboard(request):
         ).select_related('schedule').order_by('date', 'start_time')
     )
 
-    # Location legend — unique (display_label, raw_location) for color key
-    seen_locs = {}
+    # Legend — unique schedules appearing this week
+    seen_schedules = {}
     for e in schedule_entries:
-        label = e.location if e.location else e.schedule.name
-        if label not in seen_locs:
-            seen_locs[label] = e.location
-    schedule_legend = [{'label': k, 'location': v} for k, v in seen_locs.items()]
+        if e.schedule_id not in seen_schedules:
+            seen_schedules[e.schedule_id] = {'label': e.schedule.name, 'color': e.schedule.color}
+    schedule_legend = list(seen_schedules.values())
 
     # Operating hours per day
     day_hours = {}

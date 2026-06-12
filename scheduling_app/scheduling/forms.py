@@ -55,8 +55,9 @@ class DateOperatingHoursForm(forms.ModelForm):
 class ScheduleForm(forms.ModelForm):
     class Meta:
         model = Schedule
-        fields = ['name']
+        fields = ['name', 'color']
         widgets = {
-            'name': forms.TextInput(attrs={'class': 'form-control','placeholder':'Schedule name'})
+            'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Schedule name'}),
+            'color': forms.TextInput(attrs={'type': 'color', 'class': 'roster-color-input'}),
         }
 

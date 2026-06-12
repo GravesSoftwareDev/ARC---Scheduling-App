@@ -1514,6 +1514,22 @@ a:hover {
         transparent 9px
     );
     pointer-events: none;
+    z-index: 0;
+}
+.sb2-conflict-label {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 8px;
+    font-weight: 700;
+    color: #1565C0;
+    pointer-events: none;
+    overflow: hidden;
+    white-space: nowrap;
+    z-index: 1;
+    letter-spacing: 0.03em;
 }
 .sb2-cell.sb2-avail-preferred {
     animation: sb2-preferred-glow 1.4s ease-in-out infinite alternate;
@@ -1719,6 +1735,14 @@ select.form-control { cursor: pointer; }
     font-size: 14px;
     font-weight: 600;
     color: var(--text-color);
+    cursor: pointer;
+}
+.oh-closed-label input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    flex-shrink: 0;
+    vertical-align: middle;
     cursor: pointer;
 }
 .oh-time-override-row {
@@ -2231,6 +2255,16 @@ select.form-control { cursor: pointer; }
     padding: 6px 10px;
     border: 1px solid #d0d0d0;
     border-radius: 6px;
+}
+
+.roster-color-input {
+    width: 40px;
+    height: 34px;
+    padding: 2px;
+    border: 1px solid #d0d0d0;
+    border-radius: 6px;
+    cursor: pointer;
+    flex-shrink: 0;
 }
 
 /* Drop zones */

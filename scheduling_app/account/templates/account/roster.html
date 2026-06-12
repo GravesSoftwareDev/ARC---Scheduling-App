@@ -15,6 +15,7 @@
       {% csrf_token %}
       <input type="hidden" name="action" value="create_schedule">
       {{ schedule_form.name }}
+      {{ schedule_form.color }}
       <button type="submit" class="btn btn-add">+ New Schedule</button>
     </form>
   </div>
@@ -52,7 +53,8 @@
             <input type="hidden" name="action" value="edit_schedule">
             <input type="hidden" name="schedule" value="{{ schedule.pk }}">
             <input type="text" name="name" value="{{ schedule.name }}" class="form-control roster-rename-input">
-            <button type="submit" class="btn btn-add">Rename</button>
+            <input type="color" name="color" value="{{ schedule.color }}" class="roster-color-input">
+            <button type="submit" class="btn btn-add">Save</button>
           </form>
           <form method="post" class="inline-form"
                 onsubmit="return confirm('Delete {{ schedule.name }}? This cannot be undone.');">

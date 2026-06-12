@@ -148,13 +148,10 @@
                    data-date="{{ cell.date_iso }}"
                    data-slot="{{ row.slot_key }}"
                    data-loc="{{ cell.loc_slug }}"
-                   data-emp="{{ cell.emp_pk }}"
-                   {% if cell.color %}style="background:{{ cell.color }};opacity:0.82;"{% endif %}>
+                   data-inp-name="{{ cell.inp_name }}"
+                   id="{{ cell.inp_id }}__cell">
+                {% for a in cell.assignments %}<input type="hidden" name="{{ cell.inp_name }}" value="{{ a.emp_pk }}" class="sb2-cell-input">{% endfor %}
               </div>
-              <input type="hidden"
-                     name="{{ cell.inp_name }}"
-                     id="{{ cell.inp_id }}"
-                     value="{{ cell.value }}">
               {% endfor %}
             </div>
             {% endfor %}
@@ -219,7 +216,7 @@ function snapshotState() {
   const snap = {};
   document.querySelectorAll('.sb2-cell').forEach(cell => {
     const key = `${cell.dataset.date}__${cell.dataset.slot}__${cell.dataset.loc||''}`;
-    snap[key] = { emp: cell.dataset.emp || '', bg: cell.style.background || '', op: cell.style.opacity || '' };
+    snap[key] = Array.from(cell._emps || []);
   });
   return snap;
 }
@@ -227,14 +224,10 @@ function snapshotState() {
 function applySnapshot(snap) {
   document.querySelectorAll('.sb2-cell').forEach(cell => {
     const key = `${cell.dataset.date}__${cell.dataset.slot}__${cell.dataset.loc||''}`;
-    const s = snap[key];
-    if (!s) return;
-    cell.dataset.emp = s.emp;
-    cell.style.background = s.bg;
-    cell.style.opacity = s.op;
-    // sync hidden input
-    const inp = document.getElementById(cell.dataset.inputId);
-    if (inp) inp.value = s.emp || '';
+    if (snap[key] !== undefined) {
+      cell._emps = new Map(snap[key]);
+      renderCell(cell);
+    }
   });
   markUnsaved();
   updateHoursCounter();
@@ -299,19 +292,23 @@ function applyAvailabilityHighlight(empPk) {
     const slotMin = h * 60 + m;
     const dateStr = cell.dataset.date;
 
-    // Conflict check first (already scheduled elsewhere this week)
-    const isConflict = conflicts.some(c => {
+    const conflictMatches = conflicts.filter(c => {
       if (c.date !== dateStr) return false;
       const [sh, sm] = c.start.split(':').map(Number);
       const [eh, em] = c.end.split(':').map(Number);
       return slotMin >= sh * 60 + sm && slotMin < eh * 60 + em;
     });
-    if (isConflict) {
+    if (conflictMatches.length > 0) {
       cell.classList.add('sb2-sched-conflict');
+      const names = [...new Set(conflictMatches.map(c => c.schedule))].join(', ');
+      cell.title = names;
+      const label = document.createElement('span');
+      label.className = 'sb2-conflict-label';
+      label.textContent = names;
+      cell.appendChild(label);
       return;
     }
 
-    // Availability check
     const day = dateDayMap[dateStr];
     const dayBlocks = (avail && avail[day]) ? avail[day] : [];
     let inAvail = false, isPreferred = false;
@@ -337,6 +334,8 @@ function clearAvailabilityHighlight() {
     '.sb2-avail-ok, .sb2-avail-blocked, .sb2-avail-preferred, .sb2-sched-conflict'
   ).forEach(c => {
     c.classList.remove('sb2-avail-ok', 'sb2-avail-blocked', 'sb2-avail-preferred', 'sb2-sched-conflict');
+    c.title = '';
+    c.querySelectorAll('.sb2-conflict-label').forEach(el => el.remove());
   });
 }
 
@@ -349,10 +348,9 @@ function setMode(mode) {
 
 // ── Hours counter ──────────────────────────────────────────────────────────
 function calcScheduledHours(empPk) {
-  // Count unique (date, slot) combinations — deduplicates multi-location grids
   const covered = new Set();
   document.querySelectorAll('.sb2-cell').forEach(cell => {
-    if (cell.dataset.emp === String(empPk))
+    if (cell._emps && cell._emps.has(String(empPk)))
       covered.add(`${cell.dataset.date}__${cell.dataset.slot}`);
   });
   return covered.size * 0.25;
@@ -401,18 +399,51 @@ function showHoursLimitWarning() {
   hoursWarnTimeout = setTimeout(() => counter.classList.remove('sb2-hours-shake'), 500);
 }
 
+// ── Cell rendering ─────────────────────────────────────────────────────────
+function renderCell(cell) {
+  cell.querySelectorAll('.sb2-cell-input').forEach(e => e.remove());
+
+  if (!cell._emps || cell._emps.size === 0) {
+    cell.style.background = '';
+    cell.style.opacity = '';
+    return;
+  }
+
+  const colors = Array.from(cell._emps.values());
+  if (colors.length === 1) {
+    cell.style.background = colors[0];
+  } else {
+    const pct = 100 / colors.length;
+    const stops = colors.flatMap((c, i) => [
+      `${c} ${(i * pct).toFixed(1)}%`,
+      `${c} ${((i + 1) * pct).toFixed(1)}%`
+    ]);
+    cell.style.background = `linear-gradient(to right, ${stops.join(', ')})`;
+  }
+  cell.style.opacity = '0.82';
+
+  const inpName = cell.dataset.inpName;
+  for (const epk of cell._emps.keys()) {
+    const inp = document.createElement('input');
+    inp.type = 'hidden';
+    inp.name = inpName;
+    inp.value = epk;
+    inp.className = 'sb2-cell-input';
+    cell.appendChild(inp);
+  }
+}
+
 // ── Cell painting ──────────────────────────────────────────────────────────
 function paintCell(cell) {
   if (!cell.classList.contains('sb2-in-hours')) return;
-  const inp = document.getElementById(cell.dataset.inputId);
 
   if (drawMode === 'erase') {
-    cell.dataset.emp = '';
-    cell.style.background = '';
-    cell.style.opacity = '';
-    if (inp) inp.value = '';
-    markUnsaved();
-    updateHoursCounter();
+    if (cell._emps.size > 0) {
+      cell._emps.clear();
+      renderCell(cell);
+      markUnsaved();
+      updateHoursCounter();
+    }
     return;
   }
 
@@ -420,8 +451,11 @@ function paintCell(cell) {
   if (cell.classList.contains('sb2-avail-blocked') ||
       cell.classList.contains('sb2-sched-conflict')) return;
 
-  // Block painting if the employee would exceed the weekly part-time cap
-  if (employeeIsParttime[activeEmpPk] && cell.dataset.emp !== activeEmpPk) {
+  // Already has this employee — no-op while dragging
+  if (cell._emps.has(activeEmpPk)) return;
+
+  // Block if part-time employee would exceed weekly cap
+  if (employeeIsParttime[activeEmpPk]) {
     const total = calcScheduledHours(activeEmpPk) + (employeeOtherHours[activeEmpPk] || 0);
     if (total + 0.25 > PARTTIME_MAX) {
       showHoursLimitWarning();
@@ -429,23 +463,22 @@ function paintCell(cell) {
     }
   }
 
-  cell.dataset.emp = activeEmpPk;
-  cell.style.background = activeEmpColor;
-  cell.style.opacity = '0.82';
-  if (inp) inp.value = activeEmpPk;
+  cell._emps.set(activeEmpPk, activeEmpColor);
+  renderCell(cell);
   markUnsaved();
   updateHoursCounter();
 }
 
-// Wire up all cells and precompute input IDs on DOMContentLoaded
+// Wire up all cells on DOMContentLoaded
 document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('.sb2-cell').forEach(cell => {
-    // precompute and store the input id on the cell element itself
-    const loc = cell.dataset.loc || '';
-    const id = loc
-      ? `inp_${cell.dataset.date}_${cell.dataset.slot}_${loc}`
-      : `inp_${cell.dataset.date}_${cell.dataset.slot}`;
-    cell.dataset.inputId = id;
+    cell._emps = new Map();
+    cell.querySelectorAll('.sb2-cell-input').forEach(inp => {
+      const epk = inp.value;
+      const color = employeeColors[epk];
+      if (epk && color) cell._emps.set(epk, color);
+    });
+    renderCell(cell);
 
     cell.addEventListener('mousedown', e => {
       if (drawMode === 'erase' || activeEmpPk) {
@@ -492,7 +525,6 @@ function discardAndNavigate() {
 
 function saveAndNavigate() {
   document.getElementById('unsaved-dialog').style.display = 'none';
-  // Stash the destination in a hidden field, then submit
   const hidden = document.createElement('input');
   hidden.type = 'hidden'; hidden.name = 'redirect_after_save'; hidden.value = pendingNavUrl;
   document.getElementById('schedule-form').appendChild(hidden);

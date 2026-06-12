@@ -22,14 +22,15 @@ class DayOfWeek(models.TextChoices):
 
 class Schedule(models.Model):
     name = models.CharField(max_length=100, unique=True)
+    color = models.CharField(max_length=7, default='#003F7F')
     schedulers = models.ManyToManyField(
         settings.AUTH_USER_MODEL,
-        blank = True,
+        blank=True,
         related_name='scheduler_of'
     )
     members = models.ManyToManyField(
         settings.AUTH_USER_MODEL,
-        blank = True,
+        blank=True,
         related_name='member_of'
     )
 
