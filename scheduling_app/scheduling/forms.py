@@ -15,30 +15,28 @@ class OpenHoursForm(forms.ModelForm):
 class ScheduleEntryForm(forms.ModelForm):
     class Meta:
         model = ScheduleEntry
-        fields = ['user', 'department', 'date', 'start_time', 'end_time']
+        fields = ['user', 'schedule', 'date', 'start_time', 'end_time']
         widgets = {
             'date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
             'start_time': forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}),
             'end_time': forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}),
             'user': forms.Select(attrs={'class': 'form-control'}),
-            'department': forms.Select(attrs={'class': 'form-control'}),
+            'schedule': forms.Select(attrs={'class': 'form-control'}),
         }
 
     def __init__(self, *args, scheduler=None, **kwargs):
         super().__init__(*args, **kwargs)
-        from account.models import Employee, Department
-        if scheduler and scheduler.role == 'SCHEDULER':
-            # Restrict to employees/departments in the scheduler's departments
-            dept_ids = scheduler.departments.values_list('id', flat=True)
+        from account.models import Employee
+        from .models import Schedule
+        if scheduler:
+            managed = Schedule.objects.filter(schedulers=scheduler)
             self.fields['user'].queryset = Employee.objects.filter(
-                departments__in=dept_ids
+                member_of__in=managed
             ).distinct().order_by('last_name', 'first_name')
-            self.fields['department'].queryset = Department.objects.filter(
-                id__in=dept_ids
-            )
+            self.fields['schedule'].queryset = managed
         else:
             self.fields['user'].queryset = Employee.objects.all().order_by('last_name', 'first_name')
-            self.fields['department'].queryset = Department.objects.all()
+            self.fields['schedule'].queryset = Schedule.objects.all()
 
         self.fields['user'].label_from_instance = lambda u: f"{u.last_name}, {u.first_name} ({u.username})"
 

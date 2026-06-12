@@ -6,13 +6,9 @@ from django.utils.dateparse import parse_date
 from datetime import time, date, timedelta
 import json
 
-from .models import WeeklyAvailability, OperatingHours, DayOfWeek, ScheduleEntry, DateOperatingHours, Subject
+from .models import WeeklyAvailability, OperatingHours, DayOfWeek, ScheduleEntry, DateOperatingHours, Schedule
 from .forms import OpenHoursForm, DateOperatingHoursForm
 
-
-DEPT_LOCATIONS = {
-    'Arc Assistant I': ['WC', 'TLC', 'ZOOM'],
-}
 
 PARTTIME_WEEKLY_MAX = 19.5  # hours — applies to all part-time employees
 
@@ -92,24 +88,13 @@ def _week_start(d):
     """Return Monday of the week containing date d."""
     return d - timedelta(days=d.weekday())
 
-
 def _is_scheduler_or_admin(user):
-    return user.is_authenticated and user.role in ('SCHEDULER', 'ADMIN')
-
+    return user.is_authenticated and (
+        user.role == 'ADMIN' or user.scheduler_of.exists()
+    )
 
 def _is_admin(user):
     return user.is_authenticated and user.role == 'ADMIN'
-
-
-def _is_parttime(emp):
-    """True if emp is subject to the 19.5 hr/week scheduling cap."""
-    dept_names = {d.name for d in emp.departments.all()}
-    if emp.role in ('ADMIN', 'SCHEDULER'):
-        return False
-    if dept_names & {'Supervisor', 'Director'}:
-        return False
-    return True
-
 
 # ── availability ─────────────────────────────────────────────────────────────
 
@@ -362,7 +347,7 @@ def schedule_builder(request):
     other_hours_map = {}
     if visible_employees:
         for emp in visible_employees:
-            is_pt = _is_parttime(emp)
+            is_pt = emp.part_time
             parttime_flags[emp.pk] = is_pt
             if is_pt:
                 total_mins = sum(
@@ -427,7 +412,7 @@ def schedule_builder(request):
         violations = []
         for epk, slot_set in new_slots.items():
             emp = emp_lookup[epk]
-            if not _is_parttime(emp):
+            if not emp.part_time:
                 continue
             new_mins = len(slot_set) * 15
             # Hours in other dept/subjects this week (unchanged by this save)

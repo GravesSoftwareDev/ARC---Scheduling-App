@@ -10,7 +10,7 @@ class Employee(AbstractUser):
         admin = 'ADMIN','Admin'
     
     birthdate = models.DateField(null=True, blank=True)
-    
+    part_time = models.BooleanField(default=True)
     role = models.CharField(
         choices=Role.choices,
         default=Role.tutor
