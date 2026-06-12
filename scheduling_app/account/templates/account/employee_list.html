@@ -32,10 +32,10 @@
           <td>{% if emp.part_time %}Yes{% else %}No{% endif %}</td>
           <td class="emp-actions">
             <form method="post"
-                  onsubmit="return confirm('Deactivate {{ emp.first_name }} {{ emp.last_name }}? They will no longer be able to log in.');">
+                  onsubmit="return confirm('Permanently delete {{ emp.first_name }} {{ emp.last_name }}?\n\nThis will also delete all of their schedule entries and availability.\n\nThis cannot be undone.');">
               {% csrf_token %}
               <input type="hidden" name="deactivate" value="{{ emp.pk }}">
-              <button type="submit" class="btn btn-deactivate">Deactivate</button>
+              <button type="submit" class="btn btn-deactivate">Delete</button>
             </form>
           </td>
         </tr>

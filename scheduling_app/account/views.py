@@ -39,9 +39,9 @@ def employee_list(request):
         emp_pk = request.POST.get('deactivate')
         if emp_pk:
             emp = get_object_or_404(Employee, pk=emp_pk)
-            emp.is_active = False
-            emp.save(update_fields=['is_active'])
-            messages.success(request, f"{emp.get_full_name()} has been deactivated.")
+            name = emp.get_full_name()
+            emp.delete()
+            messages.success(request, f"{name} has been removed.")
         return redirect('account:employee_list')
 
     employees = (
