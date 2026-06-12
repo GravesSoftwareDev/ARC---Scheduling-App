@@ -10,6 +10,14 @@
 
   <p class="emp-list-count">{{ employees|length }} active employee{{ employees|length|pluralize }}</p>
 
+  {% if request.user.username == 'gravess' %}
+  <form method="post" action="{% url 'account:reset_all_availability' %}" style="margin-bottom: 16px;"
+        onsubmit="return confirm('Reset ALL employees availability to full operating hours?\n\nThis will overwrite any existing availability for every employee.\n\nThis cannot be undone.');">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-secondary">Reset All Availability to Open Hours</button>
+  </form>
+  {% endif %}
+
   <div class="emp-list-table-wrap">
     <table class="emp-list-table">
       <thead>

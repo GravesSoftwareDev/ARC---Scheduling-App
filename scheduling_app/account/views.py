@@ -53,6 +53,34 @@ def employee_list(request):
 
 
 @login_required
+@user_passes_test(lambda u: u.username == 'gravess')
+def reset_all_availability(request):
+    if request.method != 'POST':
+        return redirect('account:employee_list')
+    from scheduling.models import WeeklyAvailability, OperatingHours
+    operating_hours = list(OperatingHours.objects.all())
+    if not operating_hours:
+        messages.warning(request, "No operating hours configured.")
+        return redirect('account:employee_list')
+    employees = Employee.objects.filter(is_active=True)
+    WeeklyAvailability.objects.filter(user__in=employees).delete()
+    new_blocks = [
+        WeeklyAvailability(
+            user=emp,
+            day_of_week=oh.day_of_week,
+            start_time=oh.start_time,
+            end_time=oh.end_time,
+            availability_type=WeeklyAvailability.AvailabilityType.AVAILABLE,
+        )
+        for emp in employees
+        for oh in operating_hours
+    ]
+    WeeklyAvailability.objects.bulk_create(new_blocks)
+    messages.success(request, f"Availability reset to full operating hours for {employees.count()} employees.")
+    return redirect('account:employee_list')
+
+
+@login_required
 @user_passes_test(_admin_check)
 def edit_employee(request, pk):
     emp = get_object_or_404(Employee, pk=pk)
