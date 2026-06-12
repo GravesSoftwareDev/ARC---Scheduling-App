@@ -1897,6 +1897,8 @@ select.form-control { cursor: pointer; }
     flex-direction: column;
     gap: 3px;
     min-height: 20px;
+    max-height: 160px;
+    overflow-y: auto;
 }
 .roster-member-item {
     display: flex;
