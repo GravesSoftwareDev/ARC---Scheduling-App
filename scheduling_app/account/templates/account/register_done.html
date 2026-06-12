@@ -4,7 +4,7 @@
 <div class="registration-success-container">
     <h2>Registration Successful</h2>
     <p><strong>{{ new_user.get_full_name }}</strong> has been registered successfully.</p>
-        <a href="{% url 'account:register' %}" class="nav-btn nav-btn-logout-dark">Register Another</a>
+        <a href="{% url 'account:registration' %}" class="nav-btn nav-btn-logout-dark">Register Another</a>
         <a href="{% url 'dashboard:dashboard' %}" class="nav-btn nav-btn-logout-dark">Home</a>
 </div>
 {% endblock content %}
