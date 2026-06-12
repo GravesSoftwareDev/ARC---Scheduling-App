@@ -1,0 +1,1082 @@
+[
+{
+  "model": "account.employee",
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$2XW7jh1gg9GU91VLKehvX3$oHqnorpN68Fq2JBw9JTCbO/sU/9SuEMztSO6qwsrpFY=",
+    "last_login": "2026-06-12T15:35:51.244Z",
+    "is_superuser": true,
+    "username": "gravess",
+    "first_name": "Shanna",
+    "last_name": "Graves",
+    "email": "",
+    "is_staff": true,
+    "is_active": true,
+    "date_joined": "2026-05-09T22:28:20.008Z",
+    "birthdate": null,
+    "part_time": true,
+    "role": "ADMIN",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "account.employee",
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$6rGeJzUX9Ie3ZbZ1EDlAFt$axNbJIUIXuOKnrIbmwNn5h8GXhpPjLeQx1+fPs4q0x4=",
+    "last_login": "2026-06-12T15:28:44.958Z",
+    "is_superuser": false,
+    "username": "quinnm",
+    "first_name": "Marie",
+    "last_name": "Quinn",
+    "email": "quinnm@otc.edu",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2026-06-12T15:27:49.500Z",
+    "birthdate": "2000-01-01",
+    "part_time": false,
+    "role": "ADMIN",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "account.employee",
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$ooorLYysBwDQwYKlJp5xy3$oQ4NSXfCCJT0YUa9bkVHQ3ETRMiYgO63hSCY3l2VnqQ=",
+    "last_login": "2026-06-12T15:34:31.836Z",
+    "is_superuser": false,
+    "username": "ricew",
+    "first_name": "William",
+    "last_name": "Rice",
+    "email": "ricew@otc.edu",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2026-06-12T15:33:13.737Z",
+    "birthdate": "1992-02-06",
+    "part_time": true,
+    "role": "TUTOR",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "account.employee",
+  "fields": {
+    "password": "pbkdf2_sha256$1200000$V9n2JCC7QMpI7Owguh6AtG$ckVtKp7pncNymEV2XlgMjucdgNQxGwXvDaHUZFgVw3o=",
+    "last_login": "2026-06-12T15:35:14.175Z",
+    "is_superuser": false,
+    "username": "worthamg",
+    "first_name": "Geoffrey",
+    "last_name": "Wortham",
+    "email": "worthamg@otc.edu",
+    "is_staff": false,
+    "is_active": true,
+    "date_joined": "2026-06-12T15:34:17.406Z",
+    "birthdate": "2007-11-22",
+    "part_time": true,
+    "role": "TUTOR",
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "scheduling.schedule",
+  "pk": 2,
+  "fields": {
+    "name": "Writing Center Desk",
+    "color": "#75d5ff",
+    "schedulers": [
+      [
+        "gravess"
+      ]
+    ],
+    "members": [
+      [
+        "gravess"
+      ],
+      [
+        "quinnm"
+      ],
+      [
+        "ricew"
+      ],
+      [
+        "worthamg"
+      ]
+    ]
+  }
+},
+{
+  "model": "scheduling.schedule",
+  "pk": 3,
+  "fields": {
+    "name": "Zoom",
+    "color": "#72fcd5",
+    "schedulers": [
+      [
+        "gravess"
+      ]
+    ],
+    "members": [
+      [
+        "gravess"
+      ],
+      [
+        "quinnm"
+      ],
+      [
+        "ricew"
+      ],
+      [
+        "worthamg"
+      ]
+    ]
+  }
+},
+{
+  "model": "scheduling.schedule",
+  "pk": 4,
+  "fields": {
+    "name": "Library",
+    "color": "#941651",
+    "schedulers": [
+      [
+        "gravess"
+      ]
+    ],
+    "members": [
+      [
+        "gravess"
+      ],
+      [
+        "quinnm"
+      ],
+      [
+        "ricew"
+      ],
+      [
+        "worthamg"
+      ]
+    ]
+  }
+},
+{
+  "model": "scheduling.schedule",
+  "pk": 5,
+  "fields": {
+    "name": "Supervisor Desk",
+    "color": "#9437ff",
+    "schedulers": [
+      [
+        "gravess"
+      ]
+    ],
+    "members": [
+      [
+        "gravess"
+      ],
+      [
+        "quinnm"
+      ],
+      [
+        "ricew"
+      ],
+      [
+        "worthamg"
+      ]
+    ]
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 488,
+  "fields": {
+    "user": [
+      "gravess"
+    ],
+    "day_of_week": "MON",
+    "start_time": "08:00:00",
+    "end_time": "10:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 489,
+  "fields": {
+    "user": [
+      "gravess"
+    ],
+    "day_of_week": "MON",
+    "start_time": "10:00:00",
+    "end_time": "16:15:00",
+    "availability_type": "PREFERRED"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 490,
+  "fields": {
+    "user": [
+      "gravess"
+    ],
+    "day_of_week": "MON",
+    "start_time": "16:15:00",
+    "end_time": "17:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 491,
+  "fields": {
+    "user": [
+      "gravess"
+    ],
+    "day_of_week": "TUE",
+    "start_time": "08:00:00",
+    "end_time": "10:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 492,
+  "fields": {
+    "user": [
+      "gravess"
+    ],
+    "day_of_week": "TUE",
+    "start_time": "10:00:00",
+    "end_time": "16:15:00",
+    "availability_type": "PREFERRED"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 493,
+  "fields": {
+    "user": [
+      "gravess"
+    ],
+    "day_of_week": "TUE",
+    "start_time": "16:15:00",
+    "end_time": "17:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 494,
+  "fields": {
+    "user": [
+      "gravess"
+    ],
+    "day_of_week": "WED",
+    "start_time": "10:00:00",
+    "end_time": "10:15:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 495,
+  "fields": {
+    "user": [
+      "gravess"
+    ],
+    "day_of_week": "WED",
+    "start_time": "10:15:00",
+    "end_time": "16:15:00",
+    "availability_type": "PREFERRED"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 496,
+  "fields": {
+    "user": [
+      "gravess"
+    ],
+    "day_of_week": "WED",
+    "start_time": "16:15:00",
+    "end_time": "17:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 497,
+  "fields": {
+    "user": [
+      "gravess"
+    ],
+    "day_of_week": "THU",
+    "start_time": "08:00:00",
+    "end_time": "10:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 498,
+  "fields": {
+    "user": [
+      "gravess"
+    ],
+    "day_of_week": "THU",
+    "start_time": "10:00:00",
+    "end_time": "16:15:00",
+    "availability_type": "PREFERRED"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 499,
+  "fields": {
+    "user": [
+      "gravess"
+    ],
+    "day_of_week": "THU",
+    "start_time": "16:15:00",
+    "end_time": "17:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 500,
+  "fields": {
+    "user": [
+      "gravess"
+    ],
+    "day_of_week": "FRI",
+    "start_time": "08:00:00",
+    "end_time": "10:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 501,
+  "fields": {
+    "user": [
+      "gravess"
+    ],
+    "day_of_week": "FRI",
+    "start_time": "10:00:00",
+    "end_time": "15:00:00",
+    "availability_type": "PREFERRED"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 502,
+  "fields": {
+    "user": [
+      "quinnm"
+    ],
+    "day_of_week": "MON",
+    "start_time": "08:00:00",
+    "end_time": "17:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 503,
+  "fields": {
+    "user": [
+      "quinnm"
+    ],
+    "day_of_week": "TUE",
+    "start_time": "08:00:00",
+    "end_time": "17:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 504,
+  "fields": {
+    "user": [
+      "quinnm"
+    ],
+    "day_of_week": "WED",
+    "start_time": "08:00:00",
+    "end_time": "17:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 505,
+  "fields": {
+    "user": [
+      "quinnm"
+    ],
+    "day_of_week": "THU",
+    "start_time": "08:00:00",
+    "end_time": "17:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 506,
+  "fields": {
+    "user": [
+      "quinnm"
+    ],
+    "day_of_week": "FRI",
+    "start_time": "08:00:00",
+    "end_time": "15:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 507,
+  "fields": {
+    "user": [
+      "ricew"
+    ],
+    "day_of_week": "MON",
+    "start_time": "08:00:00",
+    "end_time": "17:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 508,
+  "fields": {
+    "user": [
+      "ricew"
+    ],
+    "day_of_week": "TUE",
+    "start_time": "08:00:00",
+    "end_time": "17:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 509,
+  "fields": {
+    "user": [
+      "ricew"
+    ],
+    "day_of_week": "WED",
+    "start_time": "08:00:00",
+    "end_time": "17:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 510,
+  "fields": {
+    "user": [
+      "ricew"
+    ],
+    "day_of_week": "THU",
+    "start_time": "08:00:00",
+    "end_time": "17:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 511,
+  "fields": {
+    "user": [
+      "ricew"
+    ],
+    "day_of_week": "FRI",
+    "start_time": "08:00:00",
+    "end_time": "15:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 512,
+  "fields": {
+    "user": [
+      "worthamg"
+    ],
+    "day_of_week": "MON",
+    "start_time": "08:00:00",
+    "end_time": "17:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 513,
+  "fields": {
+    "user": [
+      "worthamg"
+    ],
+    "day_of_week": "TUE",
+    "start_time": "08:00:00",
+    "end_time": "17:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 514,
+  "fields": {
+    "user": [
+      "worthamg"
+    ],
+    "day_of_week": "WED",
+    "start_time": "08:00:00",
+    "end_time": "17:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 515,
+  "fields": {
+    "user": [
+      "worthamg"
+    ],
+    "day_of_week": "THU",
+    "start_time": "08:00:00",
+    "end_time": "17:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.weeklyavailability",
+  "pk": 516,
+  "fields": {
+    "user": [
+      "worthamg"
+    ],
+    "day_of_week": "FRI",
+    "start_time": "08:00:00",
+    "end_time": "15:00:00",
+    "availability_type": "AVAILABLE"
+  }
+},
+{
+  "model": "scheduling.operatinghours",
+  "pk": 1,
+  "fields": {
+    "day_of_week": "MON",
+    "start_time": "08:00:00",
+    "end_time": "17:00:00"
+  }
+},
+{
+  "model": "scheduling.operatinghours",
+  "pk": 2,
+  "fields": {
+    "day_of_week": "TUE",
+    "start_time": "08:00:00",
+    "end_time": "17:00:00"
+  }
+},
+{
+  "model": "scheduling.operatinghours",
+  "pk": 3,
+  "fields": {
+    "day_of_week": "WED",
+    "start_time": "08:00:00",
+    "end_time": "17:00:00"
+  }
+},
+{
+  "model": "scheduling.operatinghours",
+  "pk": 4,
+  "fields": {
+    "day_of_week": "THU",
+    "start_time": "08:00:00",
+    "end_time": "17:00:00"
+  }
+},
+{
+  "model": "scheduling.operatinghours",
+  "pk": 5,
+  "fields": {
+    "day_of_week": "FRI",
+    "start_time": "08:00:00",
+    "end_time": "15:00:00"
+  }
+},
+{
+  "model": "scheduling.scheduleentry",
+  "pk": 8,
+  "fields": {
+    "user": [
+      "gravess"
+    ],
+    "schedule": 2,
+    "date": "2026-06-09",
+    "start_time": "08:00:00",
+    "end_time": "10:00:00",
+    "location": "",
+    "created_by": [
+      "gravess"
+    ]
+  }
+},
+{
+  "model": "scheduling.scheduleentry",
+  "pk": 9,
+  "fields": {
+    "user": [
+      "gravess"
+    ],
+    "schedule": 2,
+    "date": "2026-06-10",
+    "start_time": "12:00:00",
+    "end_time": "12:30:00",
+    "location": "",
+    "created_by": [
+      "gravess"
+    ]
+  }
+},
+{
+  "model": "scheduling.scheduleentry",
+  "pk": 12,
+  "fields": {
+    "user": [
+      "gravess"
+    ],
+    "schedule": 5,
+    "date": "2026-06-09",
+    "start_time": "12:00:00",
+    "end_time": "12:30:00",
+    "location": "",
+    "created_by": [
+      "gravess"
+    ]
+  }
+},
+{
+  "model": "scheduling.scheduleentry",
+  "pk": 13,
+  "fields": {
+    "user": [
+      "gravess"
+    ],
+    "schedule": 5,
+    "date": "2026-06-10",
+    "start_time": "12:30:00",
+    "end_time": "14:00:00",
+    "location": "",
+    "created_by": [
+      "gravess"
+    ]
+  }
+},
+{
+  "model": "scheduling.scheduleentry",
+  "pk": 14,
+  "fields": {
+    "user": [
+      "gravess"
+    ],
+    "schedule": 5,
+    "date": "2026-06-11",
+    "start_time": "11:30:00",
+    "end_time": "12:00:00",
+    "location": "",
+    "created_by": [
+      "gravess"
+    ]
+  }
+},
+{
+  "model": "scheduling.scheduleentry",
+  "pk": 15,
+  "fields": {
+    "user": [
+      "gravess"
+    ],
+    "schedule": 5,
+    "date": "2026-06-11",
+    "start_time": "12:30:00",
+    "end_time": "13:30:00",
+    "location": "",
+    "created_by": [
+      "gravess"
+    ]
+  }
+},
+{
+  "model": "scheduling.scheduleentry",
+  "pk": 16,
+  "fields": {
+    "user": [
+      "gravess"
+    ],
+    "schedule": 5,
+    "date": "2026-06-16",
+    "start_time": "12:00:00",
+    "end_time": "12:30:00",
+    "location": "",
+    "created_by": [
+      "gravess"
+    ]
+  }
+},
+{
+  "model": "scheduling.scheduleentry",
+  "pk": 17,
+  "fields": {
+    "user": [
+      "gravess"
+    ],
+    "schedule": 5,
+    "date": "2026-06-17",
+    "start_time": "12:30:00",
+    "end_time": "14:00:00",
+    "location": "",
+    "created_by": [
+      "gravess"
+    ]
+  }
+},
+{
+  "model": "scheduling.scheduleentry",
+  "pk": 18,
+  "fields": {
+    "user": [
+      "gravess"
+    ],
+    "schedule": 5,
+    "date": "2026-06-18",
+    "start_time": "11:30:00",
+    "end_time": "12:00:00",
+    "location": "",
+    "created_by": [
+      "gravess"
+    ]
+  }
+},
+{
+  "model": "scheduling.scheduleentry",
+  "pk": 19,
+  "fields": {
+    "user": [
+      "gravess"
+    ],
+    "schedule": 5,
+    "date": "2026-06-18",
+    "start_time": "12:30:00",
+    "end_time": "13:30:00",
+    "location": "",
+    "created_by": [
+      "gravess"
+    ]
+  }
+},
+{
+  "model": "scheduling.scheduleentry",
+  "pk": 20,
+  "fields": {
+    "user": [
+      "gravess"
+    ],
+    "schedule": 4,
+    "date": "2026-06-15",
+    "start_time": "08:00:00",
+    "end_time": "11:30:00",
+    "location": "",
+    "created_by": [
+      "gravess"
+    ]
+  }
+},
+{
+  "model": "scheduling.scheduleentry",
+  "pk": 21,
+  "fields": {
+    "user": [
+      "gravess"
+    ],
+    "schedule": 4,
+    "date": "2026-06-18",
+    "start_time": "10:00:00",
+    "end_time": "11:30:00",
+    "location": "",
+    "created_by": [
+      "gravess"
+    ]
+  }
+},
+{
+  "model": "scheduling.scheduleentry",
+  "pk": 22,
+  "fields": {
+    "user": [
+      "gravess"
+    ],
+    "schedule": 4,
+    "date": "2026-06-18",
+    "start_time": "13:30:00",
+    "end_time": "17:00:00",
+    "location": "",
+    "created_by": [
+      "gravess"
+    ]
+  }
+},
+{
+  "model": "scheduling.scheduleentry",
+  "pk": 23,
+  "fields": {
+    "user": [
+      "gravess"
+    ],
+    "schedule": 3,
+    "date": "2026-06-15",
+    "start_time": "11:30:00",
+    "end_time": "12:00:00",
+    "location": "",
+    "created_by": [
+      "gravess"
+    ]
+  }
+},
+{
+  "model": "scheduling.scheduleentry",
+  "pk": 24,
+  "fields": {
+    "user": [
+      "gravess"
+    ],
+    "schedule": 3,
+    "date": "2026-06-18",
+    "start_time": "08:00:00",
+    "end_time": "10:00:00",
+    "location": "",
+    "created_by": [
+      "gravess"
+    ]
+  }
+},
+{
+  "model": "scheduling.scheduleentry",
+  "pk": 25,
+  "fields": {
+    "user": [
+      "gravess"
+    ],
+    "schedule": 2,
+    "date": "2026-06-16",
+    "start_time": "08:00:00",
+    "end_time": "10:00:00",
+    "location": "",
+    "created_by": [
+      "gravess"
+    ]
+  }
+},
+{
+  "model": "scheduling.scheduleentry",
+  "pk": 26,
+  "fields": {
+    "user": [
+      "gravess"
+    ],
+    "schedule": 2,
+    "date": "2026-06-17",
+    "start_time": "12:00:00",
+    "end_time": "12:30:00",
+    "location": "",
+    "created_by": [
+      "gravess"
+    ]
+  }
+},
+{
+  "model": "scheduling.scheduleentry",
+  "pk": 30,
+  "fields": {
+    "user": [
+      "gravess"
+    ],
+    "schedule": 3,
+    "date": "2026-06-08",
+    "start_time": "11:30:00",
+    "end_time": "12:00:00",
+    "location": "",
+    "created_by": [
+      "gravess"
+    ]
+  }
+},
+{
+  "model": "scheduling.scheduleentry",
+  "pk": 31,
+  "fields": {
+    "user": [
+      "quinnm"
+    ],
+    "schedule": 3,
+    "date": "2026-06-08",
+    "start_time": "11:30:00",
+    "end_time": "12:00:00",
+    "location": "",
+    "created_by": [
+      "gravess"
+    ]
+  }
+},
+{
+  "model": "scheduling.scheduleentry",
+  "pk": 32,
+  "fields": {
+    "user": [
+      "quinnm"
+    ],
+    "schedule": 3,
+    "date": "2026-06-09",
+    "start_time": "11:30:00",
+    "end_time": "13:45:00",
+    "location": "",
+    "created_by": [
+      "gravess"
+    ]
+  }
+},
+{
+  "model": "scheduling.scheduleentry",
+  "pk": 33,
+  "fields": {
+    "user": [
+      "quinnm"
+    ],
+    "schedule": 3,
+    "date": "2026-06-10",
+    "start_time": "08:45:00",
+    "end_time": "11:30:00",
+    "location": "",
+    "created_by": [
+      "gravess"
+    ]
+  }
+},
+{
+  "model": "scheduling.scheduleentry",
+  "pk": 39,
+  "fields": {
+    "user": [
+      "gravess"
+    ],
+    "schedule": 4,
+    "date": "2026-06-08",
+    "start_time": "08:00:00",
+    "end_time": "11:30:00",
+    "location": "",
+    "created_by": [
+      "gravess"
+    ]
+  }
+},
+{
+  "model": "scheduling.scheduleentry",
+  "pk": 40,
+  "fields": {
+    "user": [
+      "quinnm"
+    ],
+    "schedule": 4,
+    "date": "2026-06-08",
+    "start_time": "08:00:00",
+    "end_time": "11:30:00",
+    "location": "",
+    "created_by": [
+      "gravess"
+    ]
+  }
+},
+{
+  "model": "scheduling.scheduleentry",
+  "pk": 41,
+  "fields": {
+    "user": [
+      "ricew"
+    ],
+    "schedule": 4,
+    "date": "2026-06-08",
+    "start_time": "08:00:00",
+    "end_time": "11:45:00",
+    "location": "",
+    "created_by": [
+      "gravess"
+    ]
+  }
+},
+{
+  "model": "scheduling.scheduleentry",
+  "pk": 42,
+  "fields": {
+    "user": [
+      "worthamg"
+    ],
+    "schedule": 4,
+    "date": "2026-06-08",
+    "start_time": "08:00:00",
+    "end_time": "12:00:00",
+    "location": "",
+    "created_by": [
+      "gravess"
+    ]
+  }
+},
+{
+  "model": "scheduling.scheduleentry",
+  "pk": 43,
+  "fields": {
+    "user": [
+      "quinnm"
+    ],
+    "schedule": 4,
+    "date": "2026-06-09",
+    "start_time": "08:45:00",
+    "end_time": "11:30:00",
+    "location": "",
+    "created_by": [
+      "gravess"
+    ]
+  }
+},
+{
+  "model": "scheduling.scheduleentry",
+  "pk": 44,
+  "fields": {
+    "user": [
+      "gravess"
+    ],
+    "schedule": 4,
+    "date": "2026-06-10",
+    "start_time": "08:00:00",
+    "end_time": "09:00:00",
+    "location": "",
+    "created_by": [
+      "gravess"
+    ]
+  }
+},
+{
+  "model": "scheduling.dateoperatinghours",
+  "pk": 1,
+  "fields": {
+    "date": "2026-06-19",
+    "is_closed": true,
+    "start_time": null,
+    "end_time": null,
+    "note": ""
+  }
+}
+]
