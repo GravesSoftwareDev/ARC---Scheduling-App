@@ -57,7 +57,7 @@
             <button type="submit" class="btn btn-add btn-xs">Save</button>
           </form>
           <form method="post" class="inline-form"
-                onsubmit="return confirm('Delete {{ schedule.name }}? This cannot be undone.');">
+                onsubmit="return confirm('Delete {{ schedule.name }}?\n\nThis will permanently delete the schedule AND all shift entries assigned to it.\n\nThis cannot be undone.');">
             {% csrf_token %}
             <input type="hidden" name="action" value="delete_schedule">
             <input type="hidden" name="schedule" value="{{ schedule.pk }}">

@@ -77,9 +77,12 @@ def roster(request):
                 form.save()
                 messages.success(request, f"Schedule renamed to '{form.cleaned_data['name']}'.")
         elif action == 'delete_schedule' and schedule:
+            from scheduling.models import ScheduleEntry, WeeklySchedule
             name = schedule.name
+            ScheduleEntry.objects.filter(schedule=schedule).delete()
+            WeeklySchedule.objects.filter(schedule=schedule).delete()
             schedule.delete()
-            messages.success(request, f"Schedule '{name}' deleted.")
+            messages.success(request, f"Schedule '{name}' and all its entries deleted.")
         elif action == 'add_member' and emp and schedule:
             schedule.members.add(emp)
             messages.success(request, f"Added {emp.get_full_name()} to {schedule.name}.")
