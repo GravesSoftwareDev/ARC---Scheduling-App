@@ -1,9 +1,8 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
-from django.db.models import Prefetch
 from .forms import RegistrationForm
-from .models import Employee, Department, Subject
+from .models import Employee
 
 
 _admin_check = lambda u: u.role == 'ADMIN'
@@ -46,7 +45,6 @@ def employee_list(request):
     employees = (
         Employee.objects
         .filter(is_active=True)
-        .prefetch_related('departments', 'subjects')
         .order_by('last_name', 'first_name')
     )
     return render(request, 'account/employee_list.html', {'employees': employees})
@@ -55,47 +53,35 @@ def employee_list(request):
 @login_required
 @user_passes_test(_admin_check)
 def roster(request):
+    from scheduling.models import Schedule
+
     if request.method == 'POST':
         action = request.POST.get('action')
         emp_pk = request.POST.get('employee')
-        dept_pk = request.POST.get('department')
-        subj_code = request.POST.get('subject')
+        schedule_pk = request.POST.get('schedule')
 
         emp = get_object_or_404(Employee, pk=emp_pk) if emp_pk else None
+        schedule = get_object_or_404(Schedule, pk=schedule_pk) if schedule_pk else None
 
-        if action == 'add_dept' and emp and dept_pk:
-            dept = get_object_or_404(Department, pk=dept_pk)
-            emp.departments.add(dept)
-            messages.success(request, f"Added {emp.get_full_name()} to {dept.name}.")
-        elif action == 'remove_dept' and emp and dept_pk:
-            dept = get_object_or_404(Department, pk=dept_pk)
-            emp.departments.remove(dept)
-            messages.success(request, f"Removed {emp.get_full_name()} from {dept.name}.")
-        elif action == 'add_subj' and emp and subj_code:
-            subj = get_object_or_404(Subject, code=subj_code)
-            emp.subjects.add(subj)
-            messages.success(request, f"Added {emp.get_full_name()} to {subj.name}.")
-        elif action == 'remove_subj' and emp and subj_code:
-            subj = get_object_or_404(Subject, code=subj_code)
-            emp.subjects.remove(subj)
-            messages.success(request, f"Removed {emp.get_full_name()} from {subj.name}.")
+        if action == 'add_member' and emp and schedule:
+            schedule.members.add(emp)
+            messages.success(request, f"Added {emp.get_full_name()} to {schedule.name}.")
+        elif action == 'remove_member' and emp and schedule:
+            schedule.members.remove(emp)
+            messages.success(request, f"Removed {emp.get_full_name()} from {schedule.name}.")
+        elif action == 'add_scheduler' and emp and schedule:
+            schedule.schedulers.add(emp)
+            messages.success(request, f"{emp.get_full_name()} can now schedule {schedule.name}.")
+        elif action == 'remove_scheduler' and emp and schedule:
+            schedule.schedulers.remove(emp)
+            messages.success(request, f"Removed {emp.get_full_name()} as scheduler of {schedule.name}.")
 
         return redirect('account:roster')
 
-    active_emps = Employee.objects.filter(is_active=True).order_by('last_name', 'first_name')
-
-    departments = Department.objects.prefetch_related(
-        Prefetch('employees', queryset=active_emps, to_attr='active_employees')
-    ).order_by('name')
-
-    subjects = Subject.objects.prefetch_related(
-        Prefetch('employees', queryset=active_emps, to_attr='active_employees')
-    ).order_by('name')
-
-    all_employees = list(active_emps)
+    schedules = Schedule.objects.prefetch_related('members', 'schedulers').order_by('name')
+    all_employees = list(Employee.objects.filter(is_active=True).order_by('last_name', 'first_name'))
 
     return render(request, 'account/roster.html', {
-        'departments': departments,
-        'subjects': subjects,
+        'schedules': schedules,
         'all_employees': all_employees,
     })

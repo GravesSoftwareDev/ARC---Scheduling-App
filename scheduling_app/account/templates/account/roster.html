@@ -1,46 +1,45 @@
 {% extends "dashboard/base.html" %}
-{% block title %}Subject & Department Roster – ARC{% endblock %}
+{% block title %}Schedule Roster – ARC{% endblock %}
 
 {% block content %}
 <div class="roster-container">
   <div class="roster-page-header">
-    <h1>Subject &amp; Department Roster</h1>
+    <h1>Schedule Roster</h1>
     <a href="{% url 'dashboard:dashboard' %}" class="btn btn-secondary">Back to Dashboard</a>
   </div>
 
-  <!-- ===== DEPARTMENTS ===== -->
+  {% for schedule in schedules %}
   <section class="roster-section">
-    <h2 class="roster-section-title">Departments</h2>
+    <h2 class="roster-section-title">{{ schedule.name }}</h2>
     <div class="roster-card-grid">
-      {% for dept in departments %}
-      <div class="roster-card">
-        <h3 class="roster-card-title">{{ dept.name }}</h3>
 
+      <!-- Members -->
+      <div class="roster-card">
+        <h3 class="roster-card-title">Members</h3>
         <ul class="roster-member-list">
-          {% for emp in dept.active_employees %}
+          {% for emp in schedule.members.all %}
           <li class="roster-member-item">
             <span>{{ emp.last_name }}, {{ emp.first_name }}</span>
             <form method="post" class="inline-form">
               {% csrf_token %}
-              <input type="hidden" name="action" value="remove_dept">
+              <input type="hidden" name="action" value="remove_member">
               <input type="hidden" name="employee" value="{{ emp.pk }}">
-              <input type="hidden" name="department" value="{{ dept.pk }}">
-              <button type="submit" class="btn-icon btn-icon-remove" title="Remove from {{ dept.name }}">&#10005;</button>
+              <input type="hidden" name="schedule" value="{{ schedule.pk }}">
+              <button type="submit" class="btn-icon btn-icon-remove" title="Remove from {{ schedule.name }}">&#10005;</button>
             </form>
           </li>
           {% empty %}
-          <li class="roster-empty">No employees assigned.</li>
+          <li class="roster-empty">No members assigned.</li>
           {% endfor %}
         </ul>
-
         <form method="post" class="roster-add-form">
           {% csrf_token %}
-          <input type="hidden" name="action" value="add_dept">
-          <input type="hidden" name="department" value="{{ dept.pk }}">
+          <input type="hidden" name="action" value="add_member">
+          <input type="hidden" name="schedule" value="{{ schedule.pk }}">
           <select name="employee" class="roster-select" required>
-            <option value="" disabled selected>Add employee&hellip;</option>
+            <option value="" disabled selected>Add member&hellip;</option>
             {% for emp in all_employees %}
-            {% if emp not in dept.active_employees %}
+            {% if emp not in schedule.members.all %}
             <option value="{{ emp.pk }}">{{ emp.last_name }}, {{ emp.first_name }}</option>
             {% endif %}
             {% endfor %}
@@ -48,43 +47,34 @@
           <button type="submit" class="btn btn-add">Add</button>
         </form>
       </div>
-      {% endfor %}
-    </div>
-  </section>
 
-  <!-- ===== SUBJECTS ===== -->
-  <section class="roster-section">
-    <h2 class="roster-section-title">Subjects</h2>
-    <div class="roster-card-grid">
-      {% for subj in subjects %}
+      <!-- Schedulers -->
       <div class="roster-card">
-        <h3 class="roster-card-title">{{ subj.name }}</h3>
-
+        <h3 class="roster-card-title">Schedulers</h3>
         <ul class="roster-member-list">
-          {% for emp in subj.active_employees %}
+          {% for emp in schedule.schedulers.all %}
           <li class="roster-member-item">
             <span>{{ emp.last_name }}, {{ emp.first_name }}</span>
             <form method="post" class="inline-form">
               {% csrf_token %}
-              <input type="hidden" name="action" value="remove_subj">
+              <input type="hidden" name="action" value="remove_scheduler">
               <input type="hidden" name="employee" value="{{ emp.pk }}">
-              <input type="hidden" name="subject" value="{{ subj.code }}">
-              <button type="submit" class="btn-icon btn-icon-remove" title="Remove from {{ subj.name }}">&#10005;</button>
+              <input type="hidden" name="schedule" value="{{ schedule.pk }}">
+              <button type="submit" class="btn-icon btn-icon-remove" title="Remove scheduler">&#10005;</button>
             </form>
           </li>
           {% empty %}
-          <li class="roster-empty">No employees assigned.</li>
+          <li class="roster-empty">No schedulers assigned.</li>
           {% endfor %}
         </ul>
-
         <form method="post" class="roster-add-form">
           {% csrf_token %}
-          <input type="hidden" name="action" value="add_subj">
-          <input type="hidden" name="subject" value="{{ subj.code }}">
+          <input type="hidden" name="action" value="add_scheduler">
+          <input type="hidden" name="schedule" value="{{ schedule.pk }}">
           <select name="employee" class="roster-select" required>
-            <option value="" disabled selected>Add employee&hellip;</option>
+            <option value="" disabled selected>Add scheduler&hellip;</option>
             {% for emp in all_employees %}
-            {% if emp not in subj.active_employees %}
+            {% if emp not in schedule.schedulers.all %}
             <option value="{{ emp.pk }}">{{ emp.last_name }}, {{ emp.first_name }}</option>
             {% endif %}
             {% endfor %}
@@ -92,9 +82,12 @@
           <button type="submit" class="btn btn-add">Add</button>
         </form>
       </div>
-      {% endfor %}
+
     </div>
   </section>
+  {% empty %}
+  <p class="roster-empty">No schedules have been created yet.</p>
+  {% endfor %}
 
 </div>
 {% endblock %}

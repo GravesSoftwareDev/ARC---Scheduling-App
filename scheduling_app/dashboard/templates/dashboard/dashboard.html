@@ -19,23 +19,20 @@
       <h2>Employee Info</h2>
       <div class="info-fields">
         <p><span class="info-label">Name</span><span class="info-value">{{ user.first_name }} {{ user.last_name }}</span></p>
-        <p><span class="info-label">Department</span><span class="info-value">{{ user.departments.all|join:", " }}</span></p>
-        {% if user.subjects.all %}
-        <p><span class="info-label">Subjects</span><span class="info-value">{{ user.subjects.all|join:", " }}</span></p>
-        {% endif %}
+        <p><span class="info-label">Schedules</span><span class="info-value">{{ user.member_of.all|join:", " }}</span></p>
         <p><span class="info-label">Role</span><span class="info-value">{{ user.get_role_display }}</span></p>
       </div>
 
       <div class="card-links">
         <a href="{% url 'scheduling:manage_availability' %}" class="card-link-item">Manage Availability</a>
         <a href="{% url 'account:password_change' %}" class="card-link-item">Change Password</a>
-        {% if user.role == 'SCHEDULER' or user.role == 'ADMIN' %}
+        {% if user.scheduler_of.exists or user.role == 'ADMIN' %}
         <a href="{% url 'scheduling:schedule_builder' %}" class="card-link-item card-link-scheduler">Build Schedule</a>
         {% endif %}
         {% if user.role == 'ADMIN' %}
         <a href="{% url 'account:registration' %}" class="card-link-item card-link-admin">Register Employee</a>
         <a href="{% url 'account:employee_list' %}" class="card-link-item card-link-admin">Employee List</a>
-        <a href="{% url 'account:roster' %}" class="card-link-item card-link-admin">Subject &amp; Dept Roster</a>
+        <a href="{% url 'account:roster' %}" class="card-link-item card-link-admin">Schedule Roster</a>
         <a href="{% url 'scheduling:operating_hours' %}" class="card-link-item card-link-admin">Edit Operating Hours</a>
         {% endif %}
       </div>
@@ -132,7 +129,7 @@
                 {% if block.start_time == row.time %}
                 <div class="sched-block-header">
                   <span class="sched-block-title">
-                    {{ block.department.name }}{% if block.subject %} &ndash; {{ block.subject.name }}{% endif %}
+                    {{ block.schedule.name }}
                   </span>
                   {% if block.location %}<span class="sched-block-loc-badge" style="background:{{ block.location|location_border }};color:#fff;">{{ block.location }}</span>{% endif %}
                   <span class="sched-block-time">{{ block.start_time|time:"g:i A" }}&ndash;{{ block.end_time|time:"g:i A" }}</span>

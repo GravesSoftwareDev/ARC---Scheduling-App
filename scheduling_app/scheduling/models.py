@@ -108,7 +108,7 @@ class WeeklySchedule(models.Model):
     schedule = models.ForeignKey(
         'Schedule',
         on_delete=models.PROTECT,
-        related_name = 'scheduled_blocks'
+        related_name = 'scheduled_blocks',
     )
     day_of_week = models.CharField(
         max_length=3, 
@@ -147,7 +147,7 @@ class ScheduleEntry(models.Model):
     schedule = models.ForeignKey(
         'Schedule',
         on_delete=models.PROTECT,
-        related_name='schedule_entries'
+        related_name='schedule_entries',
     )
     date = models.DateField()
     start_time = models.TimeField()

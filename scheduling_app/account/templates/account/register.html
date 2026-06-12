@@ -43,32 +43,13 @@
       {% if user_form.birthdate.errors %}<p class="reg-error">{{ user_form.birthdate.errors|join:" " }}</p>{% endif %}
     </div>
 
-    <!-- Departments -->
+    <!-- Part Time -->
     <div class="reg-field">
-      <span class="reg-label">Departments</span>
-      {% if user_form.departments.errors %}<p class="reg-error">{{ user_form.departments.errors|join:" " }}</p>{% endif %}
-      <div class="reg-checkbox-grid">
-        {% for widget in user_form.departments %}
-        <label class="reg-checkbox-item">
-          {{ widget.tag }}
-          <span>{{ widget.choice_label }}</span>
-        </label>
-        {% endfor %}
-      </div>
-    </div>
-
-    <!-- Subjects -->
-    <div class="reg-field">
-      <span class="reg-label">Subjects</span>
-      {% if user_form.subjects.errors %}<p class="reg-error">{{ user_form.subjects.errors|join:" " }}</p>{% endif %}
-      <div class="reg-checkbox-grid">
-        {% for widget in user_form.subjects %}
-        <label class="reg-checkbox-item">
-          {{ widget.tag }}
-          <span>{{ widget.choice_label }}</span>
-        </label>
-        {% endfor %}
-      </div>
+      <label class="reg-checkbox-item">
+        {{ user_form.part_time }}
+        <span class="reg-label">Part-time employee</span>
+      </label>
+      {% if user_form.part_time.errors %}<p class="reg-error">{{ user_form.part_time.errors|join:" " }}</p>{% endif %}
     </div>
 
     <!-- Role -->

@@ -16,9 +16,8 @@
         <tr>
           <th>Name</th>
           <th>Username</th>
-          <th>Departments</th>
-          <th>Subjects</th>
           <th>Role</th>
+          <th>Part Time</th>
           <th></th>
         </tr>
       </thead>
@@ -27,11 +26,10 @@
         <tr class="emp-list-row">
           <td class="emp-name">{{ emp.last_name }}, {{ emp.first_name }}</td>
           <td class="emp-username">{{ emp.username }}</td>
-          <td class="emp-depts">{{ emp.departments.all|join:", " }}</td>
-          <td class="emp-subjs">{{ emp.subjects.all|join:", " }}</td>
           <td>
             <span class="role-badge role-{{ emp.role|lower }}">{{ emp.get_role_display }}</span>
           </td>
+          <td>{% if emp.part_time %}Yes{% else %}No{% endif %}</td>
           <td class="emp-actions">
             <form method="post"
                   onsubmit="return confirm('Deactivate {{ emp.first_name }} {{ emp.last_name }}? They will no longer be able to log in.');">

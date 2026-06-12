@@ -75,13 +75,13 @@ def dashboard(request):
         ScheduleEntry.objects.filter(
             user=request.user,
             date__in=week_dates
-        ).select_related('department', 'subject').order_by('date', 'start_time')
+        ).select_related('schedule').order_by('date', 'start_time')
     )
 
     # Location legend — unique (display_label, raw_location) for color key
     seen_locs = {}
     for e in schedule_entries:
-        label = e.location if e.location else e.department.name
+        label = e.location if e.location else e.schedule.name
         if label not in seen_locs:
             seen_locs[label] = e.location
     schedule_legend = [{'label': k, 'location': v} for k, v in seen_locs.items()]

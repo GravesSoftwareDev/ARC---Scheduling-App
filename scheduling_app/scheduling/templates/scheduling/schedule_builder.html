@@ -10,16 +10,15 @@
     <div class="sb2-topbar-left">
       <h1 class="sb2-title">Schedule Builder</h1>
       <p class="sb2-subtitle">
-        {% if active_dept %}{{ active_dept }}{% else %}Select a department{% endif %}
-        {% if active_subject %}&mdash; {{ active_subject.name }}{% endif %}
-        {% if is_admin %}&mdash; All departments visible{% endif %}
+        {% if active_schedule %}{{ active_schedule }}{% else %}Select a schedule{% endif %}
+        {% if is_admin %}&mdash; All schedules visible{% endif %}
       </p>
     </div>
     <div class="sb2-topbar-right">
       <div class="sb2-week-nav">
-        <a href="?week={{ prev_week }}&dept={{ active_dept_pk }}" class="week-nav-btn" id="nav-prev">&#8592;</a>
+        <a href="?week={{ prev_week }}&schedule={{ active_schedule_pk }}" class="week-nav-btn" id="nav-prev">&#8592;</a>
         <span class="week-nav-label">{{ week_label }}</span>
-        <a href="?week={{ next_week }}&dept={{ active_dept_pk }}" class="week-nav-btn" id="nav-next">&#8594;</a>
+        <a href="?week={{ next_week }}&schedule={{ active_schedule_pk }}" class="week-nav-btn" id="nav-next">&#8594;</a>
       </div>
       <a href="{% url 'dashboard:dashboard' %}" class="btn btn-secondary" id="nav-dashboard">← Dashboard</a>
     </div>
@@ -31,35 +30,19 @@
     <!-- Sidebar -->
     <div class="sb2-sidebar">
 
-      <!-- Department selector -->
+      <!-- Schedule selector -->
       <div class="sb2-sidebar-section">
-        <label class="sb2-sidebar-label" for="dept-select">Department</label>
-        <select id="dept-select" class="sb2-select">
-          {% for dept in allowed_departments %}
-          <option value="{{ dept.pk }}"
-                  data-url="?week={{ week_start|date:'Y-m-d' }}&dept={{ dept.pk }}"
-                  {% if dept.pk|stringformat:'s' == active_dept_pk %}selected{% endif %}>
-            {{ dept.name }}
+        <label class="sb2-sidebar-label" for="schedule-select">Schedule</label>
+        <select id="schedule-select" class="sb2-select">
+          {% for sched in allowed_schedules %}
+          <option value="{{ sched.pk }}"
+                  data-url="?week={{ week_start|date:'Y-m-d' }}&schedule={{ sched.pk }}"
+                  {% if sched.pk|stringformat:'s' == active_schedule_pk %}selected{% endif %}>
+            {{ sched.name }}
           </option>
           {% endfor %}
         </select>
       </div>
-
-      <!-- Subject selector (only for departments that have subjects) -->
-      {% if dept_subjects %}
-      <div class="sb2-sidebar-section">
-        <label class="sb2-sidebar-label" for="subject-select">Subject</label>
-        <select id="subject-select" class="sb2-select">
-          {% for subj in dept_subjects %}
-          <option value="{{ subj.pk }}"
-                  data-url="?week={{ week_start|date:'Y-m-d' }}&dept={{ active_dept_pk }}&subject={{ subj.pk }}"
-                  {% if subj.pk|stringformat:'s' == active_subject_pk %}selected{% endif %}>
-            {{ subj.name }}
-          </option>
-          {% endfor %}
-        </select>
-      </div>
-      {% endif %}
 
       <!-- Employee selector -->
       <div class="sb2-sidebar-section">
@@ -75,7 +58,7 @@
             {{ emp.last_name }}, {{ emp.first_name }}
           </button>
           {% empty %}
-          <p class="sb2-no-emp">No employees in this department.</p>
+          <p class="sb2-no-emp">No employees in this schedule.</p>
           {% endfor %}
         </div>
         <div id="active-emp-label" class="sb2-active-label" style="display:none;">
@@ -128,8 +111,7 @@
     <div class="sb2-grid-wrap">
       <form method="post" id="schedule-form">
         {% csrf_token %}
-        <input type="hidden" name="active_dept_pk" value="{{ active_dept_pk }}">
-        <input type="hidden" name="active_subject_pk" value="{{ active_subject_pk }}">
+        <input type="hidden" name="active_schedule_pk" value="{{ active_schedule_pk }}">
 
         <div class="sb2-calendar-scroll">
         <div class="sb2-calendar hourly-calendar">
@@ -199,7 +181,7 @@
     </div>
     <div style="padding:20px;">
       <p style="margin:0 0 18px;font-size:14px;">
-        You have unsaved changes to the <strong>{{ active_dept }}</strong> schedule.
+        You have unsaved changes to the <strong>{{ active_schedule }}</strong> schedule.
         Save before switching?
       </p>
       <div style="display:flex;gap:10px;justify-content:flex-end;">
@@ -222,8 +204,7 @@ const PARTTIME_MAX = 19.5;
 
 let activeEmpPk    = null;
 let activeEmpColor = null;
-let activeDeptPk   = '{{ active_dept_pk }}';
-let activeSubjectPk = '{{ active_subject_pk }}';
+let activeSchedulePk = '{{ active_schedule_pk }}';
 let drawMode  = 'draw';
 let isDragging = false;
 let hasUnsaved = false;
@@ -490,34 +471,18 @@ function markUnsaved() {
 
 document.getElementById('schedule-form').addEventListener('submit', () => { hasUnsaved = false; });
 
-// ── Department change: prompt to save first ────────────────────────────────
-document.getElementById('dept-select').addEventListener('change', function() {
+// ── Schedule change: prompt to save first ─────────────────────────────────
+document.getElementById('schedule-select').addEventListener('change', function() {
   const selectedOpt = this.options[this.selectedIndex];
   const targetUrl = selectedOpt.dataset.url;
   if (hasUnsaved) {
     pendingNavUrl = targetUrl;
     document.getElementById('unsaved-dialog').style.display = 'flex';
-    this.value = activeDeptPk;
+    this.value = activeSchedulePk;
   } else {
     window.location = targetUrl;
   }
 });
-
-// ── Subject change: prompt to save first ──────────────────────────────────
-const subjectSelect = document.getElementById('subject-select');
-if (subjectSelect) {
-  subjectSelect.addEventListener('change', function() {
-    const selectedOpt = this.options[this.selectedIndex];
-    const targetUrl = selectedOpt.dataset.url;
-    if (hasUnsaved) {
-      pendingNavUrl = targetUrl;
-      document.getElementById('unsaved-dialog').style.display = 'flex';
-      this.value = activeSubjectPk;
-    } else {
-      window.location = targetUrl;
-    }
-  });
-}
 
 function discardAndNavigate() {
   hasUnsaved = false;

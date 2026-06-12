@@ -24,7 +24,7 @@ class WeeklyScheduleAdmin(admin.ModelAdmin):
 
 @admin.register(ScheduleEntry)
 class ScheduleEntryAdmin(admin.ModelAdmin):
-    list_display = ['user', 'schedule', 'subject', 'date', 'start_time', 'end_time', 'created_by']
+    list_display = ['user', 'schedule', 'date', 'start_time', 'end_time', 'created_by']
     list_filter = ['schedule', 'date']
     search_fields = ['user__username', 'user__first_name', 'user__last_name']
     ordering = ['date', 'start_time']
