@@ -2044,17 +2044,60 @@ select.form-control { cursor: pointer; }
     display: inline-block;
     padding: 3px 10px;
     border-radius: 12px;
-    font-size: 12px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.4px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
 }
-.role-admin    { background: #E3F2FD; color: #0D47A1; }
-.role-scheduler { background: #E8F5E9; color: #1B5E20; }
-.role-employee  { background: #F3E5F5; color: #4A148C; }
+.role-admin         { background: #fce4ec; color: #880e4f; }
+.role-arc_assistant { background: #e8f5e9; color: #1b5e20; }
+.role-tutor         { background: #e3f2fd; color: #0d47a1; }
+.emp-parttime {
+    font-size: 12px;
+    color: #e65100;
+    font-weight: 600;
+}
+.emp-fulltime {
+    font-size: 12px;
+    color: #2e7d32;
+    font-weight: 600;
+}
 .emp-actions {
     text-align: right;
     white-space: nowrap;
+}
+.emp-actions .inline-form {
+    display: inline;
+}
+.btn-action {
+    display: inline-block;
+    padding: 4px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: 6px;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: background 0.15s, border-color 0.15s;
+    text-decoration: none;
+    line-height: 1.5;
+}
+.btn-action-edit {
+    background: var(--primary-color);
+    color: #fff;
+    border-color: var(--primary-color);
+    margin-right: 6px;
+}
+.btn-action-edit:hover {
+    background: var(--primary-dark);
+    border-color: var(--primary-dark);
+}
+.btn-action-delete {
+    background: #fff;
+    color: #b71c1c;
+    border-color: #ef9a9a;
+}
+.btn-action-delete:hover {
+    background: #ffebee;
+    border-color: #b71c1c;
 }
 .btn-deactivate {
     padding: 5px 14px;
