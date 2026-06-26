@@ -93,11 +93,14 @@
         <p class="sb2-mode-hint">Ctrl+Z undo &nbsp;·&nbsp; Ctrl+Y redo</p>
       </div>
 
-      <!-- Override availability -->
+      <!-- Override availability + Clear All -->
       <div class="sb2-sidebar-section">
         <div class="sb2-sidebar-label">Options</div>
         <button type="button" id="toggle-override" class="sb2-override-btn" onclick="toggleOverride()">
           Override Availability
+        </button>
+        <button type="button" class="sb2-override-btn sb2-clear-all-btn" onclick="clearAll()" style="margin-top:6px;background:#c0392b;color:#fff;border-color:#c0392b;">
+          ✕ Clear All
         </button>
       </div>
 
@@ -484,13 +487,29 @@ function renderCell(cell) {
   }
 }
 
+// ── Clear all cells ────────────────────────────────────────────────────────
+function clearAll() {
+  if (!confirm('Clear all assignments from the entire schedule?')) return;
+  pushUndo();
+  document.querySelectorAll('.sb2-cell').forEach(cell => {
+    if (cell._emps && cell._emps.size > 0) {
+      cell._emps.clear();
+      renderCell(cell);
+    }
+  });
+  markUnsaved();
+  updateHoursCounter();
+  updateAvailabilityWarnings();
+}
+
 // ── Cell painting ──────────────────────────────────────────────────────────
 function paintCell(cell) {
   if (!cell.classList.contains('sb2-in-hours')) return;
 
   if (drawMode === 'erase') {
-    if (cell._emps.size > 0) {
-      cell._emps.clear();
+    if (!activeEmpPk) return;
+    if (cell._emps.has(activeEmpPk)) {
+      cell._emps.delete(activeEmpPk);
       renderCell(cell);
       markUnsaved();
       updateHoursCounter();
