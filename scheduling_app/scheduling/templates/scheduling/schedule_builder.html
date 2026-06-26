@@ -480,6 +480,17 @@ function updateAvailabilityWarnings() {
   });
 }
 
+// ── Adjacent-cell helpers ─────────────────────────────────────────────────
+function _adjCell(cell, deltaMin) {
+  const [h, m] = cell.dataset.slot.split('_').map(Number);
+  const next = h * 60 + m + deltaMin;
+  if (next < 0) return null;
+  const nk = `${String(Math.floor(next / 60)).padStart(2, '0')}_${String(next % 60).padStart(2, '0')}`;
+  return document.getElementById(cell.id.replace(`_${cell.dataset.slot}__cell`, `_${nk}__cell`));
+}
+const getPrevCell = cell => _adjCell(cell, -15);
+const getNextCell = cell => _adjCell(cell, +15);
+
 // ── Cell rendering ─────────────────────────────────────────────────────────
 function renderCell(cell) {
   cell.querySelectorAll('.sb2-cell-input, .sb2-cell-label-inp, .sb2-cell-label-badge').forEach(e => e.remove());
@@ -524,20 +535,19 @@ function renderCell(cell) {
     }
   }
 
-  // Show label text badge only on hour-boundary cells to avoid clutter
-  if (cell.dataset.hourBoundary) {
-    const badgeLabels = new Set();
-    for (const epk of cell._emps.keys()) {
-      const lbl = cell._labels?.get(epk);
-      if (lbl) badgeLabels.add(lbl);
-    }
-    if (badgeLabels.size > 0) {
-      const badge = document.createElement('span');
-      badge.className = 'sb2-cell-label-badge';
-      badge.textContent = [...badgeLabels].join(' · ');
-      badge.style.cssText = 'position:absolute;bottom:1px;left:2px;font-size:9px;font-weight:700;color:rgba(255,255,255,0.95);text-shadow:0 0 3px rgba(0,0,0,0.7);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:calc(100% - 4px);pointer-events:none;';
-      cell.appendChild(badge);
-    }
+  // Badge: show label at the start of each employee's contiguous painted block
+  const prevCell = getPrevCell(cell);
+  const startLabels = [];
+  for (const epk of cell._emps.keys()) {
+    const lbl = cell._labels?.get(epk);
+    if (lbl && !prevCell?._emps?.has(epk)) startLabels.push(lbl);
+  }
+  if (startLabels.length > 0) {
+    const badge = document.createElement('span');
+    badge.className = 'sb2-cell-label-badge';
+    badge.textContent = startLabels.join(' · ');
+    badge.style.cssText = 'position:absolute;top:1px;left:2px;font-size:9px;font-weight:700;color:rgba(255,255,255,0.95);text-shadow:0 0 3px rgba(0,0,0,0.7);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:calc(100% - 4px);pointer-events:none;';
+    cell.appendChild(badge);
   }
 }
 
@@ -567,6 +577,7 @@ function paintCell(cell) {
       cell._emps.delete(activeEmpPk);
       cell._labels?.delete(activeEmpPk);
       renderCell(cell);
+      const nc = getNextCell(cell); if (nc) renderCell(nc);
       markUnsaved();
       updateHoursCounter();
       updateAvailabilityWarnings();
@@ -595,6 +606,7 @@ function paintCell(cell) {
     cell._labels.set(activeEmpPk, activeLabelText);
   }
   renderCell(cell);
+  const nc = getNextCell(cell); if (nc) renderCell(nc);
   markUnsaved();
   updateHoursCounter();
   updateAvailabilityWarnings();
