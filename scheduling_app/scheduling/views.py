@@ -19,18 +19,14 @@ def _loc_slug(loc):
 
 
 EMPLOYEE_PALETTE = [
-    '#1565C0',  # Blue
-    '#2E7D32',  # Green
-    '#E65100',  # Deep Orange
-    '#6A1B9A',  # Purple
-    '#B71C1C',  # Red
-    '#00695C',  # Teal
-    '#AD1457',  # Pink
-    '#558B2F',  # Olive Green
-    '#4E342E',  # Brown
-    '#37474F',  # Blue Grey
-    '#F9A825',  # Amber
-    '#00838F',  # Cyan
+    '#C62828', '#AD1457', '#6A1B9A', '#4527A0', '#283593',
+    '#1565C0', '#0277BD', '#00695C', '#2E7D32', '#558B2F',
+    '#827717', '#E65100', '#4E342E', '#37474F', '#006064',
+    '#880E4F', '#4A148C', '#1A237E', '#0D47A1', '#01579B',
+    '#00838F', '#00796B', '#1B5E20', '#33691E', '#BF360C',
+    '#546E7A', '#D81B60', '#7B1FA2', '#3949AB', '#0288D1',
+    '#00ACC1', '#00897B', '#43A047', '#F4511E', '#F57F17',
+    '#3E2723', '#B71C1C', '#4E342E', '#5E35B1', '#039BE5',
 ]
 
 
@@ -265,16 +261,6 @@ def schedule_builder(request):
         active_schedule = allowed_schedules[0]
         schedule_pk_param = str(active_schedule.pk)
 
-    # Stable per-employee colors across all allowed employees
-    all_allowed_employees = list(
-        Employee.objects.filter(member_of__in=allowed_schedules)
-        .distinct().order_by('pk')
-    ) if not is_admin else list(Employee.objects.all().order_by('pk'))
-    employee_colors = {
-        e.pk: EMPLOYEE_PALETTE[i % len(EMPLOYEE_PALETTE)]
-        for i, e in enumerate(all_allowed_employees)
-    }
-
     # date → day abbreviation (MON/TUE/…) for the current week
     date_day_map = {d.isoformat(): d.strftime('%a').upper() for d in week_dates}
 
@@ -286,6 +272,12 @@ def schedule_builder(request):
         )
     else:
         visible_employees = []
+
+    # Assign unique colors within this schedule (by name order)
+    employee_colors = {
+        e.pk: EMPLOYEE_PALETTE[i % len(EMPLOYEE_PALETTE)]
+        for i, e in enumerate(visible_employees)
+    }
 
     # Availability data for visible employees (keyed by emp pk → day → list of blocks)
     avail_data = {}
