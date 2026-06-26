@@ -62,7 +62,7 @@ def build_teams_shifts_xlsx(schedule_pks, date_from: date, date_to: date) -> byt
         shifts_ws.cell(row=write_row, column=6).value = _fmt_date(entry.date)
         shifts_ws.cell(row=write_row, column=7).value = _fmt_time(entry.end_time)
         shifts_ws.cell(row=write_row, column=8).value = THEME_COLOR
-        shifts_ws.cell(row=write_row, column=9).value = None   # Custom Label
+        shifts_ws.cell(row=write_row, column=9).value = entry.custom_label or None
         shifts_ws.cell(row=write_row, column=10).value = None  # Unpaid Break
         shifts_ws.cell(row=write_row, column=11).value = entry.location or None
         shifts_ws.cell(row=write_row, column=12).value = SHARED_VALUE

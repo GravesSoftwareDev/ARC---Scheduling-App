@@ -66,6 +66,21 @@
           Drawing for: <strong id="active-emp-name"></strong>
           <button type="button" class="sb2-clear-sel" onclick="clearEmployee()">✕</button>
         </div>
+        <div id="label-input-wrap" style="display:none; margin-top:6px;">
+          <select id="active-label-select"
+                  style="width:100%;box-sizing:border-box;padding:5px 8px;font-size:12px;border:1px solid #ddd;border-radius:4px;background:#fff;">
+            <option value="">No label</option>
+            <option value="__add__">+ Add new label…</option>
+          </select>
+          <div id="new-label-wrap" style="display:none;margin-top:4px;gap:4px;align-items:center;">
+            <input type="text" id="new-label-input" placeholder="Label name…"
+                   style="flex:1;min-width:0;padding:5px 8px;font-size:12px;border:1px solid #ddd;border-radius:4px;">
+            <button type="button" onclick="confirmNewLabel()"
+                    style="padding:4px 8px;font-size:12px;background:#1565C0;color:#fff;border:none;border-radius:4px;cursor:pointer;">Add</button>
+            <button type="button" onclick="cancelNewLabel()"
+                    style="padding:4px 6px;font-size:12px;background:#eee;border:none;border-radius:4px;cursor:pointer;">✕</button>
+          </div>
+        </div>
         <div id="hours-counter" class="sb2-hours-counter" style="display:none;">
           <div class="sb2-hours-counter-row">
             <span class="sb2-hours-label">Scheduled this week</span>
@@ -161,8 +176,13 @@
                    data-slot="{{ row.slot_key }}"
                    data-loc="{{ cell.loc_slug }}"
                    data-inp-name="{{ cell.inp_name }}"
-                   id="{{ cell.inp_id }}__cell">
-                {% for a in cell.assignments %}<input type="hidden" name="{{ cell.inp_name }}" value="{{ a.emp_pk }}" class="sb2-cell-input">{% endfor %}
+                   {% if row.show_label %}data-hour-boundary="1"{% endif %}
+                   id="{{ cell.inp_id }}__cell"
+                   style="position:relative;">
+                {% for a in cell.assignments %}
+                  <input type="hidden" name="{{ cell.inp_name }}" value="{{ a.emp_pk }}" class="sb2-cell-input">
+                  {% if a.label %}<input type="hidden" name="{{ cell.inp_name }}__label__{{ a.emp_pk }}" value="{{ a.label }}" class="sb2-cell-label-inp" data-emp="{{ a.emp_pk }}">{% endif %}
+                {% endfor %}
               </div>
               {% endfor %}
             </div>
@@ -213,6 +233,7 @@ const PARTTIME_MAX = 19.5;
 
 let activeEmpPk    = null;
 let activeEmpColor = null;
+let activeLabelText = '';
 let activeSchedulePk = '{{ active_schedule_pk }}';
 let drawMode  = 'draw';
 let isDragging = false;
@@ -229,7 +250,10 @@ function snapshotState() {
   const snap = {};
   document.querySelectorAll('.sb2-cell').forEach(cell => {
     const key = `${cell.dataset.date}__${cell.dataset.slot}__${cell.dataset.loc||''}`;
-    snap[key] = Array.from(cell._emps || []);
+    snap[key] = {
+      emps:   Array.from(cell._emps   || []),
+      labels: Array.from(cell._labels || []),
+    };
   });
   return snap;
 }
@@ -238,7 +262,8 @@ function applySnapshot(snap) {
   document.querySelectorAll('.sb2-cell').forEach(cell => {
     const key = `${cell.dataset.date}__${cell.dataset.slot}__${cell.dataset.loc||''}`;
     if (snap[key] !== undefined) {
-      cell._emps = new Map(snap[key]);
+      cell._emps   = new Map(snap[key].emps);
+      cell._labels = new Map(snap[key].labels);
       renderCell(cell);
     }
   });
@@ -278,6 +303,7 @@ function selectEmployee(empPk, color) {
   document.querySelectorAll('.sb2-emp-pill').forEach(p => p.classList.remove('sb2-emp-active'));
   document.querySelector(`.sb2-emp-pill[data-emp="${empPk}"]`)?.classList.add('sb2-emp-active');
   document.getElementById('active-emp-label').style.display = 'flex';
+  document.getElementById('label-input-wrap').style.display = 'block';
   const pill = document.querySelector(`.sb2-emp-pill[data-emp="${empPk}"]`);
   document.getElementById('active-emp-name').textContent = pill ? pill.textContent.trim() : empPk;
   document.querySelectorAll('.sb2-key-item').forEach(k => k.classList.remove('sb2-key-active'));
@@ -291,6 +317,7 @@ function clearEmployee() {
   document.querySelectorAll('.sb2-emp-pill').forEach(p => p.classList.remove('sb2-emp-active'));
   document.querySelectorAll('.sb2-key-item').forEach(k => k.classList.remove('sb2-key-active'));
   document.getElementById('active-emp-label').style.display = 'none';
+  document.getElementById('label-input-wrap').style.display = 'none';
   document.getElementById('hours-counter').style.display = 'none';
   clearAvailabilityHighlight();
 }
@@ -455,7 +482,7 @@ function updateAvailabilityWarnings() {
 
 // ── Cell rendering ─────────────────────────────────────────────────────────
 function renderCell(cell) {
-  cell.querySelectorAll('.sb2-cell-input').forEach(e => e.remove());
+  cell.querySelectorAll('.sb2-cell-input, .sb2-cell-label-inp, .sb2-cell-label-badge').forEach(e => e.remove());
 
   if (!cell._emps || cell._emps.size === 0) {
     cell.style.background = '';
@@ -484,6 +511,33 @@ function renderCell(cell) {
     inp.value = epk;
     inp.className = 'sb2-cell-input';
     cell.appendChild(inp);
+
+    const lbl = cell._labels?.get(epk);
+    if (lbl) {
+      const lblInp = document.createElement('input');
+      lblInp.type = 'hidden';
+      lblInp.name = `${inpName}__label__${epk}`;
+      lblInp.value = lbl;
+      lblInp.className = 'sb2-cell-label-inp';
+      lblInp.dataset.emp = epk;
+      cell.appendChild(lblInp);
+    }
+  }
+
+  // Show label text badge only on hour-boundary cells to avoid clutter
+  if (cell.dataset.hourBoundary) {
+    const badgeLabels = new Set();
+    for (const epk of cell._emps.keys()) {
+      const lbl = cell._labels?.get(epk);
+      if (lbl) badgeLabels.add(lbl);
+    }
+    if (badgeLabels.size > 0) {
+      const badge = document.createElement('span');
+      badge.className = 'sb2-cell-label-badge';
+      badge.textContent = [...badgeLabels].join(' · ');
+      badge.style.cssText = 'position:absolute;bottom:1px;left:2px;font-size:9px;font-weight:700;color:rgba(255,255,255,0.95);text-shadow:0 0 3px rgba(0,0,0,0.7);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:calc(100% - 4px);pointer-events:none;';
+      cell.appendChild(badge);
+    }
   }
 }
 
@@ -494,6 +548,7 @@ function clearAll() {
   document.querySelectorAll('.sb2-cell').forEach(cell => {
     if (cell._emps && cell._emps.size > 0) {
       cell._emps.clear();
+      cell._labels?.clear();
       renderCell(cell);
     }
   });
@@ -510,6 +565,7 @@ function paintCell(cell) {
     if (!activeEmpPk) return;
     if (cell._emps.has(activeEmpPk)) {
       cell._emps.delete(activeEmpPk);
+      cell._labels?.delete(activeEmpPk);
       renderCell(cell);
       markUnsaved();
       updateHoursCounter();
@@ -535,20 +591,88 @@ function paintCell(cell) {
   }
 
   cell._emps.set(activeEmpPk, activeEmpColor);
+  if (activeLabelText) {
+    cell._labels.set(activeEmpPk, activeLabelText);
+  }
   renderCell(cell);
   markUnsaved();
   updateHoursCounter();
   updateAvailabilityWarnings();
 }
 
+// ── Custom label dropdown (localStorage-backed per schedule) ───────────────
+const LABEL_STORAGE_KEY = `shiftLabels_${activeSchedulePk}`;
+
+function getSavedLabels() {
+  try { return JSON.parse(localStorage.getItem(LABEL_STORAGE_KEY) || '[]'); }
+  catch { return []; }
+}
+
+function rebuildLabelSelect(selectValue) {
+  const sel = document.getElementById('active-label-select');
+  const prev = selectValue !== undefined ? selectValue : sel.value;
+  sel.innerHTML = '<option value="">No label</option>';
+  getSavedLabels().forEach(lbl => {
+    const opt = document.createElement('option');
+    opt.value = lbl; opt.textContent = lbl;
+    sel.appendChild(opt);
+  });
+  const addOpt = document.createElement('option');
+  addOpt.value = '__add__'; addOpt.textContent = '+ Add new label…';
+  sel.appendChild(addOpt);
+  if (prev && prev !== '__add__') sel.value = prev;
+  activeLabelText = (sel.value && sel.value !== '__add__') ? sel.value : '';
+}
+
+function confirmNewLabel() {
+  const input = document.getElementById('new-label-input');
+  const label = input.value.trim();
+  if (!label) return;
+  const labels = getSavedLabels();
+  if (!labels.includes(label)) {
+    labels.push(label);
+    localStorage.setItem(LABEL_STORAGE_KEY, JSON.stringify(labels));
+  }
+  input.value = '';
+  document.getElementById('new-label-wrap').style.display = 'none';
+  rebuildLabelSelect(label);
+  activeLabelText = label;
+}
+
+function cancelNewLabel() {
+  document.getElementById('new-label-wrap').style.display = 'none';
+  const sel = document.getElementById('active-label-select');
+  sel.value = activeLabelText || '';
+}
+
 // Wire up all cells on DOMContentLoaded
 document.addEventListener('DOMContentLoaded', () => {
+  rebuildLabelSelect();
+  document.getElementById('active-label-select').addEventListener('change', function() {
+    if (this.value === '__add__') {
+      document.getElementById('new-label-wrap').style.display = 'flex';
+      document.getElementById('new-label-input').focus();
+      activeLabelText = '';
+    } else {
+      document.getElementById('new-label-wrap').style.display = 'none';
+      activeLabelText = this.value;
+    }
+  });
+  document.getElementById('new-label-input').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') { e.preventDefault(); confirmNewLabel(); }
+    if (e.key === 'Escape') cancelNewLabel();
+  });
+
   document.querySelectorAll('.sb2-cell').forEach(cell => {
     cell._emps = new Map();
+    cell._labels = new Map();
     cell.querySelectorAll('.sb2-cell-input').forEach(inp => {
       const epk = inp.value;
       const color = employeeColors[epk];
       if (epk && color) cell._emps.set(epk, color);
+    });
+    cell.querySelectorAll('.sb2-cell-label-inp').forEach(inp => {
+      if (inp.dataset.emp && inp.value) cell._labels.set(inp.dataset.emp, inp.value);
     });
     renderCell(cell);
 

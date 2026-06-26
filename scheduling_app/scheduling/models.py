@@ -154,6 +154,7 @@ class ScheduleEntry(models.Model):
     start_time = models.TimeField()
     end_time = models.TimeField()
     location = models.CharField(max_length=50, blank=True, default='')
+    custom_label = models.CharField(max_length=100, blank=True, default='')
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,

@@ -398,13 +398,18 @@ def schedule_builder(request):
             if dh['closed'] or not dh['start']:
                 continue
             per_emp = {}
+            per_emp_labels = {}
             for slot in slots:
-                key = f"slot_{d.isoformat()}_{slot.hour:02d}_{slot.minute:02d}"
+                sk = f"{slot.hour:02d}_{slot.minute:02d}"
+                key = f"slot_{d.isoformat()}_{sk}"
                 for epk in request.POST.getlist(key):
                     if epk in emp_lookup:
                         per_emp.setdefault(epk, {})[slot] = epk
-            for emp_slots in per_emp.values():
-                _slots_to_entries(emp_slots, slots, post_schedule, d, emp_lookup, request.user)
+                        label = request.POST.get(f"{key}__label__{epk}", '')
+                        per_emp_labels.setdefault(epk, {})[slot] = label
+            for epk, emp_slots in per_emp.items():
+                _slots_to_entries(emp_slots, slots, post_schedule, d, emp_lookup, request.user,
+                                  slot_labels=per_emp_labels.get(epk, {}))
 
         messages.success(request, f"Schedule saved for {post_schedule}.")
         after_save = request.POST.get('redirect_after_save', '')
@@ -428,6 +433,7 @@ def schedule_builder(request):
                 cell_state.setdefault((entry.date.isoformat(), sk, ls), []).append({
                     'emp_pk': str(entry.user.pk),
                     'color': color,
+                    'label': entry.custom_label,
                 })
 
     # Build flat cell list per grid row
@@ -535,7 +541,7 @@ def export_teams_shifts(request):
     return render(request, 'scheduling/export_teams_shifts.html', {'schedules': schedules})
 
 
-def _slots_to_entries(emp_slots, all_slots, schedule, d, emp_lookup, created_by):
+def _slots_to_entries(emp_slots, all_slots, schedule, d, emp_lookup, created_by, slot_labels=None):
     """Convert a {slot: emp_pk_str} mapping into contiguous ScheduleEntry objects."""
     by_emp = {}
     for slot, epk in emp_slots.items():
@@ -545,10 +551,12 @@ def _slots_to_entries(emp_slots, all_slots, schedule, d, emp_lookup, created_by)
         slot_list.sort()
         emp = emp_lookup[epk]
         block_start = None
+        block_label = ''
         prev_slot = None
         for slot in slot_list:
             if block_start is None:
                 block_start = slot
+                block_label = (slot_labels or {}).get(slot, '')
             elif prev_slot is not None:
                 expected = time(
                     (prev_slot.hour * 60 + prev_slot.minute + 15) // 60,
@@ -563,8 +571,10 @@ def _slots_to_entries(emp_slots, all_slots, schedule, d, emp_lookup, created_by)
                         user=emp, schedule=schedule,
                         date=d, start_time=block_start, end_time=end_t,
                         created_by=created_by,
+                        custom_label=block_label,
                     )
                     block_start = slot
+                    block_label = (slot_labels or {}).get(slot, '')
             prev_slot = slot
 
         if block_start is not None and prev_slot is not None:
@@ -577,4 +587,5 @@ def _slots_to_entries(emp_slots, all_slots, schedule, d, emp_lookup, created_by)
                     user=emp, schedule=schedule,
                     date=d, start_time=block_start, end_time=end_t,
                     created_by=created_by,
+                    custom_label=block_label,
                 )
