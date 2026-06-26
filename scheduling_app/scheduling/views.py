@@ -515,12 +515,12 @@ def schedule_builder(request):
 @login_required
 @user_passes_test(_is_admin)
 def export_teams_shifts(request):
-    from django.http import HttpResponse
-    from .exports import build_teams_shifts_xlsx
-
     schedules = Schedule.objects.order_by('name')
 
     if request.method == 'POST':
+        from django.http import HttpResponse
+        from .exports import build_teams_shifts_xlsx
+
         date_from = parse_date(request.POST.get('date_from', ''))
         date_to = parse_date(request.POST.get('date_to', ''))
         schedule_pks = request.POST.getlist('schedules')

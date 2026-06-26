@@ -2157,7 +2157,8 @@ select.form-control { cursor: pointer; }
     letter-spacing: 0.3px;
 }
 .role-admin         { background: #fce4ec; color: #880e4f; }
-.role-arc_assistant { background: #e8f5e9; color: #1b5e20; }
+.role-assistant_i   { background: #e8f5e9; color: #1b5e20; }
+.role-assistant_ii  { background: #fff3e0; color: #e65100; }
 .role-tutor         { background: #e3f2fd; color: #0d47a1; }
 .emp-parttime {
     font-size: 12px;
@@ -2458,11 +2459,15 @@ select.form-control { cursor: pointer; }
 }
 
 .roster-emp-role.role-admin {
-    background: #B71C1C;
+    background: #880e4f;
 }
 
-.roster-emp-role.role-arc_assistant {
-    background: #2E7D32;
+.roster-emp-role.role-assistant_i {
+    background: #1b5e20;
+}
+
+.roster-emp-role.role-assistant_ii {
+    background: #e65100;
 }
 
 .roster-emp-role.role-tutor {
