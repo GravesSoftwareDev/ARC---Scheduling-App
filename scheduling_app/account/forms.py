@@ -3,14 +3,16 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import UserCreationForm
 User = get_user_model()
 
+
 class EditEmployeeForm(forms.ModelForm):
     birthdate = forms.DateField(required=False, widget=forms.DateInput(attrs={'type': 'date'}))
     part_time = forms.BooleanField(required=False)
     role = forms.ChoiceField(choices=User.Role.choices, required=True)
+    is_admin = forms.BooleanField(required=False)
 
     class Meta:
         model = User
-        fields = ('username', 'email', 'first_name', 'last_name', 'birthdate', 'part_time', 'role')
+        fields = ('username', 'email', 'first_name', 'last_name', 'birthdate', 'part_time', 'role', 'is_admin')
 
 
 class RegistrationForm(UserCreationForm):
@@ -18,10 +20,11 @@ class RegistrationForm(UserCreationForm):
     birthdate = forms.DateField(required=True)
     part_time = forms.BooleanField(required=False)
     role = forms.ChoiceField(choices=User.Role.choices, required=True)
+    is_admin = forms.BooleanField(required=False)
 
     class Meta:
         model = User
-        fields = ("username", "email", "first_name", "last_name", "birthdate", "part_time", "role")
+        fields = ("username", "email", "first_name", "last_name", "birthdate", "part_time", "role", "is_admin")
 
     def save(self, commit=True):
         user = super().save(commit=False)
@@ -29,7 +32,7 @@ class RegistrationForm(UserCreationForm):
         user.birthdate = self.cleaned_data["birthdate"]
         user.role = self.cleaned_data["role"]
         user.part_time = self.cleaned_data["part_time"]
+        user.is_admin = self.cleaned_data["is_admin"]
         if commit:
             user.save()
         return user
-

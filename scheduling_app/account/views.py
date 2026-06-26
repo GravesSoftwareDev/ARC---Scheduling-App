@@ -7,7 +7,7 @@ from .forms import RegistrationForm, EditEmployeeForm
 from .models import Employee
 
 
-_admin_check = lambda u: u.role == 'ADMIN'
+_admin_check = lambda u: u.is_admin
 
 
 @login_required
@@ -167,8 +167,8 @@ def roster(request):
     all_employees = list(
         Employee.objects.filter(is_active=True).annotate(
             role_order=Case(
-                When(role='ADMIN', then=Value(0)),
-                When(role='ARC_ASSISTANT', then=Value(1)),
+                When(role='ASSISTANT_I', then=Value(0)),
+                When(role='ASSISTANT_II', then=Value(1)),
                 When(role='TUTOR', then=Value(2)),
                 default=Value(3),
                 output_field=IntegerField(),

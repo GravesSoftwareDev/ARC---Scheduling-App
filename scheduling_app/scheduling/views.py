@@ -86,11 +86,11 @@ def _week_start(d):
 
 def _is_scheduler_or_admin(user):
     return user.is_authenticated and (
-        user.role == 'ADMIN' or user.scheduler_of.exists()
+        user.is_admin or user.scheduler_of.exists()
     )
 
 def _is_admin(user):
-    return user.is_authenticated and user.role == 'ADMIN'
+    return user.is_authenticated and user.is_admin
 
 # ── availability ─────────────────────────────────────────────────────────────
 
@@ -252,7 +252,7 @@ def schedule_builder(request):
     prev_week = (week_start - timedelta(weeks=1)).isoformat()
     next_week = (week_start + timedelta(weeks=1)).isoformat()
 
-    is_admin = request.user.role == 'ADMIN'
+    is_admin = request.user.is_admin
     if is_admin:
         allowed_schedules = list(Schedule.objects.all().order_by('name'))
     else:
@@ -511,6 +511,37 @@ def schedule_builder(request):
         'employee_other_hours_json': json.dumps({str(k): v for k, v in other_hours_map.items()}),
         'is_admin': is_admin, 'today': today,
     })
+
+@login_required
+@user_passes_test(_is_admin)
+def export_teams_shifts(request):
+    from django.http import HttpResponse
+    from .exports import build_teams_shifts_xlsx
+
+    schedules = Schedule.objects.order_by('name')
+
+    if request.method == 'POST':
+        date_from = parse_date(request.POST.get('date_from', ''))
+        date_to = parse_date(request.POST.get('date_to', ''))
+        schedule_pks = request.POST.getlist('schedules')
+
+        if not date_from or not date_to or date_from > date_to:
+            messages.error(request, "Please select a valid date range.")
+            return redirect('scheduling:export_teams_shifts')
+        if not schedule_pks:
+            schedule_pks = list(schedules.values_list('pk', flat=True))
+
+        xlsx_bytes = build_teams_shifts_xlsx(schedule_pks, date_from, date_to)
+        filename = f"TeamsShifts_{date_from}_{date_to}.xlsx"
+        response = HttpResponse(
+            xlsx_bytes,
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        )
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        return response
+
+    return render(request, 'scheduling/export_teams_shifts.html', {'schedules': schedules})
+
 
 def _slots_to_entries(emp_slots, all_slots, schedule, d, emp_lookup, created_by):
     """Convert a {slot: emp_pk_str} mapping into contiguous ScheduleEntry objects."""

@@ -1,0 +1,56 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Export Teams Shifts – ARC{% endblock %}
+
+{% block content %}
+<div class="oh-container">
+
+  <div class="oh-page-header">
+    <div>
+      <h1 class="oh-title">Export to Teams Shifts</h1>
+      <p class="oh-subtitle">Download a Microsoft Teams Shifts–compatible spreadsheet for a date range.</p>
+    </div>
+    <a href="{% url 'scheduling:schedule_builder' %}" class="btn btn-secondary">← Back to Schedule</a>
+  </div>
+
+  {% if messages %}
+  <ul class="messages">
+    {% for message in messages %}
+    <li class="message message-{{ message.tags }}">{{ message }}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+
+  <form method="post" class="oh-section" style="max-width:520px;">
+    {% csrf_token %}
+
+    <div class="oh-row" style="gap:16px; margin-bottom:16px;">
+      <div class="reg-field" style="flex:1;">
+        <label class="reg-label" for="date_from">Start date</label>
+        <input type="date" id="date_from" name="date_from" class="reg-input" required>
+      </div>
+      <div class="reg-field" style="flex:1;">
+        <label class="reg-label" for="date_to">End date</label>
+        <input type="date" id="date_to" name="date_to" class="reg-input" required>
+      </div>
+    </div>
+
+    <div class="reg-field" style="margin-bottom:20px;">
+      <label class="reg-label">Schedules</label>
+      <p class="reg-help" style="margin-bottom:8px;">Leave all unchecked to export every schedule.</p>
+      <div style="display:flex; flex-direction:column; gap:6px;">
+        {% for schedule in schedules %}
+        <label class="reg-checkbox-item">
+          <input type="checkbox" name="schedules" value="{{ schedule.pk }}">
+          <span>{{ schedule.name }}</span>
+        </label>
+        {% empty %}
+        <p class="roster-empty">No schedules found.</p>
+        {% endfor %}
+      </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Download .xlsx</button>
+  </form>
+
+</div>
+{% endblock %}

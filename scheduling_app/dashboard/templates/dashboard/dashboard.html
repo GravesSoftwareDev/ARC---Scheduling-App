@@ -26,14 +26,15 @@
       <div class="card-links">
         <a href="{% url 'scheduling:manage_availability' %}" class="card-link-item">Manage Availability</a>
         <a href="{% url 'account:password_change' %}" class="card-link-item">Change Password</a>
-        {% if user.scheduler_of.exists or user.role == 'ADMIN' %}
+        {% if user.scheduler_of.exists or user.is_admin %}
         <a href="{% url 'scheduling:schedule_builder' %}" class="card-link-item card-link-scheduler">Build Schedule</a>
         {% endif %}
-        {% if user.role == 'ADMIN' %}
+        {% if user.is_admin %}
         <a href="{% url 'account:registration' %}" class="card-link-item card-link-admin">Register Employee</a>
         <a href="{% url 'account:employee_list' %}" class="card-link-item card-link-admin">Employee List</a>
         <a href="{% url 'account:roster' %}" class="card-link-item card-link-admin">Schedule Roster</a>
         <a href="{% url 'scheduling:operating_hours' %}" class="card-link-item card-link-admin">Edit Operating Hours</a>
+        <a href="{% url 'scheduling:export_teams_shifts' %}" class="card-link-item card-link-admin">Export Teams Shifts</a>
         {% endif %}
       </div>
 

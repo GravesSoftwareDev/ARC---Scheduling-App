@@ -59,6 +59,14 @@
       {% if user_form.role.errors %}<p class="reg-error">{{ user_form.role.errors|join:" " }}</p>{% endif %}
     </div>
 
+    <!-- Admin -->
+    <div class="reg-field">
+      <label class="reg-checkbox-item">
+        {{ user_form.is_admin }}
+        <span class="reg-label">Admin privileges</span>
+      </label>
+    </div>
+
     <!-- Password -->
     <div class="reg-field">
       <label class="reg-label" for="{{ user_form.password1.id_for_label }}">Password</label>

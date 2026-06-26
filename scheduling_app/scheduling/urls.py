@@ -8,4 +8,5 @@ urlpatterns = [
     path('operating-hours/', views.operating_hours, name='operating_hours'),
     path('operating-hours/delete/<int:pk>/', views.delete_special_hours, name='delete_special_hours'),
     path('schedule/', views.schedule_builder, name='schedule_builder'),
+    path('export/teams/', views.export_teams_shifts, name='export_teams_shifts'),
 ]
