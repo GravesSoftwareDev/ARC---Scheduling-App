@@ -8,8 +8,8 @@ from .models import ScheduleEntry
 
 TEMPLATE_PATH = os.path.join(os.path.dirname(__file__), 'data', 'TeamsShiftsTemplate.xlsx')
 
-SHARED_VALUE = '1. Shared'
-THEME_COLOR = '1. White'
+SHARED_VALUE = '2. Not Shared'
+THEME_COLOR = '6. Yellow'
 
 
 def _fmt_time(t):
