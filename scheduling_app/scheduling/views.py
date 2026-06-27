@@ -441,9 +441,20 @@ def schedule_builder(request):
                     'label': entry.custom_label,
                 })
 
-    # Sort each cell's assignments by label alphabetically so stripes line up visually
-    for assignments in cell_state.values():
-        assignments.sort(key=lambda a: (a['label'] or '', a['emp_pk']))
+    # Count distinct slots each label occupies per day (= total staffed time for that position)
+    label_day_slots = {}
+    for (date_iso, sk, ls), assignments in cell_state.items():
+        for lbl in {a['label'] or '' for a in assignments}:
+            key = (date_iso, lbl)
+            label_day_slots[key] = label_day_slots.get(key, 0) + 1
+
+    # Sort each cell: most-time label first, then alphabetically, then by emp_pk for stability
+    for (date_iso, sk, ls), assignments in cell_state.items():
+        assignments.sort(key=lambda a: (
+            -label_day_slots.get((date_iso, a['label'] or ''), 0),
+            a['label'] or '',
+            a['emp_pk'],
+        ))
 
     # Build flat cell list per grid row
     num_locs = len(dept_locs)
