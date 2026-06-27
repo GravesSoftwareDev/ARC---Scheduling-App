@@ -192,13 +192,8 @@ LABEL_PALETTE = [
 ]
 
 
-class EmployeeShiftLabel(models.Model):
-    """A named label (e.g. "Morning", "Training") defined per employee per schedule."""
-    employee = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name='shift_labels'
-    )
+class ShiftLabel(models.Model):
+    """A named position/role label (e.g. "WC", "Front Desk") shared across all employees in a schedule."""
     schedule = models.ForeignKey(
         'Schedule',
         on_delete=models.CASCADE,
@@ -208,11 +203,11 @@ class EmployeeShiftLabel(models.Model):
     color = models.CharField(max_length=7)
 
     class Meta:
-        unique_together = ['employee', 'schedule', 'name']
+        unique_together = ['schedule', 'name']
         ordering = ['name']
 
     def __str__(self):
-        return f"{self.employee} – {self.name}"
+        return f"{self.schedule} – {self.name}"
 
 
 class DateOperatingHours(models.Model):

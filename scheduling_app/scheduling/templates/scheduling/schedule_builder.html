@@ -243,11 +243,10 @@ const employeeConflicts    = JSON.parse('{{ employee_conflicts_json|escapejs }}'
 const dateDayMap           = JSON.parse('{{ date_day_map_json|escapejs }}');
 const employeeIsParttime   = JSON.parse('{{ employee_is_parttime_json|escapejs }}');
 const employeeOtherHours   = JSON.parse('{{ employee_other_hours_json|escapejs }}');
-const employeeLabels       = JSON.parse('{{ employee_labels_json|escapejs }}');
-const employeeNames        = JSON.parse('{{ employee_names_json|escapejs }}');
+const scheduleLabels       = JSON.parse('{{ schedule_labels_json|escapejs }}');
 const SCHEDULE_PK          = '{{ active_schedule_pk }}';
-const LABELS_URL_TPL       = '{% url "scheduling:employee_labels" schedule_pk=0 emp_pk=0 %}';
-const LABEL_DELETE_URL_TPL = '{% url "scheduling:delete_employee_label" label_pk=0 %}';
+const LABELS_URL_TPL       = '{% url "scheduling:schedule_labels" schedule_pk=0 %}';
+const LABEL_DELETE_URL_TPL = '{% url "scheduling:delete_shift_label" label_pk=0 %}';
 const hasLocs = {{ has_locs|yesno:"true,false" }};
 const PARTTIME_MAX = 19.5;
 
@@ -332,7 +331,6 @@ function selectEmployee(empPk, color) {
   document.querySelector(`.sb2-key-item[data-emp-key="${empPk}"]`)?.classList.add('sb2-key-active');
   applyAvailabilityHighlight(empPk);
   updateHoursCounter();
-  rebuildLabelSelect();
 }
 
 function clearEmployee() {
@@ -520,7 +518,7 @@ const getNextCell = cell => _adjCell(cell, +15);
 
 // ── Cell rendering ─────────────────────────────────────────────────────────
 function renderCell(cell) {
-  cell.querySelectorAll('.sb2-cell-input, .sb2-cell-label-inp, .sb2-label-outline').forEach(e => e.remove());
+  cell.querySelectorAll('.sb2-cell-input, .sb2-cell-label-inp').forEach(e => e.remove());
 
   if (!cell._emps || cell._emps.size === 0) {
     cell.style.background = '';
@@ -528,15 +526,30 @@ function renderCell(cell) {
     return;
   }
 
-  const colors = Array.from(cell._emps.values());
-  if (colors.length === 1) {
-    cell.style.background = colors[0];
+  // Build background: each employee stripe is solid emp color, or a gradient
+  // from label color → emp color when a position label is assigned.
+  const empEntries = Array.from(cell._emps.entries());
+  if (empEntries.length === 1) {
+    const [epk, empColor] = empEntries[0];
+    const lbl = cell._labels?.get(epk);
+    const labelColor = lbl ? getLabelColor(lbl) : null;
+    cell.style.background = labelColor
+      ? `linear-gradient(to right, ${labelColor}, ${empColor})`
+      : empColor;
   } else {
-    const pct = 100 / colors.length;
-    const stops = colors.flatMap((c, i) => [
-      `${c} ${(i * pct).toFixed(1)}%`,
-      `${c} ${((i + 1) * pct).toFixed(1)}%`
-    ]);
+    const pct = 100 / empEntries.length;
+    const stops = [];
+    empEntries.forEach(([epk, empColor], i) => {
+      const s = (i * pct).toFixed(1);
+      const e = ((i + 1) * pct).toFixed(1);
+      const lbl = cell._labels?.get(epk);
+      const labelColor = lbl ? getLabelColor(lbl) : null;
+      if (labelColor) {
+        stops.push(`${labelColor} ${s}%`, `${empColor} ${e}%`);
+      } else {
+        stops.push(`${empColor} ${s}%`, `${empColor} ${e}%`);
+      }
+    });
     cell.style.background = `linear-gradient(to right, ${stops.join(', ')})`;
   }
   cell.style.opacity = '0.82';
@@ -560,27 +573,6 @@ function renderCell(cell) {
       lblInp.dataset.emp = epk;
       cell.appendChild(lblInp);
     }
-  }
-
-  // Outline: per-employee border that caps at the top/bottom of each employee's labeled block
-  const prevCell = getPrevCell(cell);
-  const nextCell = getNextCell(cell);
-  let inset = 0;
-  for (const [epk] of cell._emps) {
-    const lbl = cell._labels?.get(epk);
-    if (!lbl) continue;
-    const color = getLabelColor(epk, lbl);
-    const prevHas = prevCell?._emps?.has(epk) && prevCell._labels?.get(epk) === lbl;
-    const nextHas = nextCell?._emps?.has(epk) && nextCell._labels?.get(epk) === lbl;
-    const ol = document.createElement('div');
-    ol.className = 'sb2-label-outline';
-    ol.style.cssText = `position:absolute;top:${inset}px;left:${inset}px;right:${inset}px;bottom:${inset}px;`
-      + `border-left:2px solid ${color};border-right:2px solid ${color};`
-      + `border-top:${prevHas ? 'none' : `2px solid ${color}`};`
-      + `border-bottom:${nextHas ? 'none' : `2px solid ${color}`};`
-      + `pointer-events:none;z-index:3;box-sizing:border-box;`;
-    cell.appendChild(ol);
-    inset += 3;
   }
 }
 
@@ -647,15 +639,14 @@ function paintCell(cell) {
   updateAvailabilityWarnings();
 }
 
-// ── Custom label system (server-backed, per-employee) ─────────────────────
+// ── Position label system (server-backed, shared across all employees) ────────
 
 function getCsrf() {
   return document.querySelector('[name=csrfmiddlewaretoken]').value;
 }
 
-function getLabelColor(empPk, labelName) {
-  const labels = employeeLabels[String(empPk)] || [];
-  const found = labels.find(l => l.name === labelName);
+function getLabelColor(labelName) {
+  const found = scheduleLabels.find(l => l.name === labelName);
   return found ? found.color : '#aaaaaa';
 }
 
@@ -663,33 +654,27 @@ function renderLabelKey() {
   const section = document.getElementById('label-key-section');
   const list = document.getElementById('label-key-list');
   list.innerHTML = '';
-  let hasAny = false;
-  for (const [empPk, labels] of Object.entries(employeeLabels)) {
-    if (!labels.length) continue;
-    hasAny = true;
-    const empFirst = (employeeNames[empPk] || '').split(' ')[0];
-    labels.forEach(lbl => {
-      const item = document.createElement('div');
-      item.className = 'sb2-key-item';
-      item.innerHTML = `<span class="sb2-key-swatch" style="background:${lbl.color};border-radius:2px;border:2px solid ${lbl.color};width:12px;height:12px;display:inline-block;flex-shrink:0;"></span>`
-                     + `<span class="sb2-key-name" style="font-size:11px;">${empFirst} – ${lbl.name}</span>`;
-      list.appendChild(item);
-    });
-  }
-  section.style.display = hasAny ? 'block' : 'none';
+  if (!scheduleLabels.length) { section.style.display = 'none'; return; }
+  section.style.display = 'block';
+  scheduleLabels.forEach(lbl => {
+    const item = document.createElement('div');
+    item.className = 'sb2-key-item';
+    item.innerHTML = `<span class="sb2-key-swatch" style="background:${lbl.color};border-radius:2px;border:1px solid rgba(0,0,0,0.15);"></span>`
+                   + `<span class="sb2-key-name">${lbl.name}</span>`;
+    list.appendChild(item);
+  });
 }
 
 function rebuildLabelSelect() {
   const sel = document.getElementById('active-label-select');
   const prev = activeLabelText;
   sel.innerHTML = '<option value="">No label</option>';
-  const labels = employeeLabels[String(activeEmpPk)] || [];
-  labels.forEach(lbl => {
+  scheduleLabels.forEach(lbl => {
     const opt = document.createElement('option');
     opt.value = lbl.name; opt.textContent = lbl.name;
     sel.appendChild(opt);
   });
-  const stillExists = labels.some(l => l.name === prev);
+  const stillExists = scheduleLabels.some(l => l.name === prev);
   sel.value = stillExists ? prev : '';
   activeLabelText = sel.value;
   document.getElementById('label-delete-btn').style.display = activeLabelText ? 'block' : 'none';
@@ -703,18 +688,17 @@ function showAddLabel() {
 async function confirmNewLabel() {
   const input = document.getElementById('new-label-input');
   const name = input.value.trim();
-  if (!name || !activeEmpPk || !SCHEDULE_PK) return;
+  if (!name || !SCHEDULE_PK) return;
   try {
-    const resp = await fetch(LABELS_URL_TPL.replace('/0/0/', `/${SCHEDULE_PK}/${activeEmpPk}/`), {
+    const resp = await fetch(LABELS_URL_TPL.replace('/0/', `/${SCHEDULE_PK}/`), {
       method: 'POST',
       headers: {'Content-Type': 'application/json', 'X-CSRFToken': getCsrf()},
       body: JSON.stringify({name}),
     });
     const data = await resp.json();
     if (!resp.ok) { alert(data.error || 'Failed to create label'); return; }
-    const empPk = String(activeEmpPk);
-    if (!employeeLabels[empPk]) employeeLabels[empPk] = [];
-    employeeLabels[empPk].push(data);
+    scheduleLabels.push(data);
+    scheduleLabels.sort((a, b) => a.name.localeCompare(b.name));
     input.value = '';
     document.getElementById('new-label-wrap').style.display = 'none';
     activeLabelText = data.name;
@@ -729,26 +713,30 @@ function cancelNewLabel() {
 }
 
 async function deleteActiveLabel() {
-  if (!activeLabelText || !activeEmpPk) return;
-  const empPk = String(activeEmpPk);
-  const labelObj = (employeeLabels[empPk] || []).find(l => l.name === activeLabelText);
+  if (!activeLabelText) return;
+  const labelObj = scheduleLabels.find(l => l.name === activeLabelText);
   if (!labelObj) return;
-  if (!confirm(`Delete label "${activeLabelText}"? It will be removed from all cells in the current view.`)) return;
+  if (!confirm(`Delete position label "${activeLabelText}"? It will be removed from all cells in the current view.`)) return;
   try {
     const resp = await fetch(LABEL_DELETE_URL_TPL.replace('/0/', `/${labelObj.pk}/`), {
       method: 'DELETE',
       headers: {'X-CSRFToken': getCsrf()},
     });
     if (!resp.ok) { alert('Failed to delete label'); return; }
-    employeeLabels[empPk] = (employeeLabels[empPk] || []).filter(l => l.pk !== labelObj.pk);
+    const idx = scheduleLabels.findIndex(l => l.pk === labelObj.pk);
+    if (idx !== -1) scheduleLabels.splice(idx, 1);
     const deletedName = activeLabelText;
     activeLabelText = '';
     rebuildLabelSelect();
     renderLabelKey();
     // Strip deleted label from all cells and re-render
     document.querySelectorAll('.sb2-cell').forEach(cell => {
-      if (cell._labels?.get(empPk) === deletedName) {
-        cell._labels.delete(empPk);
+      if (!cell._labels) return;
+      let changed = false;
+      for (const [epk, lbl] of cell._labels) {
+        if (lbl === deletedName) { cell._labels.delete(epk); changed = true; }
+      }
+      if (changed) {
         renderCell(cell);
         const pc = getPrevCell(cell); if (pc) renderCell(pc);
         const nc = getNextCell(cell); if (nc) renderCell(nc);
@@ -759,6 +747,7 @@ async function deleteActiveLabel() {
 
 // Wire up all cells on DOMContentLoaded
 document.addEventListener('DOMContentLoaded', () => {
+  rebuildLabelSelect();
   renderLabelKey();
   document.getElementById('active-label-select').addEventListener('change', function() {
     activeLabelText = this.value;
