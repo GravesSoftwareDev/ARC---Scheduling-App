@@ -183,6 +183,38 @@ class ScheduleEntry(models.Model):
         ordering = ['date', 'start_time']
 
 
+LABEL_PALETTE = [
+    '#FF6B9D', '#00D4FF', '#FFE66D', '#55EFC4',
+    '#FF9F43', '#A29BFE', '#FD79A8', '#74B9FF',
+    '#6FCF97', '#F9CA24', '#E17055', '#81ECEC',
+    '#FDCB6E', '#6C5CE7', '#00B894', '#E84393',
+    '#0984E3', '#00CEC9', '#D63031', '#B2BEC3',
+]
+
+
+class EmployeeShiftLabel(models.Model):
+    """A named label (e.g. "Morning", "Training") defined per employee per schedule."""
+    employee = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='shift_labels'
+    )
+    schedule = models.ForeignKey(
+        'Schedule',
+        on_delete=models.CASCADE,
+        related_name='shift_labels'
+    )
+    name = models.CharField(max_length=100)
+    color = models.CharField(max_length=7)
+
+    class Meta:
+        unique_together = ['employee', 'schedule', 'name']
+        ordering = ['name']
+
+    def __str__(self):
+        return f"{self.employee} – {self.name}"
+
+
 class DateOperatingHours(models.Model):
     """Date-specific operating hours override. Falls back to OperatingHours weekly defaults."""
     date = models.DateField(unique=True)

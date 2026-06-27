@@ -6,7 +6,10 @@ from django.utils.dateparse import parse_date
 from datetime import time, date, timedelta
 import json
 
-from .models import WeeklyAvailability, OperatingHours, DayOfWeek, ScheduleEntry, DateOperatingHours, Schedule
+from django.http import JsonResponse
+from django.views.decorators.http import require_http_methods
+
+from .models import WeeklyAvailability, OperatingHours, DayOfWeek, ScheduleEntry, DateOperatingHours, Schedule, EmployeeShiftLabel, LABEL_PALETTE
 from .forms import OpenHoursForm, DateOperatingHoursForm
 
 
@@ -487,6 +490,18 @@ def schedule_builder(request):
             'cells': cells,
         })
 
+    # Shift labels defined per employee for this schedule
+    employee_labels_data = {}
+    employee_names_data = {}
+    if active_schedule and visible_employees:
+        for lbl in EmployeeShiftLabel.objects.filter(schedule=active_schedule, employee__in=visible_employees):
+            emp_pk_str = str(lbl.employee_id)
+            employee_labels_data.setdefault(emp_pk_str, []).append(
+                {'pk': lbl.pk, 'name': lbl.name, 'color': lbl.color}
+            )
+    for e in visible_employees:
+        employee_names_data[str(e.pk)] = f"{e.first_name} {e.last_name}"
+
     return render(request, 'scheduling/schedule_builder.html', {
         'week_start': week_start,
         'week_label': f"{week_start.strftime('%b %-d')} – {week_dates[-1].strftime('%b %-d, %Y')}",
@@ -507,8 +522,52 @@ def schedule_builder(request):
         'date_day_map_json': json.dumps(date_day_map),
         'employee_is_parttime_json': json.dumps({str(k): v for k, v in parttime_flags.items()}),
         'employee_other_hours_json': json.dumps({str(k): v for k, v in other_hours_map.items()}),
+        'employee_labels_json': json.dumps(employee_labels_data),
+        'employee_names_json': json.dumps(employee_names_data),
         'is_admin': is_admin, 'today': today,
     })
+
+@login_required
+@user_passes_test(_is_scheduler_or_admin)
+@require_http_methods(['GET', 'POST'])
+def employee_labels(request, schedule_pk, emp_pk):
+    """GET: list labels for one employee. POST: create a new label."""
+    from account.models import Employee
+    schedule = get_object_or_404(Schedule, pk=schedule_pk)
+    employee = get_object_or_404(Employee, pk=emp_pk)
+
+    if request.method == 'GET':
+        labels = EmployeeShiftLabel.objects.filter(employee=employee, schedule=schedule)
+        return JsonResponse({'labels': [{'pk': l.pk, 'name': l.name, 'color': l.color} for l in labels]})
+
+    data = json.loads(request.body)
+    name = data.get('name', '').strip()
+    if not name:
+        return JsonResponse({'error': 'Name required'}, status=400)
+
+    existing_colors = set(
+        EmployeeShiftLabel.objects.filter(employee=employee, schedule=schedule).values_list('color', flat=True)
+    )
+    color = next((c for c in LABEL_PALETTE if c not in existing_colors), LABEL_PALETTE[0])
+
+    label, created = EmployeeShiftLabel.objects.get_or_create(
+        employee=employee, schedule=schedule, name=name,
+        defaults={'color': color}
+    )
+    if not created:
+        return JsonResponse({'error': 'Label already exists'}, status=409)
+    return JsonResponse({'pk': label.pk, 'name': label.name, 'color': label.color}, status=201)
+
+
+@login_required
+@user_passes_test(_is_scheduler_or_admin)
+@require_http_methods(['DELETE'])
+def delete_employee_label(request, label_pk):
+    """DELETE: remove a shift label definition."""
+    label = get_object_or_404(EmployeeShiftLabel, pk=label_pk)
+    label.delete()
+    return JsonResponse({'ok': True})
+
 
 @login_required
 @user_passes_test(_is_admin)

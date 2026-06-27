@@ -67,12 +67,17 @@
           <button type="button" class="sb2-clear-sel" onclick="clearEmployee()">✕</button>
         </div>
         <div id="label-input-wrap" style="display:none; margin-top:6px;">
-          <select id="active-label-select"
-                  style="width:100%;box-sizing:border-box;padding:5px 8px;font-size:12px;border:1px solid #ddd;border-radius:4px;background:#fff;">
-            <option value="">No label</option>
-            <option value="__add__">+ Add new label…</option>
-          </select>
-          <div id="new-label-wrap" style="display:none;margin-top:4px;gap:4px;align-items:center;">
+          <!-- Label selector + delete -->
+          <div style="display:flex;gap:4px;align-items:center;">
+            <select id="active-label-select"
+                    style="flex:1;min-width:0;box-sizing:border-box;padding:5px 8px;font-size:12px;border:1px solid #ddd;border-radius:4px;background:#fff;">
+              <option value="">No label</option>
+            </select>
+            <button type="button" id="label-delete-btn" onclick="deleteActiveLabel()" title="Delete this label"
+                    style="display:none;padding:4px 7px;font-size:12px;background:#c0392b;color:#fff;border:none;border-radius:4px;cursor:pointer;flex-shrink:0;">✕</button>
+          </div>
+          <!-- Add new label inline -->
+          <div id="new-label-wrap" style="display:none;margin-top:4px;gap:4px;align-items:center;flex-wrap:wrap;">
             <input type="text" id="new-label-input" placeholder="Label name…"
                    style="flex:1;min-width:0;padding:5px 8px;font-size:12px;border:1px solid #ddd;border-radius:4px;">
             <button type="button" onclick="confirmNewLabel()"
@@ -80,6 +85,10 @@
             <button type="button" onclick="cancelNewLabel()"
                     style="padding:4px 6px;font-size:12px;background:#eee;border:none;border-radius:4px;cursor:pointer;">✕</button>
           </div>
+          <button type="button" id="add-label-btn" onclick="showAddLabel()"
+                  style="margin-top:4px;width:100%;padding:4px 8px;font-size:12px;background:#f0f4f8;color:#555;border:1px solid #ddd;border-radius:4px;cursor:pointer;">
+            + Add new label
+          </button>
         </div>
         <div id="hours-counter" class="sb2-hours-counter" style="display:none;">
           <div class="sb2-hours-counter-row">
@@ -234,6 +243,11 @@ const employeeConflicts    = JSON.parse('{{ employee_conflicts_json|escapejs }}'
 const dateDayMap           = JSON.parse('{{ date_day_map_json|escapejs }}');
 const employeeIsParttime   = JSON.parse('{{ employee_is_parttime_json|escapejs }}');
 const employeeOtherHours   = JSON.parse('{{ employee_other_hours_json|escapejs }}');
+const employeeLabels       = JSON.parse('{{ employee_labels_json|escapejs }}');
+const employeeNames        = JSON.parse('{{ employee_names_json|escapejs }}');
+const SCHEDULE_PK          = '{{ active_schedule_pk }}';
+const LABELS_URL_TPL       = '{% url "scheduling:employee_labels" schedule_pk=0 emp_pk=0 %}';
+const LABEL_DELETE_URL_TPL = '{% url "scheduling:delete_employee_label" label_pk=0 %}';
 const hasLocs = {{ has_locs|yesno:"true,false" }};
 const PARTTIME_MAX = 19.5;
 
@@ -318,15 +332,17 @@ function selectEmployee(empPk, color) {
   document.querySelector(`.sb2-key-item[data-emp-key="${empPk}"]`)?.classList.add('sb2-key-active');
   applyAvailabilityHighlight(empPk);
   updateHoursCounter();
+  rebuildLabelSelect();
 }
 
 function clearEmployee() {
-  activeEmpPk = null; activeEmpColor = null;
+  activeEmpPk = null; activeEmpColor = null; activeLabelText = '';
   document.querySelectorAll('.sb2-emp-pill').forEach(p => p.classList.remove('sb2-emp-active'));
   document.querySelectorAll('.sb2-key-item').forEach(k => k.classList.remove('sb2-key-active'));
   document.getElementById('active-emp-label').style.display = 'none';
   document.getElementById('label-input-wrap').style.display = 'none';
   document.getElementById('hours-counter').style.display = 'none';
+  document.getElementById('new-label-wrap').style.display = 'none';
   clearAvailabilityHighlight();
 }
 
@@ -546,18 +562,16 @@ function renderCell(cell) {
     }
   }
 
-  // Outline: neon/pastel border that caps at the top and bottom of each label block
+  // Outline: per-employee border that caps at the top/bottom of each employee's labeled block
   const prevCell = getPrevCell(cell);
   const nextCell = getNextCell(cell);
-  const seenLabels = new Map(); // label → color, de-duped
+  let inset = 0;
   for (const [epk] of cell._emps) {
     const lbl = cell._labels?.get(epk);
-    if (lbl && !seenLabels.has(lbl)) seenLabels.set(lbl, getLabelColor(lbl));
-  }
-  let inset = 0;
-  for (const [lbl, color] of seenLabels) {
-    const prevHas = prevCell?._emps && [...prevCell._emps.keys()].some(k => prevCell._labels?.get(k) === lbl);
-    const nextHas = nextCell?._emps && [...nextCell._emps.keys()].some(k => nextCell._labels?.get(k) === lbl);
+    if (!lbl) continue;
+    const color = getLabelColor(epk, lbl);
+    const prevHas = prevCell?._emps?.has(epk) && prevCell._labels?.get(epk) === lbl;
+    const nextHas = nextCell?._emps?.has(epk) && nextCell._labels?.get(epk) === lbl;
     const ol = document.createElement('div');
     ol.className = 'sb2-label-outline';
     ol.style.cssText = `position:absolute;top:${inset}px;left:${inset}px;right:${inset}px;bottom:${inset}px;`
@@ -633,108 +647,122 @@ function paintCell(cell) {
   updateAvailabilityWarnings();
 }
 
-// ── Custom label dropdown (localStorage-backed per schedule) ───────────────
-const LABEL_STORAGE_KEY = `shiftLabels_${activeSchedulePk}`;
-const LABEL_COLOR_KEY   = `shiftLabelColors_${activeSchedulePk}`;
+// ── Custom label system (server-backed, per-employee) ─────────────────────
 
-const NEON_PALETTE = [
-  '#FF6B9D', '#00D4FF', '#FFE66D', '#55EFC4',
-  '#FF9F43', '#A29BFE', '#FD79A8', '#74B9FF',
-  '#6FCF97', '#F9CA24',
-];
-
-function getSavedLabels() {
-  try { return JSON.parse(localStorage.getItem(LABEL_STORAGE_KEY) || '[]'); }
-  catch { return []; }
+function getCsrf() {
+  return document.querySelector('[name=csrfmiddlewaretoken]').value;
 }
 
-function getLabelColorMap() {
-  try { return JSON.parse(localStorage.getItem(LABEL_COLOR_KEY) || '{}'); }
-  catch { return {}; }
-}
-
-function getLabelColor(label) {
-  const saved = getLabelColorMap()[label];
-  if (saved) return saved;
-  let h = 5381;
-  for (let i = 0; i < label.length; i++) h = ((h << 5) + h) ^ label.charCodeAt(i);
-  return NEON_PALETTE[Math.abs(h) % NEON_PALETTE.length];
+function getLabelColor(empPk, labelName) {
+  const labels = employeeLabels[String(empPk)] || [];
+  const found = labels.find(l => l.name === labelName);
+  return found ? found.color : '#aaaaaa';
 }
 
 function renderLabelKey() {
-  const labels = getSavedLabels();
-  const colorMap = getLabelColorMap();
   const section = document.getElementById('label-key-section');
   const list = document.getElementById('label-key-list');
   list.innerHTML = '';
-  if (!labels.length) { section.style.display = 'none'; return; }
-  section.style.display = 'block';
-  labels.forEach(lbl => {
-    const color = colorMap[lbl] || NEON_PALETTE[0];
-    const item = document.createElement('div');
-    item.className = 'sb2-key-item';
-    item.innerHTML = `<span class="sb2-key-swatch" style="background:${color};border-radius:2px;border:1px solid rgba(0,0,0,0.15);"></span>`
-                   + `<span class="sb2-key-name">${lbl}</span>`;
-    list.appendChild(item);
-  });
+  let hasAny = false;
+  for (const [empPk, labels] of Object.entries(employeeLabels)) {
+    if (!labels.length) continue;
+    hasAny = true;
+    const empFirst = (employeeNames[empPk] || '').split(' ')[0];
+    labels.forEach(lbl => {
+      const item = document.createElement('div');
+      item.className = 'sb2-key-item';
+      item.innerHTML = `<span class="sb2-key-swatch" style="background:${lbl.color};border-radius:2px;border:2px solid ${lbl.color};width:12px;height:12px;display:inline-block;flex-shrink:0;"></span>`
+                     + `<span class="sb2-key-name" style="font-size:11px;">${empFirst} – ${lbl.name}</span>`;
+      list.appendChild(item);
+    });
+  }
+  section.style.display = hasAny ? 'block' : 'none';
 }
 
-function rebuildLabelSelect(selectValue) {
+function rebuildLabelSelect() {
   const sel = document.getElementById('active-label-select');
-  const prev = selectValue !== undefined ? selectValue : sel.value;
+  const prev = activeLabelText;
   sel.innerHTML = '<option value="">No label</option>';
-  getSavedLabels().forEach(lbl => {
+  const labels = employeeLabels[String(activeEmpPk)] || [];
+  labels.forEach(lbl => {
     const opt = document.createElement('option');
-    opt.value = lbl; opt.textContent = lbl;
+    opt.value = lbl.name; opt.textContent = lbl.name;
     sel.appendChild(opt);
   });
-  const addOpt = document.createElement('option');
-  addOpt.value = '__add__'; addOpt.textContent = '+ Add new label…';
-  sel.appendChild(addOpt);
-  if (prev && prev !== '__add__') sel.value = prev;
-  activeLabelText = (sel.value && sel.value !== '__add__') ? sel.value : '';
+  const stillExists = labels.some(l => l.name === prev);
+  sel.value = stillExists ? prev : '';
+  activeLabelText = sel.value;
+  document.getElementById('label-delete-btn').style.display = activeLabelText ? 'block' : 'none';
 }
 
-function confirmNewLabel() {
+function showAddLabel() {
+  document.getElementById('new-label-wrap').style.display = 'flex';
+  document.getElementById('new-label-input').focus();
+}
+
+async function confirmNewLabel() {
   const input = document.getElementById('new-label-input');
-  const label = input.value.trim();
-  if (!label) return;
-  const labels = getSavedLabels();
-  if (!labels.includes(label)) {
-    labels.push(label);
-    localStorage.setItem(LABEL_STORAGE_KEY, JSON.stringify(labels));
-  }
-  const colorMap = getLabelColorMap();
-  if (!colorMap[label]) {
-    colorMap[label] = NEON_PALETTE[Object.keys(colorMap).length % NEON_PALETTE.length];
-    localStorage.setItem(LABEL_COLOR_KEY, JSON.stringify(colorMap));
-  }
-  input.value = '';
-  document.getElementById('new-label-wrap').style.display = 'none';
-  rebuildLabelSelect(label);
-  renderLabelKey();
-  activeLabelText = label;
+  const name = input.value.trim();
+  if (!name || !activeEmpPk || !SCHEDULE_PK) return;
+  try {
+    const resp = await fetch(LABELS_URL_TPL.replace('/0/0/', `/${SCHEDULE_PK}/${activeEmpPk}/`), {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json', 'X-CSRFToken': getCsrf()},
+      body: JSON.stringify({name}),
+    });
+    const data = await resp.json();
+    if (!resp.ok) { alert(data.error || 'Failed to create label'); return; }
+    const empPk = String(activeEmpPk);
+    if (!employeeLabels[empPk]) employeeLabels[empPk] = [];
+    employeeLabels[empPk].push(data);
+    input.value = '';
+    document.getElementById('new-label-wrap').style.display = 'none';
+    activeLabelText = data.name;
+    rebuildLabelSelect();
+    renderLabelKey();
+  } catch (e) { alert('Network error'); }
 }
 
 function cancelNewLabel() {
   document.getElementById('new-label-wrap').style.display = 'none';
-  const sel = document.getElementById('active-label-select');
-  sel.value = activeLabelText || '';
+  document.getElementById('new-label-input').value = '';
+}
+
+async function deleteActiveLabel() {
+  if (!activeLabelText || !activeEmpPk) return;
+  const empPk = String(activeEmpPk);
+  const labelObj = (employeeLabels[empPk] || []).find(l => l.name === activeLabelText);
+  if (!labelObj) return;
+  if (!confirm(`Delete label "${activeLabelText}"? It will be removed from all cells in the current view.`)) return;
+  try {
+    const resp = await fetch(LABEL_DELETE_URL_TPL.replace('/0/', `/${labelObj.pk}/`), {
+      method: 'DELETE',
+      headers: {'X-CSRFToken': getCsrf()},
+    });
+    if (!resp.ok) { alert('Failed to delete label'); return; }
+    employeeLabels[empPk] = (employeeLabels[empPk] || []).filter(l => l.pk !== labelObj.pk);
+    const deletedName = activeLabelText;
+    activeLabelText = '';
+    rebuildLabelSelect();
+    renderLabelKey();
+    // Strip deleted label from all cells and re-render
+    document.querySelectorAll('.sb2-cell').forEach(cell => {
+      if (cell._labels?.get(empPk) === deletedName) {
+        cell._labels.delete(empPk);
+        renderCell(cell);
+        const pc = getPrevCell(cell); if (pc) renderCell(pc);
+        const nc = getNextCell(cell); if (nc) renderCell(nc);
+      }
+    });
+  } catch (e) { alert('Network error'); }
 }
 
 // Wire up all cells on DOMContentLoaded
 document.addEventListener('DOMContentLoaded', () => {
-  rebuildLabelSelect();
   renderLabelKey();
   document.getElementById('active-label-select').addEventListener('change', function() {
-    if (this.value === '__add__') {
-      document.getElementById('new-label-wrap').style.display = 'flex';
-      document.getElementById('new-label-input').focus();
-      activeLabelText = '';
-    } else {
-      document.getElementById('new-label-wrap').style.display = 'none';
-      activeLabelText = this.value;
-    }
+    activeLabelText = this.value;
+    document.getElementById('label-delete-btn').style.display = activeLabelText ? 'block' : 'none';
   });
   document.getElementById('new-label-input').addEventListener('keydown', function(e) {
     if (e.key === 'Enter') { e.preventDefault(); confirmNewLabel(); }
