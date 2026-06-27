@@ -623,7 +623,19 @@ function paintCell(cell) {
   if (!cell.classList.contains('sb2-in-hours')) return;
 
   if (drawMode === 'erase') {
-    if (!activeEmpPk) return;
+    if (!activeEmpPk) {
+      if (cell._emps.size > 0) {
+        cell._emps.clear();
+        cell._labels?.clear();
+        renderCell(cell);
+        const pc = getPrevCell(cell); if (pc) renderCell(pc);
+        const nc = getNextCell(cell); if (nc) renderCell(nc);
+        markUnsaved();
+        updateHoursCounter();
+        updateAvailabilityWarnings();
+      }
+      return;
+    }
     if (cell._emps.has(activeEmpPk)) {
       cell._emps.delete(activeEmpPk);
       cell._labels?.delete(activeEmpPk);
