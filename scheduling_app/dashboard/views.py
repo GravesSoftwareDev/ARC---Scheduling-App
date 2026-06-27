@@ -248,7 +248,7 @@ def export_schedule_ics(request):
         dtstart = entry.date.strftime('%Y%m%d') + 'T' + entry.start_time.strftime('%H%M%S')
         dtend   = entry.date.strftime('%Y%m%d') + 'T' + entry.end_time.strftime('%H%M%S')
         uid     = f'scheduleentry-{entry.pk}-{user_slug}@arc-scheduling'
-        summary = _ics_escape(entry.schedule.name)
+        summary = _ics_escape(entry.custom_label or entry.schedule.name)
 
         lines += [
             'BEGIN:VEVENT',

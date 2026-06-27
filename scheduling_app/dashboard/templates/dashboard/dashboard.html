@@ -130,7 +130,7 @@
                    style="background:{{ block.schedule.color }}22;border-left-color:{{ block.schedule.color }};">
                 {% if block.start_time == row.time %}
                 <div class="sched-block-header">
-                  <span class="sched-block-title">{{ block.schedule.name }}</span>
+                  <span class="sched-block-title">{{ block.custom_label|default:block.schedule.name }}</span>
                   <span class="sched-block-time">{{ block.start_time|time:"g:i A" }}&ndash;{{ block.end_time|time:"g:i A" }}</span>
                 </div>
                 {% endif %}
