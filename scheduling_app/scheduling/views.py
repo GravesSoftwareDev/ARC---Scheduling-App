@@ -617,7 +617,8 @@ def _slots_to_entries(emp_slots, all_slots, schedule, d, emp_lookup, created_by,
                     (prev_slot.hour * 60 + prev_slot.minute + 15) // 60,
                     (prev_slot.hour * 60 + prev_slot.minute + 15) % 60,
                 )
-                if slot != expected:
+                current_label = (slot_labels or {}).get(slot, '')
+                if slot != expected or current_label != block_label:
                     end_t = time(
                         (prev_slot.hour * 60 + prev_slot.minute + 15) // 60,
                         (prev_slot.hour * 60 + prev_slot.minute + 15) % 60,
@@ -629,7 +630,7 @@ def _slots_to_entries(emp_slots, all_slots, schedule, d, emp_lookup, created_by,
                         custom_label=block_label,
                     )
                     block_start = slot
-                    block_label = (slot_labels or {}).get(slot, '')
+                    block_label = current_label
             prev_slot = slot
 
         if block_start is not None and prev_slot is not None:
