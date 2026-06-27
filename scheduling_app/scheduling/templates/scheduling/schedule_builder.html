@@ -494,7 +494,10 @@ function _adjCell(cell, deltaMin) {
   const next = h * 60 + m + deltaMin;
   if (next < 0) return null;
   const nk = `${String(Math.floor(next / 60)).padStart(2, '0')}_${String(next % 60).padStart(2, '0')}`;
-  return document.getElementById(cell.id.replace(`_${cell.dataset.slot}__cell`, `_${nk}__cell`));
+  const loc = cell.dataset.loc;
+  const oldSuffix = loc ? `_${cell.dataset.slot}_${loc}__cell` : `_${cell.dataset.slot}__cell`;
+  const newSuffix = loc ? `_${nk}_${loc}__cell` : `_${nk}__cell`;
+  return document.getElementById(cell.id.replace(oldSuffix, newSuffix));
 }
 const getPrevCell = cell => _adjCell(cell, -15);
 const getNextCell = cell => _adjCell(cell, +15);
@@ -651,7 +654,11 @@ function getLabelColorMap() {
 }
 
 function getLabelColor(label) {
-  return getLabelColorMap()[label] || NEON_PALETTE[0];
+  const saved = getLabelColorMap()[label];
+  if (saved) return saved;
+  let h = 5381;
+  for (let i = 0; i < label.length; i++) h = ((h << 5) + h) ^ label.charCodeAt(i);
+  return NEON_PALETTE[Math.abs(h) % NEON_PALETTE.length];
 }
 
 function renderLabelKey() {
