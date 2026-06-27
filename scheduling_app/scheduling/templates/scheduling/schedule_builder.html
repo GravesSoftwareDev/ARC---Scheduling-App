@@ -342,6 +342,7 @@ function clearEmployee() {
   document.getElementById('label-input-wrap').style.display = 'none';
   document.getElementById('hours-counter').style.display = 'none';
   document.getElementById('new-label-wrap').style.display = 'none';
+  document.getElementById('hours-value').className = 'sb2-hours-value';
   clearAvailabilityHighlight();
 }
 
@@ -436,36 +437,46 @@ function calcScheduledHours(empPk) {
 
 function updateHoursCounter() {
   const counter = document.getElementById('hours-counter');
-  if (!activeEmpPk || !employeeIsParttime[activeEmpPk]) {
-    counter.style.display = 'none';
-    return;
-  }
+  if (!activeEmpPk) { counter.style.display = 'none'; return; }
+
   const thisHrs  = calcScheduledHours(activeEmpPk);
   const otherHrs = employeeOtherHours[activeEmpPk] || 0;
   const total    = thisHrs + otherHrs;
-  const pct      = Math.min(100, (total / PARTTIME_MAX) * 100);
+  const isParttime = employeeIsParttime[activeEmpPk];
 
   counter.style.display = 'block';
-  document.getElementById('hours-value').textContent = total.toFixed(1);
+  document.getElementById('hours-value').textContent = total.toFixed(2);
 
-  const fill    = document.getElementById('hours-fill');
-  const valEl   = document.getElementById('hours-value');
-  const warnEl  = document.getElementById('hours-warning');
+  const capEl  = document.getElementById('hours-cap');
+  const barWrap = document.querySelector('.sb2-hours-bar-wrap');
+  const fill   = document.getElementById('hours-fill');
+  const valEl  = document.getElementById('hours-value');
+  const warnEl = document.getElementById('hours-warning');
 
-  fill.style.width = pct + '%';
-
-  if (total > PARTTIME_MAX) {
-    fill.className  = 'sb2-hours-fill sb2-hours-over';
-    valEl.className = 'sb2-hours-value sb2-hours-over';
-    warnEl.style.display = 'block';
-  } else if (total >= PARTTIME_MAX - 1) {
-    fill.className  = 'sb2-hours-fill sb2-hours-warn';
-    valEl.className = 'sb2-hours-value sb2-hours-warn';
-    warnEl.style.display = 'none';
+  if (isParttime) {
+    const pct = Math.min(100, (total / PARTTIME_MAX) * 100);
+    capEl.style.display  = '';
+    barWrap.style.display = '';
+    fill.style.width = pct + '%';
+    if (total > PARTTIME_MAX) {
+      fill.className = 'sb2-hours-fill sb2-hours-over';
+      valEl.className = 'sb2-hours-value sb2-hours-over';
+      warnEl.style.display = 'block';
+    } else if (total >= PARTTIME_MAX - 1) {
+      fill.className = 'sb2-hours-fill sb2-hours-warn';
+      valEl.className = 'sb2-hours-value sb2-hours-warn';
+      warnEl.style.display = 'none';
+    } else {
+      fill.className = 'sb2-hours-fill';
+      valEl.className = 'sb2-hours-value';
+      warnEl.style.display = 'none';
+    }
   } else {
+    capEl.style.display   = 'none';
+    barWrap.style.display = 'none';
+    warnEl.style.display  = 'none';
     fill.className  = 'sb2-hours-fill';
     valEl.className = 'sb2-hours-value';
-    warnEl.style.display = 'none';
   }
 }
 

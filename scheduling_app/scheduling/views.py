@@ -383,7 +383,7 @@ def schedule_builder(request):
             total_hrs = (new_mins + other_mins) / 60
             if total_hrs > PARTTIME_WEEKLY_MAX:
                 violations.append(
-                    f"{emp.first_name} {emp.last_name}: {total_hrs:.1f} hrs scheduled "
+                    f"{emp.first_name} {emp.last_name}: {total_hrs:.2f} hrs scheduled "
                     f"(limit {PARTTIME_WEEKLY_MAX})"
                 )
 
