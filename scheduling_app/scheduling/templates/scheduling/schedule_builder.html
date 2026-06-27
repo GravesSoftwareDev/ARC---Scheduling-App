@@ -535,7 +535,7 @@ function renderCell(cell) {
     const lbl = cell._labels?.get(epk);
     const labelColor = lbl ? getLabelColor(lbl) : null;
     cell.style.background = labelColor
-      ? `linear-gradient(to right, ${labelColor} 0%, ${empColor} 30%)`
+      ? `linear-gradient(to right, ${labelColor} 0%, ${labelColor} 18%, ${empColor} 18%)`
       : empColor;
   } else {
     const pct = 100 / empEntries.length;
@@ -543,11 +543,11 @@ function renderCell(cell) {
     empEntries.forEach(([epk, empColor], i) => {
       const s = (i * pct).toFixed(1);
       const e = ((i + 1) * pct).toFixed(1);
-      const mid = (i * pct + pct * 0.3).toFixed(1);
+      const stripe = (i * pct + pct * 0.18).toFixed(1);
       const lbl = cell._labels?.get(epk);
       const labelColor = lbl ? getLabelColor(lbl) : null;
       if (labelColor) {
-        stops.push(`${labelColor} ${s}%`, `${empColor} ${mid}%`, `${empColor} ${e}%`);
+        stops.push(`${labelColor} ${s}%`, `${labelColor} ${stripe}%`, `${empColor} ${stripe}%`, `${empColor} ${e}%`);
       } else {
         stops.push(`${empColor} ${s}%`, `${empColor} ${e}%`);
       }
