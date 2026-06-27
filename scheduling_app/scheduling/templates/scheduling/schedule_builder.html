@@ -244,6 +244,7 @@ const dateDayMap           = JSON.parse('{{ date_day_map_json|escapejs }}');
 const employeeIsParttime   = JSON.parse('{{ employee_is_parttime_json|escapejs }}');
 const employeeOtherHours   = JSON.parse('{{ employee_other_hours_json|escapejs }}');
 const scheduleLabels       = JSON.parse('{{ schedule_labels_json|escapejs }}');
+const employeeInitials     = JSON.parse('{{ employee_initials_json|escapejs }}');
 const SCHEDULE_PK          = '{{ active_schedule_pk }}';
 const LABELS_URL_TPL       = '{% url "scheduling:schedule_labels" schedule_pk=0 %}';
 const LABEL_DELETE_URL_TPL = '{% url "scheduling:delete_shift_label" label_pk=0 %}';
@@ -518,7 +519,7 @@ const getNextCell = cell => _adjCell(cell, +15);
 
 // ── Cell rendering ─────────────────────────────────────────────────────────
 function renderCell(cell) {
-  cell.querySelectorAll('.sb2-cell-input, .sb2-cell-label-inp').forEach(e => e.remove());
+  cell.querySelectorAll('.sb2-cell-input, .sb2-cell-label-inp, .sb2-initials').forEach(e => e.remove());
 
   if (!cell._emps || cell._emps.size === 0) {
     cell.style.background = '';
@@ -575,6 +576,19 @@ function renderCell(cell) {
       cell.appendChild(lblInp);
     }
   }
+
+  // Initials overlay — one per employee, positioned in their stripe
+  const total = empEntries.length;
+  empEntries.forEach(([epk], i) => {
+    const initials = employeeInitials[epk];
+    if (!initials) return;
+    const span = document.createElement('span');
+    span.className = 'sb2-initials';
+    span.textContent = initials;
+    const pct = 100 / total;
+    span.style.left = `${(i * pct + pct / 2).toFixed(1)}%`;
+    cell.appendChild(span);
+  });
 }
 
 // ── Clear all cells ────────────────────────────────────────────────────────

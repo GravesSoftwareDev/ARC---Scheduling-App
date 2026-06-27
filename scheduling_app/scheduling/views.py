@@ -497,6 +497,11 @@ def schedule_builder(request):
             ShiftLabel.objects.filter(schedule=active_schedule).values('pk', 'name', 'color')
         )
 
+    employee_initials = {
+        str(e.pk): (e.first_name[:1] + e.last_name[:1]).upper()
+        for e in visible_employees
+    }
+
     return render(request, 'scheduling/schedule_builder.html', {
         'week_start': week_start,
         'week_label': f"{week_start.strftime('%b %-d')} – {week_dates[-1].strftime('%b %-d, %Y')}",
@@ -518,6 +523,7 @@ def schedule_builder(request):
         'employee_is_parttime_json': json.dumps({str(k): v for k, v in parttime_flags.items()}),
         'employee_other_hours_json': json.dumps({str(k): v for k, v in other_hours_map.items()}),
         'schedule_labels_json': json.dumps(schedule_labels_data),
+        'employee_initials_json': json.dumps(employee_initials),
         'is_admin': is_admin, 'today': today,
     })
 
