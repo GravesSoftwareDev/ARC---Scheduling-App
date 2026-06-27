@@ -441,6 +441,10 @@ def schedule_builder(request):
                     'label': entry.custom_label,
                 })
 
+    # Sort each cell's assignments by label alphabetically so stripes line up visually
+    for assignments in cell_state.values():
+        assignments.sort(key=lambda a: (a['label'] or '', a['emp_pk']))
+
     # Build flat cell list per grid row
     num_locs = len(dept_locs)
     total_day_cols = 5 * num_locs
