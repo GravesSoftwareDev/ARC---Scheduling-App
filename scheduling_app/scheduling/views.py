@@ -422,7 +422,9 @@ def schedule_builder(request):
     # ── GET: load existing entries into cell state ────────────────────────────
     entries_qs = ScheduleEntry.objects.filter(
         date__in=week_dates, schedule=active_schedule,
-    ).select_related('user') if active_schedule else []
+    ).select_related('user').order_by(
+        'date', 'start_time', 'custom_label', 'user__last_name', 'user__first_name'
+    ) if active_schedule else []
     entries = list(entries_qs)
 
     # cell_state[(date_iso, slot_key, loc_slug)] → list of {emp_pk, color}
