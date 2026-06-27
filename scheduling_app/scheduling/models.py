@@ -184,11 +184,26 @@ class ScheduleEntry(models.Model):
 
 
 LABEL_PALETTE = [
-    '#FF6B9D', '#00D4FF', '#FFE66D', '#55EFC4',
-    '#FF9F43', '#A29BFE', '#FD79A8', '#74B9FF',
-    '#6FCF97', '#F9CA24', '#E17055', '#81ECEC',
-    '#FDCB6E', '#6C5CE7', '#00B894', '#E84393',
-    '#0984E3', '#00CEC9', '#D63031', '#B2BEC3',
+    '#FF3B30',  # red
+    '#FF9500',  # orange
+    '#FFCC00',  # yellow
+    '#34C759',  # green
+    '#00C7BE',  # teal
+    '#007AFF',  # blue
+    '#5856D6',  # indigo
+    '#BF5AF2',  # purple
+    '#FF2D92',  # hot pink
+    '#A2845E',  # brown
+    '#FF6B35',  # coral
+    '#C8F709',  # lime
+    '#64D2FF',  # light blue
+    '#AC39AC',  # magenta
+    '#FFD60A',  # gold
+    '#32ADE6',  # azure
+    '#6AC4DC',  # powder blue
+    '#30D158',  # mint
+    '#FF453A',  # vermillion
+    '#A0522D',  # sienna
 ]
 
 
