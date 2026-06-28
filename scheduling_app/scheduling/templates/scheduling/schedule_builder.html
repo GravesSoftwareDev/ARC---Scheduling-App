@@ -66,7 +66,7 @@
           Drawing for: <strong id="active-emp-name"></strong>
           <button type="button" class="sb2-clear-sel" onclick="clearEmployee()">✕</button>
         </div>
-        <div id="label-input-wrap" style="display:none; margin-top:6px;">
+        <div id="label-input-wrap" style="margin-top:6px;">
           <!-- Label selector + delete -->
           <div style="display:flex;gap:4px;align-items:center;">
             <select id="active-label-select"
@@ -326,7 +326,6 @@ function selectEmployee(empPk, color) {
   document.querySelectorAll('.sb2-emp-pill').forEach(p => p.classList.remove('sb2-emp-active'));
   document.querySelector(`.sb2-emp-pill[data-emp="${empPk}"]`)?.classList.add('sb2-emp-active');
   document.getElementById('active-emp-label').style.display = 'flex';
-  document.getElementById('label-input-wrap').style.display = 'block';
   const pill = document.querySelector(`.sb2-emp-pill[data-emp="${empPk}"]`);
   document.getElementById('active-emp-name').textContent = pill ? pill.textContent.trim() : empPk;
   document.querySelectorAll('.sb2-key-item').forEach(k => k.classList.remove('sb2-key-active'));
@@ -340,7 +339,6 @@ function clearEmployee() {
   document.querySelectorAll('.sb2-emp-pill').forEach(p => p.classList.remove('sb2-emp-active'));
   document.querySelectorAll('.sb2-key-item').forEach(k => k.classList.remove('sb2-key-active'));
   document.getElementById('active-emp-label').style.display = 'none';
-  document.getElementById('label-input-wrap').style.display = 'none';
   document.getElementById('hours-counter').style.display = 'none';
   document.getElementById('new-label-wrap').style.display = 'none';
   document.getElementById('hours-value').className = 'sb2-hours-value';
