@@ -838,12 +838,8 @@ async function saveSchedule(afterUrl) {
   const fd = new FormData(form);
   const schedulePk = fd.get('active_schedule_pk') || SCHEDULE_PK;
 
-  // Collect unique dates from slot input names
-  const dateSet = new Set();
-  for (const key of fd.keys()) {
-    const m = key.match(/^slot_(\d{4}-\d{2}-\d{2})_/);
-    if (m) dateSet.add(m[1]);
-  }
+  // Always save all week dates so empty days still clear existing DB entries
+  const dateSet = new Set(Object.keys(dateDayMap));
 
   const saveBtn = document.querySelector('.sb2-save-btn');
   const origText = saveBtn.textContent;
