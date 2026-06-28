@@ -583,6 +583,53 @@ def delete_shift_label(request, label_pk):
 
 
 @login_required
+@user_passes_test(_is_scheduler_or_admin)
+@require_http_methods(['POST'])
+def save_schedule_day(request):
+    """Save/rebuild schedule entries for a single day. Called via AJAX."""
+    from account.models import Employee
+
+    schedule_pk = request.POST.get('schedule_pk', '')
+    date_iso = request.POST.get('date_iso', '')
+
+    try:
+        target_date = date.fromisoformat(date_iso)
+    except (ValueError, TypeError):
+        return JsonResponse({'error': 'Invalid date'}, status=400)
+
+    schedule = get_object_or_404(Schedule, pk=schedule_pk)
+    if not (request.user.is_admin or schedule in request.user.scheduler_of.all()):
+        return JsonResponse({'error': 'Forbidden'}, status=403)
+
+    dh_start, dh_end, closed = _get_operating_hours_for_date(target_date)
+    if closed or not dh_start:
+        ScheduleEntry.objects.filter(date=target_date, schedule=schedule).delete()
+        return JsonResponse({'ok': True})
+
+    slots = _build_time_slots(dh_start, dh_end)
+    emp_lookup = {str(e.pk): e for e in Employee.objects.filter(member_of=schedule)}
+
+    ScheduleEntry.objects.filter(date=target_date, schedule=schedule).delete()
+
+    per_emp = {}
+    per_emp_labels = {}
+    for slot in slots:
+        sk = f"{slot.hour:02d}_{slot.minute:02d}"
+        key = f"slot_{date_iso}_{sk}"
+        for epk in request.POST.getlist(key):
+            if epk in emp_lookup:
+                per_emp.setdefault(epk, {})[slot] = epk
+                label = request.POST.get(f"{key}__label__{epk}", '')
+                per_emp_labels.setdefault(epk, {})[slot] = label
+
+    for epk, emp_slots in per_emp.items():
+        _slots_to_entries(emp_slots, slots, schedule, target_date, emp_lookup, request.user,
+                          slot_labels=per_emp_labels.get(epk, {}))
+
+    return JsonResponse({'ok': True})
+
+
+@login_required
 @user_passes_test(_is_admin)
 def export_teams_shifts(request):
     schedules = Schedule.objects.order_by('name')

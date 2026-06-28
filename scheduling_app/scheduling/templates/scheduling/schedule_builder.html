@@ -248,6 +248,7 @@ const employeeInitials     = JSON.parse('{{ employee_initials_json|escapejs }}')
 const SCHEDULE_PK          = '{{ active_schedule_pk }}';
 const LABELS_URL_TPL       = '{% url "scheduling:schedule_labels" schedule_pk=0 %}';
 const LABEL_DELETE_URL_TPL = '{% url "scheduling:delete_shift_label" label_pk=0 %}';
+const SAVE_DAY_URL         = '{% url "scheduling:save_schedule_day" %}';
 const hasLocs = {{ has_locs|yesno:"true,false" }};
 const PARTTIME_MAX = 19.5;
 
@@ -833,7 +834,62 @@ function markUnsaved() {
   document.getElementById('unsaved-badge').style.display = 'inline-flex';
 }
 
-document.getElementById('schedule-form').addEventListener('submit', () => { hasUnsaved = false; });
+// ── Per-day AJAX save ─────────────────────────────────────────────────────
+async function saveSchedule(afterUrl) {
+  const form = document.getElementById('schedule-form');
+  const fd = new FormData(form);
+  const schedulePk = fd.get('active_schedule_pk') || SCHEDULE_PK;
+
+  // Collect unique dates from slot input names
+  const dateSet = new Set();
+  for (const key of fd.keys()) {
+    const m = key.match(/^slot_(\d{4}-\d{2}-\d{2})_/);
+    if (m) dateSet.add(m[1]);
+  }
+
+  const saveBtn = document.querySelector('.sb2-save-btn');
+  const origText = saveBtn.textContent;
+  saveBtn.disabled = true;
+  saveBtn.textContent = 'Saving…';
+
+  try {
+    for (const dateIso of dateSet) {
+      const dayFd = new FormData();
+      dayFd.append('schedule_pk', schedulePk);
+      dayFd.append('date_iso', dateIso);
+      for (const [key, val] of fd.entries()) {
+        if (key.startsWith(`slot_${dateIso}_`)) dayFd.append(key, val);
+      }
+      const resp = await fetch(SAVE_DAY_URL, {
+        method: 'POST',
+        headers: {'X-CSRFToken': getCsrf()},
+        body: dayFd,
+      });
+      if (!resp.ok) {
+        const data = await resp.json().catch(() => ({}));
+        alert('Save failed: ' + (data.error || resp.statusText));
+        saveBtn.disabled = false;
+        saveBtn.textContent = origText;
+        return;
+      }
+    }
+  } catch (err) {
+    alert('Save failed: ' + err.message);
+    saveBtn.disabled = false;
+    saveBtn.textContent = origText;
+    return;
+  }
+
+  hasUnsaved = false;
+  const weekParam = new URLSearchParams(window.location.search).get('week') || '';
+  const base = afterUrl || `?week=${weekParam}&schedule=${schedulePk}`;
+  window.location.href = window.location.pathname + (base.startsWith('?') ? base : '?' + base);
+}
+
+document.getElementById('schedule-form').addEventListener('submit', e => {
+  e.preventDefault();
+  saveSchedule();
+});
 
 // ── Schedule change: prompt to save first ─────────────────────────────────
 document.getElementById('schedule-select').addEventListener('change', function() {
@@ -856,10 +912,7 @@ function discardAndNavigate() {
 
 function saveAndNavigate() {
   document.getElementById('unsaved-dialog').style.display = 'none';
-  const hidden = document.createElement('input');
-  hidden.type = 'hidden'; hidden.name = 'redirect_after_save'; hidden.value = pendingNavUrl;
-  document.getElementById('schedule-form').appendChild(hidden);
-  document.getElementById('schedule-form').submit();
+  saveSchedule(pendingNavUrl);
 }
 
 // ── Week nav / dashboard nav: warn on unsaved ──────────────────────────────
