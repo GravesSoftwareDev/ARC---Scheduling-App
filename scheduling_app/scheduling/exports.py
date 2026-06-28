@@ -33,12 +33,14 @@ def build_teams_shifts_xlsx(schedule_pks, date_from: date, date_to: date) -> byt
     Returns raw bytes ready to serve as a file download.
     """
     wb = load_workbook(TEMPLATE_PATH)
-    shifts_ws = wb['Shifts']
 
-    # Clear sample data rows from the template (keep header row 1)
-    for row in shifts_ws.iter_rows(min_row=2):
-        for cell in row:
-            cell.value = None
+    # Clear sample data from every sheet (keep header row 1)
+    for ws in wb.worksheets:
+        for row in ws.iter_rows(min_row=2):
+            for cell in row:
+                cell.value = None
+
+    shifts_ws = wb['Shifts']
 
     entries = (
         ScheduleEntry.objects
