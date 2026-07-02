@@ -23,6 +23,7 @@
       {% if active_schedule %}
       <a href="?week={{ week_start|date:'Y-m-d' }}&schedule={{ active_schedule_pk }}&load_default=1"
          class="btn btn-secondary" id="nav-load-default">Load Default Week</a>
+      <button type="button" class="btn btn-secondary" id="save-as-default-btn" onclick="saveWeekAsDefault()">Save Week as Default</button>
       {% endif %}
       <a href="{% url 'scheduling:default_schedule_builder' %}?schedule={{ active_schedule_pk }}" class="btn btn-secondary" id="nav-manage-default">Manage Default Week</a>
       {% if is_admin %}<a href="{% url 'scheduling:export_teams_shifts' %}" class="btn btn-secondary">Export</a>{% endif %}
@@ -254,6 +255,8 @@ const SCHEDULE_PK          = '{{ active_schedule_pk }}';
 const LABELS_URL_TPL       = '{% url "scheduling:schedule_labels" schedule_pk=0 %}';
 const LABEL_DELETE_URL_TPL = '{% url "scheduling:delete_shift_label" label_pk=0 %}';
 const SAVE_DAY_URL         = '{% url "scheduling:save_schedule_day" %}';
+const SAVE_AS_DEFAULT_URL  = '{% url "scheduling:save_week_as_default" %}';
+const WEEK_START_ISO       = '{{ week_start|date:"Y-m-d" }}';
 const hasLocs = {{ has_locs|yesno:"true,false" }};
 const PARTTIME_MAX = 19.5;
 
@@ -883,6 +886,45 @@ async function saveSchedule(afterUrl) {
   const weekParam = new URLSearchParams(window.location.search).get('week') || '';
   const base = afterUrl || `?week=${weekParam}&schedule=${schedulePk}`;
   window.location.href = window.location.pathname + (base.startsWith('?') ? base : '?' + base);
+}
+
+// ── Save the currently-displayed week as the schedule's default template ──
+async function saveWeekAsDefault() {
+  if (!confirm('Save this week exactly as shown as the new default weekly schedule? This replaces the current default template entirely.')) {
+    return;
+  }
+
+  const form = document.getElementById('schedule-form');
+  const fd = new FormData(form);
+  const schedulePk = fd.get('active_schedule_pk') || SCHEDULE_PK;
+  fd.append('week_start', WEEK_START_ISO);
+
+  const btn = document.getElementById('save-as-default-btn');
+  const origText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Saving…';
+
+  try {
+    const resp = await fetch(SAVE_AS_DEFAULT_URL, {
+      method: 'POST',
+      headers: {'X-CSRFToken': getCsrf()},
+      body: fd,
+    });
+    if (!resp.ok) {
+      const data = await resp.json().catch(() => ({}));
+      alert('Save failed: ' + (data.error || resp.statusText));
+      btn.disabled = false;
+      btn.textContent = origText;
+      return;
+    }
+  } catch (err) {
+    alert('Save failed: ' + err.message);
+    btn.disabled = false;
+    btn.textContent = origText;
+    return;
+  }
+
+  window.location.href = `${window.location.pathname}?week=${WEEK_START_ISO}&schedule=${schedulePk}`;
 }
 
 document.getElementById('schedule-form').addEventListener('submit', e => {

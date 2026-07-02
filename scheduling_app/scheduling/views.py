@@ -915,6 +915,54 @@ def save_schedule_day(request):
 
 
 @login_required
+@user_passes_test(_is_scheduler_or_admin)
+@require_http_methods(['POST'])
+def save_week_as_default(request):
+    """Persist the schedule builder's currently-displayed week as the schedule's
+    new default weekly template, replacing whatever default previously existed."""
+    from account.models import Employee
+
+    schedule_pk = request.POST.get('active_schedule_pk', '')
+    week_start = parse_date(request.POST.get('week_start', ''))
+    if not week_start:
+        return JsonResponse({'error': 'Invalid week'}, status=400)
+
+    schedule = get_object_or_404(Schedule, pk=schedule_pk)
+    if not (request.user.is_admin or schedule in request.user.scheduler_of.all()):
+        return JsonResponse({'error': 'Forbidden'}, status=403)
+
+    week_dates = [week_start + timedelta(days=i) for i in range(5)]
+    emp_lookup = {str(e.pk): e for e in Employee.objects.filter(member_of=schedule).distinct()}
+
+    WeeklySchedule.objects.filter(schedule=schedule).delete()
+
+    for d in week_dates:
+        day_code = _DOW_CODE.get(d.weekday())
+        if not day_code:
+            continue
+        dh_start, dh_end, closed = _get_operating_hours_for_date(d)
+        if closed or not dh_start:
+            continue
+        day_slots = _build_time_slots(dh_start, dh_end)
+        per_emp = {}
+        per_emp_labels = {}
+        for slot in day_slots:
+            sk = f"{slot.hour:02d}_{slot.minute:02d}"
+            key = f"slot_{d.isoformat()}_{sk}"
+            for epk in request.POST.getlist(key):
+                if epk in emp_lookup:
+                    per_emp.setdefault(epk, {})[slot] = epk
+                    label = request.POST.get(f"{key}__label__{epk}", '')
+                    per_emp_labels.setdefault(epk, {})[slot] = label
+        for epk, emp_slots in per_emp.items():
+            _slots_to_weekly_blocks(emp_slots, schedule, day_code, emp_lookup,
+                                     slot_labels=per_emp_labels.get(epk, {}))
+
+    messages.success(request, f"This week's schedule is now the default for {schedule}.")
+    return JsonResponse({'ok': True})
+
+
+@login_required
 @user_passes_test(_is_admin)
 def export_teams_shifts(request):
     schedules = Schedule.objects.order_by('name')
