@@ -112,17 +112,18 @@ class WeeklySchedule(models.Model):
         related_name = 'scheduled_blocks',
     )
     day_of_week = models.CharField(
-        max_length=3, 
+        max_length=3,
         choices=DayOfWeek.choices
     )
     start_time = models.TimeField()
     end_time = models.TimeField()
+    custom_label = models.CharField(max_length=100, blank=True, default='')
 
     def clean(self):
         if self.start_time and self.end_time:
             if self.start_time >= self.end_time:
                 raise ValidationError("Start time must be before end time.")
-            
+
             overlaps = WeeklySchedule.objects.filter(
                 user=self.user,
                 day_of_week = self.day_of_week,
@@ -131,9 +132,9 @@ class WeeklySchedule(models.Model):
             ).exclude(pk=self.pk)
             if overlaps.exists():
                 raise ValidationError("This block overlaps with an existing scheduled block.")
-    
+
     def __str__(self):
-        return f'{self.user} = {self.department} - {self.day_of_week} - {self.start_time} - {self.end_time}'
+        return f'{self.user} – {self.schedule} - {self.day_of_week} - {self.start_time} - {self.end_time}'
 
     class Meta:
         ordering = [DAY_ORDER, 'start_time']

@@ -4,12 +4,13 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.forms import modelformset_factory
 from django.utils.dateparse import parse_date
 from datetime import time, date, timedelta
+from collections import namedtuple
 import json
 
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 
-from .models import WeeklyAvailability, OperatingHours, DayOfWeek, ScheduleEntry, DateOperatingHours, Schedule, ShiftLabel, LABEL_PALETTE
+from .models import WeeklyAvailability, OperatingHours, DayOfWeek, ScheduleEntry, DateOperatingHours, Schedule, ShiftLabel, LABEL_PALETTE, WeeklySchedule
 from .forms import OpenHoursForm, DateOperatingHoursForm
 
 
@@ -90,6 +91,10 @@ def _is_scheduler_or_admin(user):
 
 def _is_admin(user):
     return user.is_authenticated and user.is_admin
+
+_VirtualEntry = namedtuple(
+    '_VirtualEntry', ['user', 'date', 'start_time', 'end_time', 'location', 'custom_label']
+)
 
 # ── availability ─────────────────────────────────────────────────────────────
 
@@ -419,13 +424,33 @@ def schedule_builder(request):
         redirect_url = after_save if after_save.startswith('?') else f"?week={week_start.isoformat()}&schedule={post_schedule_pk}"
         return redirect(f"{request.path}{redirect_url}")
 
-    # ── GET: load existing entries into cell state ────────────────────────────
-    entries_qs = ScheduleEntry.objects.filter(
-        date__in=week_dates, schedule=active_schedule,
-    ).select_related('user').order_by(
-        'date', 'start_time', 'custom_label', 'user__last_name', 'user__first_name'
-    ) if active_schedule else []
-    entries = list(entries_qs)
+    # ── GET: load existing entries (or the default template) into cell state ─
+    load_default = request.GET.get('load_default') == '1'
+
+    if load_default and active_schedule:
+        dow_to_date = {_DOW_CODE.get(d.weekday()): d for d in week_dates}
+        weekly_blocks = WeeklySchedule.objects.filter(
+            schedule=active_schedule, user__in=visible_employees,
+        ).select_related('user')
+        entries = [
+            _VirtualEntry(
+                user=blk.user, date=dow_to_date[blk.day_of_week],
+                start_time=blk.start_time, end_time=blk.end_time,
+                location='', custom_label=blk.custom_label,
+            )
+            for blk in weekly_blocks if blk.day_of_week in dow_to_date
+        ]
+        if not entries:
+            messages.info(request, f"No default weekly schedule is set for {active_schedule}.")
+        else:
+            messages.info(request, "Default weekly schedule loaded — review and click Save to apply.")
+    else:
+        entries_qs = ScheduleEntry.objects.filter(
+            date__in=week_dates, schedule=active_schedule,
+        ).select_related('user').order_by(
+            'date', 'start_time', 'custom_label', 'user__last_name', 'user__first_name'
+        ) if active_schedule else []
+        entries = list(entries_qs)
 
     # cell_state[(date_iso, slot_key, loc_slug)] → list of {emp_pk, color}
     cell_state = {}
@@ -542,7 +567,267 @@ def schedule_builder(request):
         'schedule_labels_json': json.dumps(schedule_labels_data),
         'employee_initials_json': json.dumps(employee_initials),
         'is_admin': is_admin, 'today': today,
+        'load_default': load_default,
     })
+
+
+DEFAULT_BUILDER_DAYS = [d for d in DayOfWeek.choices]  # [('MON', 'Monday'), ...]
+
+
+def _default_day_hours():
+    """Weekly operating-hours span for each weekday, falling back to 8–5 if unconfigured."""
+    oh_by_day = {oh.day_of_week: oh for oh in OperatingHours.objects.all()}
+    day_hours = {}
+    for day_code, _label in DEFAULT_BUILDER_DAYS:
+        oh = oh_by_day.get(day_code)
+        day_hours[day_code] = (oh.start_time, oh.end_time) if oh else (time(8, 0), time(17, 0))
+    return day_hours
+
+
+@login_required
+@user_passes_test(_is_scheduler_or_admin)
+def default_schedule_builder(request):
+    """Schedulers define a recurring default week (day-of-week based) per Schedule.
+    Saved as WeeklySchedule rows; the live schedule_builder can load these to prefill a real week."""
+    from account.models import Employee
+
+    is_admin = request.user.is_admin
+    if is_admin:
+        allowed_schedules = list(Schedule.objects.all().order_by('name'))
+    else:
+        allowed_schedules = list(request.user.scheduler_of.all().order_by('name'))
+
+    schedule_pk_param = (
+        request.POST.get('active_schedule_pk')
+        or request.GET.get('schedule')
+        or (str(allowed_schedules[0].pk) if allowed_schedules else '')
+    )
+    active_schedule = next((s for s in allowed_schedules if str(s.pk) == schedule_pk_param), None)
+    if not active_schedule and allowed_schedules:
+        active_schedule = allowed_schedules[0]
+        schedule_pk_param = str(active_schedule.pk)
+
+    if active_schedule:
+        visible_employees = list(
+            Employee.objects.filter(member_of=active_schedule)
+            .distinct().order_by('last_name', 'first_name')
+        )
+    else:
+        visible_employees = []
+
+    employee_colors = {
+        e.pk: EMPLOYEE_PALETTE[i % len(EMPLOYEE_PALETTE)]
+        for i, e in enumerate(visible_employees)
+    }
+
+    # Availability is already day-of-week based — same shape as the live builder uses.
+    avail_data = {}
+    if visible_employees:
+        all_avail = WeeklyAvailability.objects.filter(user__in=visible_employees).order_by('start_time')
+        for a in all_avail:
+            avail_data.setdefault(str(a.user_id), {}).setdefault(a.day_of_week, []).append({
+                'start': a.start_time.strftime('%H:%M'),
+                'end': a.end_time.strftime('%H:%M'),
+                'type': a.availability_type,
+            })
+
+    # Conflicts = this employee's default hours on OTHER schedules (keyed by day code,
+    # reusing the 'date' key so the existing conflict-matching JS works unmodified).
+    conflict_data = {}
+    other_default_qs = WeeklySchedule.objects.none()
+    if visible_employees:
+        other_default_qs = WeeklySchedule.objects.filter(
+            user__in=visible_employees,
+        ).exclude(schedule=active_schedule)
+        for blk in other_default_qs.select_related('user', 'schedule'):
+            conflict_data.setdefault(str(blk.user_id), []).append({
+                'date': blk.day_of_week,
+                'start': blk.start_time.strftime('%H:%M'),
+                'end': blk.end_time.strftime('%H:%M'),
+                'schedule': blk.schedule.name,
+                'schedule_color': blk.schedule.color,
+            })
+
+    # Part-time flag + default hours already committed on other schedules
+    parttime_flags = {}
+    other_hours_map = {}
+    for emp in visible_employees:
+        is_pt = emp.part_time
+        parttime_flags[emp.pk] = is_pt
+        if is_pt:
+            total_mins = sum(
+                (blk.end_time.hour * 60 + blk.end_time.minute)
+                - (blk.start_time.hour * 60 + blk.start_time.minute)
+                for blk in other_default_qs.filter(user=emp)
+            )
+            other_hours_map[emp.pk] = round(total_mins / 60, 2)
+        else:
+            other_hours_map[emp.pk] = 0
+
+    day_hours = _default_day_hours()
+    grid_start = min(h[0] for h in day_hours.values())
+    grid_end = max(h[1] for h in day_hours.values())
+    slots = _build_time_slots(grid_start, grid_end)
+
+    # date→day map, keyed by day code onto itself, so the shared JS's
+    # `dateDayMap[dateStr]` lookup works unmodified against day codes.
+    date_day_map = {code: code for code, _label in DEFAULT_BUILDER_DAYS}
+
+    # ── POST: rebuild the default week for this schedule ─────────────────────
+    if request.method == 'POST':
+        post_schedule_pk = request.POST.get('active_schedule_pk', schedule_pk_param)
+        post_schedule = next((s for s in allowed_schedules if str(s.pk) == post_schedule_pk), active_schedule)
+        if not post_schedule:
+            messages.error(request, "Select a schedule first.")
+            return redirect('scheduling:default_schedule_builder')
+
+        post_emps = list(Employee.objects.filter(member_of=post_schedule).distinct())
+        emp_lookup = {str(e.pk): e for e in post_emps}
+
+        # ── Part-time hour-limit check (before any DB changes) ────────────────
+        new_slots = {}
+        for day_code, _label in DEFAULT_BUILDER_DAYS:
+            dh_start, dh_end = day_hours[day_code]
+            for slot in slots:
+                if not (dh_start <= slot < dh_end):
+                    continue
+                key = f"slot_{day_code}_{slot.hour:02d}_{slot.minute:02d}"
+                for epk in request.POST.getlist(key):
+                    if epk in emp_lookup:
+                        new_slots.setdefault(epk, set()).add((day_code, f"{slot.hour:02d}_{slot.minute:02d}"))
+
+        violations = []
+        for epk, slot_set in new_slots.items():
+            emp = emp_lookup[epk]
+            if not emp.part_time:
+                continue
+            new_mins = len(slot_set) * 15
+            other_mins = sum(
+                (blk.end_time.hour * 60 + blk.end_time.minute)
+                - (blk.start_time.hour * 60 + blk.start_time.minute)
+                for blk in WeeklySchedule.objects.filter(user=emp).exclude(schedule=post_schedule)
+            )
+            total_hrs = (new_mins + other_mins) / 60
+            if total_hrs > PARTTIME_WEEKLY_MAX:
+                violations.append(
+                    f"{emp.first_name} {emp.last_name}: {total_hrs:.2f} hrs scheduled "
+                    f"(limit {PARTTIME_WEEKLY_MAX})"
+                )
+
+        if violations:
+            for v in violations:
+                messages.error(request, f"Over weekly limit — {v}")
+            return redirect(f"{request.path}?schedule={post_schedule_pk}")
+
+        WeeklySchedule.objects.filter(schedule=post_schedule).delete()
+
+        for day_code, _label in DEFAULT_BUILDER_DAYS:
+            dh_start, dh_end = day_hours[day_code]
+            per_emp = {}
+            per_emp_labels = {}
+            for slot in slots:
+                if not (dh_start <= slot < dh_end):
+                    continue
+                sk = f"{slot.hour:02d}_{slot.minute:02d}"
+                key = f"slot_{day_code}_{sk}"
+                for epk in request.POST.getlist(key):
+                    if epk in emp_lookup:
+                        per_emp.setdefault(epk, {})[slot] = epk
+                        label = request.POST.get(f"{key}__label__{epk}", '')
+                        per_emp_labels.setdefault(epk, {})[slot] = label
+            for epk, emp_slots in per_emp.items():
+                _slots_to_weekly_blocks(emp_slots, post_schedule, day_code, emp_lookup,
+                                         slot_labels=per_emp_labels.get(epk, {}))
+
+        messages.success(request, f"Default weekly schedule saved for {post_schedule}.")
+        return redirect(f"{request.path}?schedule={post_schedule_pk}")
+
+    # ── GET: load existing WeeklySchedule blocks into cell state ─────────────
+    blocks = list(
+        WeeklySchedule.objects.filter(schedule=active_schedule).select_related('user')
+    ) if active_schedule else []
+
+    cell_state = {}
+    for blk in blocks:
+        color = employee_colors.get(blk.user.pk, '#999')
+        for slot in slots:
+            if blk.start_time <= slot < blk.end_time:
+                sk = f"{slot.hour:02d}_{slot.minute:02d}"
+                cell_state.setdefault((blk.day_of_week, sk), []).append({
+                    'emp_pk': str(blk.user.pk),
+                    'color': color,
+                    'label': blk.custom_label,
+                })
+
+    label_day_slots = {}
+    for (day_code, sk), assignments in cell_state.items():
+        for lbl in {a['label'] or '' for a in assignments}:
+            key = (day_code, lbl)
+            label_day_slots[key] = label_day_slots.get(key, 0) + 1
+
+    for (day_code, sk), assignments in cell_state.items():
+        assignments.sort(key=lambda a: (
+            -label_day_slots.get((day_code, a['label'] or ''), 0),
+            a['label'] or '',
+            a['emp_pk'],
+        ))
+
+    col_template = f"72px repeat({len(DEFAULT_BUILDER_DAYS)}, 1fr)"
+    day_header_cols = [{'code': code, 'label': label} for code, label in DEFAULT_BUILDER_DAYS]
+
+    grid = []
+    for slot in slots:
+        sk = f"{slot.hour:02d}_{slot.minute:02d}"
+        cells = []
+        for day_code, _label in DEFAULT_BUILDER_DAYS:
+            dh_start, dh_end = day_hours[day_code]
+            in_hours = dh_start <= slot < dh_end
+            inp_name = f"slot_{day_code}_{sk}"
+            cells.append({
+                'day_code': day_code,
+                'in_hours': in_hours,
+                'assignments': cell_state.get((day_code, sk), []),
+                'inp_name': inp_name,
+                'inp_id': f"inp_{day_code}_{sk}",
+            })
+        grid.append({
+            'time': slot, 'slot_key': sk,
+            'display': _slot_display(slot),
+            'show_label': slot.minute == 0,
+            'cells': cells,
+        })
+
+    schedule_labels_data = []
+    if active_schedule:
+        schedule_labels_data = list(
+            ShiftLabel.objects.filter(schedule=active_schedule).values('pk', 'name', 'color')
+        )
+
+    employee_initials = {
+        str(e.pk): (e.first_name[:1] + e.last_name[:1]).upper()
+        for e in visible_employees
+    }
+
+    return render(request, 'scheduling/default_schedule_builder.html', {
+        'col_template': col_template,
+        'day_header_cols': day_header_cols,
+        'grid': grid,
+        'allowed_schedules': allowed_schedules,
+        'visible_employees': visible_employees,
+        'employee_colors': employee_colors,
+        'employee_colors_json': json.dumps(employee_colors),
+        'active_schedule': active_schedule,
+        'active_schedule_pk': schedule_pk_param,
+        'employee_availability_json': json.dumps(avail_data),
+        'employee_conflicts_json': json.dumps(conflict_data),
+        'date_day_map_json': json.dumps(date_day_map),
+        'employee_is_parttime_json': json.dumps({str(k): v for k, v in parttime_flags.items()}),
+        'employee_other_hours_json': json.dumps({str(k): v for k, v in other_hours_map.items()}),
+        'schedule_labels_json': json.dumps(schedule_labels_data),
+        'employee_initials_json': json.dumps(employee_initials),
+        'is_admin': is_admin,
+    })
+
 
 @login_required
 @user_passes_test(_is_scheduler_or_admin)
@@ -660,15 +945,17 @@ def export_teams_shifts(request):
     return render(request, 'scheduling/export_teams_shifts.html', {'schedules': schedules})
 
 
-def _slots_to_entries(emp_slots, all_slots, schedule, d, emp_lookup, created_by, slot_labels=None):
-    """Convert a {slot: emp_pk_str} mapping into contiguous ScheduleEntry objects."""
+def _slots_to_blocks(emp_slots, slot_labels=None):
+    """Convert a {slot: emp_pk_str} mapping into per-employee contiguous
+    (start_time, end_time, label) blocks, splitting on gaps or label changes."""
     by_emp = {}
     for slot, epk in emp_slots.items():
         by_emp.setdefault(epk, []).append(slot)
 
+    result = {}
     for epk, slot_list in by_emp.items():
         slot_list.sort()
-        emp = emp_lookup[epk]
+        blocks = []
         block_start = None
         block_label = ''
         prev_slot = None
@@ -683,16 +970,7 @@ def _slots_to_entries(emp_slots, all_slots, schedule, d, emp_lookup, created_by,
                 )
                 current_label = (slot_labels or {}).get(slot, '')
                 if slot != expected or current_label != block_label:
-                    end_t = time(
-                        (prev_slot.hour * 60 + prev_slot.minute + 15) // 60,
-                        (prev_slot.hour * 60 + prev_slot.minute + 15) % 60,
-                    )
-                    ScheduleEntry.objects.create(
-                        user=emp, schedule=schedule,
-                        date=d, start_time=block_start, end_time=end_t,
-                        created_by=created_by,
-                        custom_label=block_label,
-                    )
+                    blocks.append((block_start, expected, block_label))
                     block_start = slot
                     block_label = current_label
             prev_slot = slot
@@ -703,9 +981,31 @@ def _slots_to_entries(emp_slots, all_slots, schedule, d, emp_lookup, created_by,
                 (prev_slot.hour * 60 + prev_slot.minute + 15) % 60,
             )
             if block_start < end_t:
-                ScheduleEntry.objects.create(
-                    user=emp, schedule=schedule,
-                    date=d, start_time=block_start, end_time=end_t,
-                    created_by=created_by,
-                    custom_label=block_label,
-                )
+                blocks.append((block_start, end_t, block_label))
+        result[epk] = blocks
+    return result
+
+
+def _slots_to_entries(emp_slots, all_slots, schedule, d, emp_lookup, created_by, slot_labels=None):
+    """Convert a {slot: emp_pk_str} mapping into contiguous ScheduleEntry objects."""
+    for epk, blocks in _slots_to_blocks(emp_slots, slot_labels).items():
+        emp = emp_lookup[epk]
+        for start_t, end_t, label in blocks:
+            ScheduleEntry.objects.create(
+                user=emp, schedule=schedule,
+                date=d, start_time=start_t, end_time=end_t,
+                created_by=created_by,
+                custom_label=label,
+            )
+
+
+def _slots_to_weekly_blocks(emp_slots, schedule, day_code, emp_lookup, slot_labels=None):
+    """Convert a {slot: emp_pk_str} mapping into contiguous WeeklySchedule objects for one day-of-week."""
+    for epk, blocks in _slots_to_blocks(emp_slots, slot_labels).items():
+        emp = emp_lookup[epk]
+        for start_t, end_t, label in blocks:
+            WeeklySchedule.objects.create(
+                user=emp, schedule=schedule, day_of_week=day_code,
+                start_time=start_t, end_time=end_t,
+                custom_label=label,
+            )

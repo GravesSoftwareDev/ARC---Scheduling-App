@@ -1,6 +1,6 @@
 {% extends "dashboard/base.html" %}
 {% load custom_filters %}
-{% block title %}Schedule Builder – Academic Resource Center{% endblock %}
+{% block title %}Default Weekly Schedule – Academic Resource Center{% endblock %}
 
 {% block content %}
 <div class="sb2-page">
@@ -8,24 +8,14 @@
   <!-- ── Top bar ──────────────────────────────────────────────────────────── -->
   <div class="sb2-topbar">
     <div class="sb2-topbar-left">
-      <h1 class="sb2-title">Schedule Builder</h1>
+      <h1 class="sb2-title">Default Weekly Schedule</h1>
       <p class="sb2-subtitle">
         {% if active_schedule %}{{ active_schedule }}{% else %}Select a schedule{% endif %}
         {% if is_admin %}&mdash; All schedules visible{% endif %}
       </p>
     </div>
     <div class="sb2-topbar-right">
-      <div class="sb2-week-nav">
-        <a href="?week={{ prev_week }}&schedule={{ active_schedule_pk }}" class="week-nav-btn" id="nav-prev">&#8592;</a>
-        <span class="week-nav-label">{{ week_label }}</span>
-        <a href="?week={{ next_week }}&schedule={{ active_schedule_pk }}" class="week-nav-btn" id="nav-next">&#8594;</a>
-      </div>
-      {% if active_schedule %}
-      <a href="?week={{ week_start|date:'Y-m-d' }}&schedule={{ active_schedule_pk }}&load_default=1"
-         class="btn btn-secondary" id="nav-load-default">Load Default Week</a>
-      {% endif %}
-      <a href="{% url 'scheduling:default_schedule_builder' %}?schedule={{ active_schedule_pk }}" class="btn btn-secondary" id="nav-manage-default">Manage Default Week</a>
-      {% if is_admin %}<a href="{% url 'scheduling:export_teams_shifts' %}" class="btn btn-secondary">Export</a>{% endif %}
+      <a href="{% url 'scheduling:schedule_builder' %}?schedule={{ active_schedule_pk }}" class="btn btn-secondary" id="nav-builder">← Schedule Builder</a>
       <a href="{% url 'dashboard:dashboard' %}" class="btn btn-secondary" id="nav-dashboard">← Dashboard</a>
     </div>
   </div>
@@ -42,7 +32,7 @@
         <select id="schedule-select" class="sb2-select">
           {% for sched in allowed_schedules %}
           <option value="{{ sched.pk }}"
-                  data-url="?week={{ week_start|date:'Y-m-d' }}&schedule={{ sched.pk }}"
+                  data-url="?schedule={{ sched.pk }}"
                   {% if sched.pk|stringformat:'s' == active_schedule_pk %}selected{% endif %}>
             {{ sched.name }}
           </option>
@@ -97,7 +87,7 @@
         </div>
         <div id="hours-counter" class="sb2-hours-counter" style="display:none;">
           <div class="sb2-hours-counter-row">
-            <span class="sb2-hours-label">Scheduled this week</span>
+            <span class="sb2-hours-label">Default hours / week</span>
             <span id="hours-value" class="sb2-hours-value">0.0</span>
             <span id="hours-cap" class="sb2-hours-cap">/ 19.5 hrs</span>
           </div>
@@ -164,22 +154,13 @@
         <div class="sb2-calendar hourly-calendar">
 
           <!-- ── Header ──────────────────────────────────────────────────── -->
-          <div class="calendar-header {% if has_locs %}sb2-multiloc-header{% endif %}"
-               style="grid-template-columns: {{ col_template }};">
-            <div class="hour-column" {% if has_locs %}style="grid-row: span 2;"{% endif %}></div>
+          <div class="calendar-header" style="grid-template-columns: {{ col_template }};">
+            <div class="hour-column"></div>
             {% for day in day_header_cols %}
-            <div class="day-header {% if day.is_today %}day-header-today{% endif %}"
-                 {% if has_locs %}style="grid-column: span {{ day.span }};"{% endif %}>
+            <div class="day-header">
               <span class="day-full">{{ day.label }}</span>
-              <span class="day-date-num">{{ day.month_abbr }} {{ day.date_num }}</span>
-              {% if day.closed %}<span class="day-closed-tag">Closed</span>{% endif %}
             </div>
             {% endfor %}
-            {% if has_locs %}
-            {% for lhc in loc_header_cells %}
-            <div class="sb2-loc-header">{{ lhc.loc }}</div>
-            {% endfor %}
-            {% endif %}
           </div>
 
           <!-- ── Grid rows ────────────────────────────────────────────────── -->
@@ -192,9 +173,8 @@
               </div>
               {% for cell in row.cells %}
               <div class="hour-cell sb2-cell {% if cell.in_hours %}sb2-in-hours{% else %}out-of-hours{% endif %}"
-                   data-date="{{ cell.date_iso }}"
+                   data-date="{{ cell.day_code }}"
                    data-slot="{{ row.slot_key }}"
-                   data-loc="{{ cell.loc_slug }}"
                    data-inp-name="{{ cell.inp_name }}"
                    {% if row.show_label %}data-hour-boundary="1"{% endif %}
                    id="{{ cell.inp_id }}__cell"
@@ -214,7 +194,7 @@
 
         <div class="sb2-form-actions">
           <span id="unsaved-badge" class="sb2-unsaved" style="display:none;">Unsaved changes</span>
-          <button type="submit" class="btn btn-primary sb2-save-btn">Save Schedule</button>
+          <button type="submit" class="btn btn-primary sb2-save-btn">Save Default Schedule</button>
         </div>
       </form>
     </div>
@@ -230,7 +210,7 @@
     </div>
     <div style="padding:20px;">
       <p style="margin:0 0 18px;font-size:14px;">
-        You have unsaved changes to the <strong>{{ active_schedule }}</strong> schedule.
+        You have unsaved changes to the <strong>{{ active_schedule }}</strong> default schedule.
         Save before switching?
       </p>
       <div style="display:flex;gap:10px;justify-content:flex-end;">
@@ -253,8 +233,6 @@ const employeeInitials     = JSON.parse('{{ employee_initials_json|escapejs }}')
 const SCHEDULE_PK          = '{{ active_schedule_pk }}';
 const LABELS_URL_TPL       = '{% url "scheduling:schedule_labels" schedule_pk=0 %}';
 const LABEL_DELETE_URL_TPL = '{% url "scheduling:delete_shift_label" label_pk=0 %}';
-const SAVE_DAY_URL         = '{% url "scheduling:save_schedule_day" %}';
-const hasLocs = {{ has_locs|yesno:"true,false" }};
 const PARTTIME_MAX = 19.5;
 
 let activeEmpPk    = null;
@@ -275,7 +253,7 @@ let redoStack = [];
 function snapshotState() {
   const snap = {};
   document.querySelectorAll('.sb2-cell').forEach(cell => {
-    const key = `${cell.dataset.date}__${cell.dataset.slot}__${cell.dataset.loc||''}`;
+    const key = `${cell.dataset.date}__${cell.dataset.slot}`;
     snap[key] = {
       emps:   Array.from(cell._emps   || []),
       labels: Array.from(cell._labels || []),
@@ -285,15 +263,13 @@ function snapshotState() {
 }
 
 function applySnapshot(snap) {
-  // Pass 1: restore all state before rendering so neighbor checks are correct
   document.querySelectorAll('.sb2-cell').forEach(cell => {
-    const key = `${cell.dataset.date}__${cell.dataset.slot}__${cell.dataset.loc||''}`;
+    const key = `${cell.dataset.date}__${cell.dataset.slot}`;
     if (snap[key] !== undefined) {
       cell._emps   = new Map(snap[key].emps);
       cell._labels = new Map(snap[key].labels);
     }
   });
-  // Pass 2: render
   document.querySelectorAll('.sb2-cell').forEach(cell => renderCell(cell));
   markUnsaved();
   updateHoursCounter();
@@ -396,7 +372,6 @@ function applyAvailabilityHighlight(empPk) {
     if (inAvail) {
       cell.classList.add(isPreferred ? 'sb2-avail-preferred' : 'sb2-avail-ok');
     } else if (!cell._emps.has(empPk)) {
-      // Only grey/override-color empty cells — painted cells use the red outline warning instead
       cell.classList.add(overrideAvailability ? 'sb2-avail-override' : 'sb2-avail-blocked');
     }
   });
@@ -499,7 +474,6 @@ function updateAvailabilityWarnings() {
   });
   if (overrideAvailability || !Object.keys(employeeAvailability).length) return;
 
-  const [h0, m0] = [0, 0]; // unused but kept for clarity
   document.querySelectorAll('.sb2-cell.sb2-in-hours').forEach(cell => {
     if (!cell._emps || cell._emps.size === 0) return;
     const [h, m] = cell.dataset.slot.split('_').map(Number);
@@ -524,9 +498,8 @@ function _adjCell(cell, deltaMin) {
   const next = h * 60 + m + deltaMin;
   if (next < 0) return null;
   const nk = `${String(Math.floor(next / 60)).padStart(2, '0')}_${String(next % 60).padStart(2, '0')}`;
-  const loc = cell.dataset.loc;
-  const oldSuffix = loc ? `_${cell.dataset.slot}_${loc}__cell` : `_${cell.dataset.slot}__cell`;
-  const newSuffix = loc ? `_${nk}_${loc}__cell` : `_${nk}__cell`;
+  const oldSuffix = `_${cell.dataset.slot}__cell`;
+  const newSuffix = `_${nk}__cell`;
   return document.getElementById(cell.id.replace(oldSuffix, newSuffix));
 }
 const getPrevCell = cell => _adjCell(cell, -15);
@@ -542,8 +515,6 @@ function renderCell(cell) {
     return;
   }
 
-  // Build background: each employee stripe is solid emp color, or a gradient
-  // from label color → emp color when a position label is assigned.
   const empEntries = Array.from(cell._emps.entries());
   if (empEntries.length === 1) {
     const [epk, empColor] = empEntries[0];
@@ -592,7 +563,6 @@ function renderCell(cell) {
     }
   }
 
-  // Initials overlay — one per employee, positioned in their stripe
   const total = empEntries.length;
   empEntries.forEach(([epk], i) => {
     const initials = employeeInitials[epk];
@@ -608,7 +578,7 @@ function renderCell(cell) {
 
 // ── Clear all cells ────────────────────────────────────────────────────────
 function clearAll() {
-  if (!confirm('Clear all assignments from the entire schedule?')) return;
+  if (!confirm('Clear all assignments from the default schedule?')) return;
   pushUndo();
   document.querySelectorAll('.sb2-cell').forEach(cell => {
     if (cell._emps && cell._emps.size > 0) {
@@ -657,10 +627,8 @@ function paintCell(cell) {
   if (cell.classList.contains('sb2-avail-blocked') ||
       cell.classList.contains('sb2-sched-conflict')) return;
 
-  // Already has this employee — no-op while dragging
   if (cell._emps.has(activeEmpPk)) return;
 
-  // Block if part-time employee would exceed weekly cap
   if (employeeIsParttime[activeEmpPk]) {
     const total = calcScheduledHours(activeEmpPk) + (employeeOtherHours[activeEmpPk] || 0);
     if (total + 0.25 > PARTTIME_MAX) {
@@ -771,7 +739,6 @@ async function deleteActiveLabel() {
     activeLabelText = '';
     rebuildLabelSelect();
     renderLabelKey();
-    // Strip deleted label from all cells and re-render
     document.querySelectorAll('.sb2-cell').forEach(cell => {
       if (!cell._labels) return;
       let changed = false;
@@ -800,7 +767,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.key === 'Escape') cancelNewLabel();
   });
 
-  // Pass 1: init state and wire events (no render yet — neighbors need to be ready first)
   document.querySelectorAll('.sb2-cell').forEach(cell => {
     cell._emps = new Map();
     cell._labels = new Map();
@@ -824,7 +790,6 @@ document.addEventListener('DOMContentLoaded', () => {
       if (isDragging && (drawMode === 'erase' || activeEmpPk)) paintCell(cell);
     });
   });
-  // Pass 2: render all cells so outline borders see correct neighbor state
   document.querySelectorAll('.sb2-cell').forEach(cell => renderCell(cell));
   updateAvailabilityWarnings();
 });
@@ -837,14 +802,11 @@ function markUnsaved() {
   document.getElementById('unsaved-badge').style.display = 'inline-flex';
 }
 
-// ── Per-day AJAX save ─────────────────────────────────────────────────────
-async function saveSchedule(afterUrl) {
+// ── Save (single POST — no per-date splitting needed for a template) ──────
+async function saveDefaultSchedule(afterUrl) {
   const form = document.getElementById('schedule-form');
   const fd = new FormData(form);
   const schedulePk = fd.get('active_schedule_pk') || SCHEDULE_PK;
-
-  // Always save all week dates so empty days still clear existing DB entries
-  const dateSet = new Set(Object.keys(dateDayMap));
 
   const saveBtn = document.querySelector('.sb2-save-btn');
   const origText = saveBtn.textContent;
@@ -852,25 +814,16 @@ async function saveSchedule(afterUrl) {
   saveBtn.textContent = 'Saving…';
 
   try {
-    for (const dateIso of dateSet) {
-      const dayFd = new FormData();
-      dayFd.append('schedule_pk', schedulePk);
-      dayFd.append('date_iso', dateIso);
-      for (const [key, val] of fd.entries()) {
-        if (key.startsWith(`slot_${dateIso}_`)) dayFd.append(key, val);
-      }
-      const resp = await fetch(SAVE_DAY_URL, {
-        method: 'POST',
-        headers: {'X-CSRFToken': getCsrf()},
-        body: dayFd,
-      });
-      if (!resp.ok) {
-        const data = await resp.json().catch(() => ({}));
-        alert('Save failed: ' + (data.error || resp.statusText));
-        saveBtn.disabled = false;
-        saveBtn.textContent = origText;
-        return;
-      }
+    const resp = await fetch(window.location.pathname, {
+      method: 'POST',
+      headers: {'X-CSRFToken': getCsrf()},
+      body: fd,
+    });
+    if (!resp.ok) {
+      alert('Save failed.');
+      saveBtn.disabled = false;
+      saveBtn.textContent = origText;
+      return;
     }
   } catch (err) {
     alert('Save failed: ' + err.message);
@@ -880,14 +833,12 @@ async function saveSchedule(afterUrl) {
   }
 
   hasUnsaved = false;
-  const weekParam = new URLSearchParams(window.location.search).get('week') || '';
-  const base = afterUrl || `?week=${weekParam}&schedule=${schedulePk}`;
-  window.location.href = window.location.pathname + (base.startsWith('?') ? base : '?' + base);
+  window.location.href = afterUrl || (window.location.pathname + '?schedule=' + schedulePk);
 }
 
 document.getElementById('schedule-form').addEventListener('submit', e => {
   e.preventDefault();
-  saveSchedule();
+  saveDefaultSchedule();
 });
 
 // ── Schedule change: prompt to save first ─────────────────────────────────
@@ -911,11 +862,11 @@ function discardAndNavigate() {
 
 function saveAndNavigate() {
   document.getElementById('unsaved-dialog').style.display = 'none';
-  saveSchedule(pendingNavUrl);
+  saveDefaultSchedule(pendingNavUrl);
 }
 
-// ── Week nav / dashboard nav: warn on unsaved ──────────────────────────────
-['nav-prev','nav-next','nav-dashboard','nav-manage-default'].forEach(id => {
+// ── Nav links: warn on unsaved ──────────────────────────────────────────────
+['nav-builder','nav-dashboard'].forEach(id => {
   const el = document.getElementById(id);
   if (!el) return;
   el.addEventListener('click', e => {
@@ -926,20 +877,6 @@ function saveAndNavigate() {
     }
   });
 });
-
-// ── Load Default Week: confirm before replacing the on-screen grid ────────
-const loadDefaultBtn = document.getElementById('nav-load-default');
-if (loadDefaultBtn) {
-  loadDefaultBtn.addEventListener('click', e => {
-    if (!confirm('Load the default weekly schedule into this week? This replaces what\'s shown below — nothing is saved until you click Save Schedule.')) {
-      e.preventDefault();
-    }
-  });
-}
-
-// If this page was loaded via "Load Default Week", treat it as unsaved so
-// nav guards fire until the scheduler explicitly saves.
-{% if load_default %}markUnsaved();{% endif %}
 
 // ── Native beforeunload guard ──────────────────────────────────────────────
 window.addEventListener('beforeunload', e => {

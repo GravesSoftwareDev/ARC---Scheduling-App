@@ -28,6 +28,7 @@
         <a href="{% url 'account:password_change' %}" class="card-link-item">Change Password</a>
         {% if user.scheduler_of.exists or user.is_admin %}
         <a href="{% url 'scheduling:schedule_builder' %}" class="card-link-item card-link-scheduler">Build Schedule</a>
+        <a href="{% url 'scheduling:default_schedule_builder' %}" class="card-link-item card-link-scheduler">Default Weekly Schedule</a>
         {% endif %}
         {% if user.is_admin %}
         <a href="{% url 'account:registration' %}" class="card-link-item card-link-admin">Register Employee</a>
