@@ -2,6 +2,23 @@ from django import forms
 from .models import OperatingHours, ScheduleEntry, DateOperatingHours, Schedule
 
 
+class EmployeePreferencesForm(forms.ModelForm):
+    class Meta:
+        from account.models import Employee
+        model = Employee
+        fields = ['desired_weekly_hours', 'wants_lunch_break']
+        widgets = {
+            'desired_weekly_hours': forms.NumberInput(attrs={
+                'class': 'form-control', 'min': 0, 'step': '0.25', 'placeholder': 'e.g. 19.5',
+            }),
+            'wants_lunch_break': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+        labels = {
+            'desired_weekly_hours': 'Desired weekly hours',
+            'wants_lunch_break': 'I would like a scheduled lunch break',
+        }
+
+
 class OpenHoursForm(forms.ModelForm):
     class Meta:
         model = OperatingHours

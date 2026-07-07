@@ -61,6 +61,16 @@
           Drawing for: <strong id="active-emp-name"></strong>
           <button type="button" class="sb2-clear-sel" onclick="clearEmployee()">✕</button>
         </div>
+        <div id="emp-preferences" class="sb2-emp-preferences" style="display:none;">
+          <div class="sb2-emp-pref-row">
+            <span class="sb2-emp-pref-label">Desired hours</span>
+            <span id="emp-pref-hours" class="sb2-emp-pref-value">—</span>
+          </div>
+          <div class="sb2-emp-pref-row">
+            <span class="sb2-emp-pref-label">Lunch break</span>
+            <span id="emp-pref-lunch" class="sb2-emp-pref-value">—</span>
+          </div>
+        </div>
         <div id="label-input-wrap" style="margin-top:6px;">
           <!-- Label selector + delete -->
           <div style="display:flex;gap:4px;align-items:center;">
@@ -228,6 +238,8 @@ const employeeConflicts    = JSON.parse('{{ employee_conflicts_json|escapejs }}'
 const dateDayMap           = JSON.parse('{{ date_day_map_json|escapejs }}');
 const employeeIsParttime   = JSON.parse('{{ employee_is_parttime_json|escapejs }}');
 const employeeOtherHours   = JSON.parse('{{ employee_other_hours_json|escapejs }}');
+const employeeDesiredHours = JSON.parse('{{ employee_desired_hours_json|escapejs }}');
+const employeeWantsLunch   = JSON.parse('{{ employee_wants_lunch_json|escapejs }}');
 const scheduleLabels       = JSON.parse('{{ schedule_labels_json|escapejs }}');
 const employeeInitials     = JSON.parse('{{ employee_initials_json|escapejs }}');
 const SCHEDULE_PK          = '{{ active_schedule_pk }}';
@@ -313,6 +325,15 @@ function selectEmployee(empPk, color) {
   document.querySelector(`.sb2-key-item[data-emp-key="${empPk}"]`)?.classList.add('sb2-key-active');
   applyAvailabilityHighlight(empPk);
   updateHoursCounter();
+  updateEmpPreferences(empPk);
+}
+
+function updateEmpPreferences(empPk) {
+  const desired = employeeDesiredHours[String(empPk)];
+  const wantsLunch = employeeWantsLunch[String(empPk)];
+  document.getElementById('emp-pref-hours').textContent = (desired === null || desired === undefined) ? 'Not set' : `${desired} hrs/wk`;
+  document.getElementById('emp-pref-lunch').textContent = wantsLunch ? 'Requested' : 'Not requested';
+  document.getElementById('emp-preferences').style.display = 'block';
 }
 
 function clearEmployee() {
@@ -320,6 +341,7 @@ function clearEmployee() {
   document.querySelectorAll('.sb2-emp-pill').forEach(p => p.classList.remove('sb2-emp-active'));
   document.querySelectorAll('.sb2-key-item').forEach(k => k.classList.remove('sb2-key-active'));
   document.getElementById('active-emp-label').style.display = 'none';
+  document.getElementById('emp-preferences').style.display = 'none';
   document.getElementById('hours-counter').style.display = 'none';
   document.getElementById('new-label-wrap').style.display = 'none';
   document.getElementById('hours-value').className = 'sb2-hours-value';

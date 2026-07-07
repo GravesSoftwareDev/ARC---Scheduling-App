@@ -11,7 +11,7 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 
 from .models import WeeklyAvailability, OperatingHours, DayOfWeek, ScheduleEntry, DateOperatingHours, Schedule, ShiftLabel, LABEL_PALETTE, WeeklySchedule
-from .forms import OpenHoursForm, DateOperatingHoursForm
+from .forms import OpenHoursForm, DateOperatingHoursForm, EmployeePreferencesForm
 
 
 PARTTIME_WEEKLY_MAX = 19.5  # hours — applies to all part-time employees
@@ -120,6 +120,10 @@ def manage_availability(request):
     slots = _build_time_slots(grid_start, grid_end)
 
     if request.method == 'POST':
+        preferences_form = EmployeePreferencesForm(request.POST, instance=request.user)
+        if preferences_form.is_valid():
+            preferences_form.save()
+
         WeeklyAvailability.objects.filter(user=request.user).delete()
 
         for day_code, _ in days:
@@ -166,6 +170,8 @@ def manage_availability(request):
 
         return redirect('dashboard:dashboard')
 
+    preferences_form = EmployeePreferencesForm(instance=request.user)
+
     existing = list(WeeklyAvailability.objects.filter(user=request.user))
     grid = []
     for slot in slots:
@@ -187,6 +193,7 @@ def manage_availability(request):
         'days': days,
         'start_hour': grid_start.hour,
         'end_hour': grid_end.hour,
+        'preferences_form': preferences_form,
     }
     return render(request, 'scheduling/availability.html', context)
 
@@ -285,6 +292,14 @@ def schedule_builder(request):
     employee_colors = {
         e.pk: EMPLOYEE_PALETTE[i % len(EMPLOYEE_PALETTE)]
         for i, e in enumerate(visible_employees)
+    }
+
+    # Desired weekly hours + lunch break preference, set by each employee on their availability page
+    employee_desired_hours = {
+        str(e.pk): e.desired_weekly_hours for e in visible_employees
+    }
+    employee_wants_lunch = {
+        str(e.pk): e.wants_lunch_break for e in visible_employees
     }
 
     # Availability data for visible employees (keyed by emp pk → day → list of blocks)
@@ -493,7 +508,7 @@ def schedule_builder(request):
         day_header_cols.append({
             'date_iso': d.isoformat(),
             'label': d.strftime('%a'),
-            'date_num': d.strftime('%-d'),
+            'date_num': str(d.day),
             'month_abbr': d.strftime('%b'),
             'is_today': d == today,
             'closed': day_hours[d]['closed'],
@@ -546,7 +561,7 @@ def schedule_builder(request):
 
     return render(request, 'scheduling/schedule_builder.html', {
         'week_start': week_start,
-        'week_label': f"{week_start.strftime('%b %-d')} – {week_dates[-1].strftime('%b %-d, %Y')}",
+        'week_label': f"{week_start.strftime('%b')} {week_start.day} – {week_dates[-1].strftime('%b')} {week_dates[-1].day}, {week_dates[-1].year}",
         'prev_week': prev_week, 'next_week': next_week,
         'col_template': col_template,
         'day_header_cols': day_header_cols,
@@ -564,6 +579,8 @@ def schedule_builder(request):
         'date_day_map_json': json.dumps(date_day_map),
         'employee_is_parttime_json': json.dumps({str(k): v for k, v in parttime_flags.items()}),
         'employee_other_hours_json': json.dumps({str(k): v for k, v in other_hours_map.items()}),
+        'employee_desired_hours_json': json.dumps(employee_desired_hours),
+        'employee_wants_lunch_json': json.dumps(employee_wants_lunch),
         'schedule_labels_json': json.dumps(schedule_labels_data),
         'employee_initials_json': json.dumps(employee_initials),
         'is_admin': is_admin, 'today': today,
@@ -618,6 +635,13 @@ def default_schedule_builder(request):
     employee_colors = {
         e.pk: EMPLOYEE_PALETTE[i % len(EMPLOYEE_PALETTE)]
         for i, e in enumerate(visible_employees)
+    }
+
+    employee_desired_hours = {
+        str(e.pk): e.desired_weekly_hours for e in visible_employees
+    }
+    employee_wants_lunch = {
+        str(e.pk): e.wants_lunch_break for e in visible_employees
     }
 
     # Availability is already day-of-week based — same shape as the live builder uses.
@@ -823,6 +847,8 @@ def default_schedule_builder(request):
         'date_day_map_json': json.dumps(date_day_map),
         'employee_is_parttime_json': json.dumps({str(k): v for k, v in parttime_flags.items()}),
         'employee_other_hours_json': json.dumps({str(k): v for k, v in other_hours_map.items()}),
+        'employee_desired_hours_json': json.dumps(employee_desired_hours),
+        'employee_wants_lunch_json': json.dumps(employee_wants_lunch),
         'schedule_labels_json': json.dumps(schedule_labels_data),
         'employee_initials_json': json.dumps(employee_initials),
         'is_admin': is_admin,

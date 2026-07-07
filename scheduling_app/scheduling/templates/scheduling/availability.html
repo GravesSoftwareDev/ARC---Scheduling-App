@@ -30,6 +30,19 @@
     <form method="post" id="avail-form">
         {% csrf_token %}
 
+        <div class="avail-preferences">
+            <div class="avail-preference-field">
+                <label for="{{ preferences_form.desired_weekly_hours.id_for_label }}">{{ preferences_form.desired_weekly_hours.label }}</label>
+                {{ preferences_form.desired_weekly_hours }}
+            </div>
+            <div class="avail-preference-field avail-preference-checkbox">
+                <label for="{{ preferences_form.wants_lunch_break.id_for_label }}">
+                    {{ preferences_form.wants_lunch_break }}
+                    {{ preferences_form.wants_lunch_break.label }}
+                </label>
+            </div>
+        </div>
+
         <div class="hourly-calendar">
             <!-- Header row -->
             <div class="calendar-header">

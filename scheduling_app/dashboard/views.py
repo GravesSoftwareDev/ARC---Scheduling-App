@@ -182,13 +182,16 @@ def dashboard(request):
             'date_iso': d.isoformat(),
             'label_full': d.strftime('%A'),
             'label_short': d.strftime('%a'),
-            'label_num': d.strftime('%-d'),
+            'label_num': str(d.day),
             'month_abbr': d.strftime('%b'),
             'is_today': d == today,
             'closed': day_hours[d]['closed'],
         })
 
     return render(request, 'dashboard/dashboard.html', {
+        # Toggle to bring the weekly schedule calendar back to the dashboard;
+        # while False, the availability calendar takes its place instead.
+        'show_schedule': False,
         'grid': grid,
         'days_display': days_display,
         'avail_grid': avail_grid,
@@ -197,7 +200,7 @@ def dashboard(request):
         'schedule_legend': schedule_legend,
         'week_start': week_start,
         'week_end': week_dates[-1],
-        'week_label': f"{week_start.strftime('%b %-d')} – {week_dates[-1].strftime('%b %-d, %Y')}",
+        'week_label': f"{week_start.strftime('%b')} {week_start.day} – {week_dates[-1].strftime('%b')} {week_dates[-1].day}, {week_dates[-1].year}",
         'prev_week': prev_week,
         'next_week': next_week,
         'today': today,

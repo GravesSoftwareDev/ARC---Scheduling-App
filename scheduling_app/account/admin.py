@@ -5,7 +5,7 @@ from .models import Employee
 @admin.register(Employee)
 class EmployeeAdmin(UserAdmin):
     fieldsets = UserAdmin.fieldsets + (
-        ('Employee Details', {'fields': ('role', 'birthdate','part_time')}),
+        ('Employee Details', {'fields': ('role', 'birthdate','part_time', 'desired_weekly_hours', 'wants_lunch_break')}),
     )
     add_fieldsets = (
         (None, {

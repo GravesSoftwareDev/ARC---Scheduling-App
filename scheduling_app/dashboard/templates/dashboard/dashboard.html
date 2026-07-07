@@ -38,45 +38,9 @@
         <a href="{% url 'scheduling:export_teams_shifts' %}" class="card-link-item card-link-admin">Export Teams Shifts</a>
         {% endif %}
       </div>
-
-      <!-- Mini Availability Calendar (weekly, day-of-week based) -->
-      <div class="mini-avail-section">
-        <h3>My Availability</h3>
-        <a href="{% url 'scheduling:manage_availability' %}" class="mini-calendar-link">
-          <div class="mini-calendar hourly-calendar">
-            <div class="calendar-header">
-              <div class="hour-column"></div>
-              {% for day_code, day_name in avail_days %}
-              <div class="day-header">{{ day_code|slice:":2"|title }}</div>
-              {% endfor %}
-            </div>
-            <div class="calendar-grid">
-              {% for row in avail_grid %}
-              <div class="calendar-row {% if row.show_label %}hour-row{% endif %}">
-                <div class="hour-label{% if not row.show_label %} label-hidden{% endif %}">
-                  {% if row.show_label %}{{ row.display }}{% endif %}
-                </div>
-                {% for day_code, day_name in avail_days %}
-                {% with cell=row.days|dict_lookup:day_code %}
-                <div class="hour-cell {% if not cell.in_hours %}out-of-hours{% elif cell.type == 'AVAILABLE' %}state-available{% elif cell.type == 'PREFERRED' %}state-preferred{% endif %}"></div>
-                {% endwith %}
-                {% endfor %}
-              </div>
-              {% endfor %}
-            </div>
-          </div>
-        </a>
-        <div class="mini-avail-legend">
-          <span class="mini-legend-item">
-            <span class="mini-swatch" style="background:linear-gradient(135deg,#1976D2,#1565C0);"></span>Available
-          </span>
-          <span class="mini-legend-item">
-            <span class="mini-swatch" style="background:linear-gradient(135deg,#FFD700,#FFA500);"></span>Preferred
-          </span>
-        </div>
-      </div>
     </div>
 
+    {% if show_schedule %}
     <!-- Main: Calendar-based Schedule -->
     <div class="calendar-section">
       <div class="schedule-header">
@@ -146,6 +110,59 @@
       </div>
 
     </div>
+    {% else %}
+    <!-- Main: Weekly Availability (stands in for the schedule while it's hidden) -->
+    <div class="calendar-section">
+      <div class="schedule-header">
+        <h2>My Availability</h2>
+        <a href="{% url 'scheduling:manage_availability' %}" class="btn-export-ics">Edit Availability</a>
+        <div class="mini-avail-legend">
+          <span class="mini-legend-item">
+            <span class="mini-swatch" style="background:linear-gradient(135deg,#1976D2,#1565C0);"></span>Available
+          </span>
+          <span class="mini-legend-item">
+            <span class="mini-swatch" style="background:linear-gradient(135deg,#FFD700,#FFA500);"></span>Preferred
+          </span>
+        </div>
+      </div>
+
+      <div class="avail-preferences-summary">
+        <div class="avail-preference-field">
+          <span class="info-label">Desired weekly hours</span>
+          <span class="info-value">{{ user.desired_weekly_hours|default:"Not set" }}</span>
+        </div>
+        <div class="avail-preference-field">
+          <span class="info-label">Scheduled lunch break</span>
+          <span class="info-value">{{ user.wants_lunch_break|yesno:"Requested,Not requested" }}</span>
+        </div>
+      </div>
+
+      <a href="{% url 'scheduling:manage_availability' %}" class="mini-calendar-link">
+        <div class="mini-calendar hourly-calendar">
+          <div class="calendar-header">
+            <div class="hour-column"></div>
+            {% for day_code, day_name in avail_days %}
+            <div class="day-header">{{ day_code|slice:":2"|title }}</div>
+            {% endfor %}
+          </div>
+          <div class="calendar-grid">
+            {% for row in avail_grid %}
+            <div class="calendar-row {% if row.show_label %}hour-row{% endif %}">
+              <div class="hour-label{% if not row.show_label %} label-hidden{% endif %}">
+                {% if row.show_label %}{{ row.display }}{% endif %}
+              </div>
+              {% for day_code, day_name in avail_days %}
+              {% with cell=row.days|dict_lookup:day_code %}
+              <div class="hour-cell {% if not cell.in_hours %}out-of-hours{% elif cell.type == 'AVAILABLE' %}state-available{% elif cell.type == 'PREFERRED' %}state-preferred{% endif %}"></div>
+              {% endwith %}
+              {% endfor %}
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </a>
+    </div>
+    {% endif %}
   </div>
 </div>
 {% endblock %}

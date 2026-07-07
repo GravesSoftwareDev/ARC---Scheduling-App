@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+from django.core.validators import MinValueValidator
 
 
 class Employee(AbstractUser):
@@ -16,3 +17,7 @@ class Employee(AbstractUser):
         default=Role.TUTOR,
     )
     is_admin = models.BooleanField(default=False)
+    desired_weekly_hours = models.FloatField(
+        null=True, blank=True, validators=[MinValueValidator(0)]
+    )
+    wants_lunch_break = models.BooleanField(default=False)
