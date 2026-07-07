@@ -46,9 +46,10 @@
         <div id="emp-list" class="sb2-emp-list">
           {% for emp in visible_employees %}
           <button type="button"
-                  class="sb2-emp-pill"
+                  class="sb2-emp-pill {% if low_availability_flags|dict_lookup:emp.pk %}sb2-emp-pill-warning{% endif %}"
                   data-emp="{{ emp.pk }}"
                   style="--emp-color: {{ employee_colors|dict_lookup:emp.pk }};"
+                  {% if low_availability_flags|dict_lookup:emp.pk %}title="Has not marked the minimum {{ min_availability_hours }} hours of availability"{% endif %}
                   onclick="selectEmployee('{{ emp.pk }}', '{{ employee_colors|dict_lookup:emp.pk }}')">
             <span class="sb2-emp-swatch" style="background:{{ employee_colors|dict_lookup:emp.pk }};"></span>
             {{ emp.last_name }}, {{ emp.first_name }}
@@ -144,7 +145,8 @@
         <div class="sb2-sidebar-label">Color Key</div>
         <div class="sb2-key-list">
           {% for emp in visible_employees %}
-          <div class="sb2-key-item" data-emp-key="{{ emp.pk }}">
+          <div class="sb2-key-item {% if low_availability_flags|dict_lookup:emp.pk %}sb2-key-item-warning{% endif %}" data-emp-key="{{ emp.pk }}"
+               {% if low_availability_flags|dict_lookup:emp.pk %}title="Has not marked the minimum {{ min_availability_hours }} hours of availability"{% endif %}>
             <span class="sb2-key-swatch" style="background:{{ employee_colors|dict_lookup:emp.pk }};"></span>
             <span class="sb2-key-name">{{ emp.first_name }} {{ emp.last_name }}</span>
           </div>
@@ -433,7 +435,7 @@ function calcScheduledHours(empPk) {
     if (cell._emps && cell._emps.has(String(empPk)))
       covered.add(`${cell.dataset.date}__${cell.dataset.slot}`);
   });
-  return covered.size * 0.25;
+  return covered.size * 0.5;
 }
 
 function updateHoursCounter() {
@@ -524,8 +526,8 @@ function _adjCell(cell, deltaMin) {
   const newSuffix = `_${nk}__cell`;
   return document.getElementById(cell.id.replace(oldSuffix, newSuffix));
 }
-const getPrevCell = cell => _adjCell(cell, -15);
-const getNextCell = cell => _adjCell(cell, +15);
+const getPrevCell = cell => _adjCell(cell, -30);
+const getNextCell = cell => _adjCell(cell, +30);
 
 // ── Cell rendering ─────────────────────────────────────────────────────────
 function renderCell(cell) {
@@ -653,7 +655,7 @@ function paintCell(cell) {
 
   if (employeeIsParttime[activeEmpPk]) {
     const total = calcScheduledHours(activeEmpPk) + (employeeOtherHours[activeEmpPk] || 0);
-    if (total + 0.25 > PARTTIME_MAX) {
+    if (total + 0.5 > PARTTIME_MAX) {
       showHoursLimitWarning();
       return;
     }

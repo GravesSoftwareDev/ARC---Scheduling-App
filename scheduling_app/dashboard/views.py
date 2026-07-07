@@ -8,13 +8,15 @@ from django.utils.dateparse import parse_date
 
 _DOW_CODE = {0: 'MON', 1: 'TUE', 2: 'WED', 3: 'THU', 4: 'FRI', 5: 'SAT', 6: 'SUN'}
 
+SLOT_MINUTES = 30
+
 
 def _build_time_slots(start_time, end_time):
     slots = []
     current = start_time
     while current < end_time:
         slots.append(current)
-        total = current.hour * 60 + current.minute + 15
+        total = current.hour * 60 + current.minute + SLOT_MINUTES
         current = time(total // 60, total % 60)
     return slots
 
@@ -106,6 +108,12 @@ def dashboard(request):
     # Weekly availability (still day-of-week based)
     avail_list = list(WeeklyAvailability.objects.filter(user=request.user))
 
+    MIN_AVAILABILITY_HOURS = 10
+    total_availability_hours = sum(
+        (a.end_time.hour * 60 + a.end_time.minute) - (a.start_time.hour * 60 + a.start_time.minute)
+        for a in avail_list
+    ) / 60
+
     # Build calendar grid
     grid = []
     for slot in slots:
@@ -196,6 +204,9 @@ def dashboard(request):
         'days_display': days_display,
         'avail_grid': avail_grid,
         'avail_days': avail_days,
+        'total_availability_hours': total_availability_hours,
+        'min_availability_hours': MIN_AVAILABILITY_HOURS,
+        'below_min_availability': total_availability_hours < MIN_AVAILABILITY_HOURS,
         'has_schedule': bool(schedule_entries),
         'schedule_legend': schedule_legend,
         'week_start': week_start,

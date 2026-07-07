@@ -126,6 +126,13 @@
         </div>
       </div>
 
+      {% if below_min_availability %}
+      <div class="avail-min-hours-warning">
+        You are required to mark a minimum of {{ min_availability_hours }} hours available in order to be scheduled.
+        You have currently marked <strong>{{ total_availability_hours }}</strong> hour{{ total_availability_hours|pluralize }}.
+      </div>
+      {% endif %}
+
       <div class="avail-preferences-summary">
         <div class="avail-preference-field">
           <span class="info-label">Desired weekly hours</span>

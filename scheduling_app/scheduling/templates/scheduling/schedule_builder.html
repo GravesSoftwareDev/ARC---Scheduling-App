@@ -15,6 +15,10 @@
       </p>
     </div>
     <div class="sb2-topbar-right">
+      <div class="sb2-mode-btns sb2-view-toggle">
+        <button type="button" id="view-week-btn" class="sb2-mode-btn sb2-mode-active" onclick="setViewMode('week')">Week</button>
+        <button type="button" id="view-day-btn" class="sb2-mode-btn" onclick="setViewMode('day')">Day</button>
+      </div>
       <div class="sb2-week-nav">
         <a href="?week={{ prev_week }}&schedule={{ active_schedule_pk }}" class="week-nav-btn" id="nav-prev">&#8592;</a>
         <span class="week-nav-label">{{ week_label }}</span>
@@ -57,9 +61,10 @@
         <div id="emp-list" class="sb2-emp-list">
           {% for emp in visible_employees %}
           <button type="button"
-                  class="sb2-emp-pill"
+                  class="sb2-emp-pill {% if low_availability_flags|dict_lookup:emp.pk %}sb2-emp-pill-warning{% endif %}"
                   data-emp="{{ emp.pk }}"
                   style="--emp-color: {{ employee_colors|dict_lookup:emp.pk }};"
+                  {% if low_availability_flags|dict_lookup:emp.pk %}title="Has not marked the minimum {{ min_availability_hours }} hours of availability"{% endif %}
                   onclick="selectEmployee('{{ emp.pk }}', '{{ employee_colors|dict_lookup:emp.pk }}')">
             <span class="sb2-emp-swatch" style="background:{{ employee_colors|dict_lookup:emp.pk }};"></span>
             {{ emp.last_name }}, {{ emp.first_name }}
@@ -155,7 +160,8 @@
         <div class="sb2-sidebar-label">Color Key</div>
         <div class="sb2-key-list">
           {% for emp in visible_employees %}
-          <div class="sb2-key-item" data-emp-key="{{ emp.pk }}">
+          <div class="sb2-key-item {% if low_availability_flags|dict_lookup:emp.pk %}sb2-key-item-warning{% endif %}" data-emp-key="{{ emp.pk }}"
+               {% if low_availability_flags|dict_lookup:emp.pk %}title="Has not marked the minimum {{ min_availability_hours }} hours of availability"{% endif %}>
             <span class="sb2-key-swatch" style="background:{{ employee_colors|dict_lookup:emp.pk }};"></span>
             <span class="sb2-key-name">{{ emp.first_name }} {{ emp.last_name }}</span>
           </div>
@@ -167,6 +173,13 @@
 
     <!-- Grid area -->
     <div class="sb2-grid-wrap">
+      <div id="day-view-pills" class="sb2-day-pills" style="display:none;">
+        {% for day in day_header_cols %}
+        <button type="button" class="sb2-day-pill" data-date="{{ day.date_iso }}" onclick="selectDay('{{ day.date_iso }}')">
+          {{ day.label }} {{ day.month_abbr }} {{ day.date_num }}
+        </button>
+        {% endfor %}
+      </div>
       <form method="post" id="schedule-form">
         {% csrf_token %}
         <input type="hidden" name="active_schedule_pk" value="{{ active_schedule_pk }}">
@@ -180,6 +193,7 @@
             <div class="hour-column" {% if has_locs %}style="grid-row: span 2;"{% endif %}></div>
             {% for day in day_header_cols %}
             <div class="day-header {% if day.is_today %}day-header-today{% endif %}"
+                 data-date-iso="{{ day.date_iso }}"
                  {% if has_locs %}style="grid-column: span {{ day.span }};"{% endif %}>
               <span class="day-full">{{ day.label }}</span>
               <span class="day-date-num">{{ day.month_abbr }} {{ day.date_num }}</span>
@@ -269,6 +283,9 @@ const LABEL_DELETE_URL_TPL = '{% url "scheduling:delete_shift_label" label_pk=0 
 const SAVE_DAY_URL         = '{% url "scheduling:save_schedule_day" %}';
 const SAVE_AS_DEFAULT_URL  = '{% url "scheduling:save_week_as_default" %}';
 const WEEK_START_ISO       = '{{ week_start|date:"Y-m-d" }}';
+const TODAY_ISO            = '{{ today|date:"Y-m-d" }}';
+const COL_TEMPLATE_WEEK    = '{{ col_template }}';
+const COL_TEMPLATE_DAY     = '72px repeat({{ num_locs|default:1 }}, 1fr)';
 const hasLocs = {{ has_locs|yesno:"true,false" }};
 const PARTTIME_MAX = 19.5;
 
@@ -277,6 +294,8 @@ let activeEmpColor = null;
 let activeLabelText = '';
 let activeSchedulePk = '{{ active_schedule_pk }}';
 let drawMode  = 'draw';
+let viewMode = 'week';
+let activeDayIso = Object.prototype.hasOwnProperty.call(dateDayMap, TODAY_ISO) ? TODAY_ISO : Object.keys(dateDayMap)[0];
 let isDragging = false;
 let hasUnsaved = false;
 let pendingNavUrl = null;
@@ -455,6 +474,37 @@ function setMode(mode) {
   document.getElementById('mode-erase').classList.toggle('sb2-mode-active', mode === 'erase');
 }
 
+// ── Day / Week view toggle ──────────────────────────────────────────────────
+function setViewMode(mode) {
+  viewMode = mode;
+  document.getElementById('view-week-btn').classList.toggle('sb2-mode-active', mode === 'week');
+  document.getElementById('view-day-btn').classList.toggle('sb2-mode-active', mode === 'day');
+  document.getElementById('day-view-pills').style.display = mode === 'day' ? 'flex' : 'none';
+  applyViewMode();
+}
+
+function selectDay(dateIso) {
+  activeDayIso = dateIso;
+  document.querySelectorAll('.sb2-day-pill').forEach(p => {
+    p.classList.toggle('sb2-day-pill-active', p.dataset.date === dateIso);
+  });
+  applyViewMode();
+}
+
+function applyViewMode() {
+  const colTemplate = viewMode === 'day' ? COL_TEMPLATE_DAY : COL_TEMPLATE_WEEK;
+  document.querySelector('.calendar-header').style.gridTemplateColumns = colTemplate;
+  document.querySelectorAll('.calendar-row').forEach(row => {
+    row.style.gridTemplateColumns = colTemplate;
+  });
+  document.querySelectorAll('.day-header[data-date-iso]').forEach(dh => {
+    dh.style.display = (viewMode === 'day' && dh.dataset.dateIso !== activeDayIso) ? 'none' : '';
+  });
+  document.querySelectorAll('.sb2-cell').forEach(cell => {
+    cell.style.display = (viewMode === 'day' && cell.dataset.date !== activeDayIso) ? 'none' : '';
+  });
+}
+
 // ── Hours counter ──────────────────────────────────────────────────────────
 function calcScheduledHours(empPk) {
   const covered = new Set();
@@ -462,7 +512,7 @@ function calcScheduledHours(empPk) {
     if (cell._emps && cell._emps.has(String(empPk)))
       covered.add(`${cell.dataset.date}__${cell.dataset.slot}`);
   });
-  return covered.size * 0.25;
+  return covered.size * 0.5;
 }
 
 function updateHoursCounter() {
@@ -555,8 +605,8 @@ function _adjCell(cell, deltaMin) {
   const newSuffix = loc ? `_${nk}_${loc}__cell` : `_${nk}__cell`;
   return document.getElementById(cell.id.replace(oldSuffix, newSuffix));
 }
-const getPrevCell = cell => _adjCell(cell, -15);
-const getNextCell = cell => _adjCell(cell, +15);
+const getPrevCell = cell => _adjCell(cell, -30);
+const getNextCell = cell => _adjCell(cell, +30);
 
 // ── Cell rendering ─────────────────────────────────────────────────────────
 function renderCell(cell) {
@@ -689,7 +739,7 @@ function paintCell(cell) {
   // Block if part-time employee would exceed weekly cap
   if (employeeIsParttime[activeEmpPk]) {
     const total = calcScheduledHours(activeEmpPk) + (employeeOtherHours[activeEmpPk] || 0);
-    if (total + 0.25 > PARTTIME_MAX) {
+    if (total + 0.5 > PARTTIME_MAX) {
       showHoursLimitWarning();
       return;
     }
@@ -815,6 +865,9 @@ async function deleteActiveLabel() {
 
 // Wire up all cells on DOMContentLoaded
 document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.sb2-day-pill').forEach(p => {
+    p.classList.toggle('sb2-day-pill-active', p.dataset.date === activeDayIso);
+  });
   rebuildLabelSelect();
   renderLabelKey();
   document.getElementById('active-label-select').addEventListener('change', function() {

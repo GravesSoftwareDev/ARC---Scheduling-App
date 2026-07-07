@@ -15,6 +15,8 @@ from .forms import OpenHoursForm, DateOperatingHoursForm, EmployeePreferencesFor
 
 
 PARTTIME_WEEKLY_MAX = 19.5  # hours — applies to all part-time employees
+SLOT_MINUTES = 30  # granularity of the availability / schedule builder grids
+MIN_AVAILABILITY_HOURS = 10  # employees must mark at least this many hours to be schedulable
 
 
 def _loc_slug(loc):
@@ -41,7 +43,7 @@ def _build_time_slots(start_time, end_time):
     current = start_time
     while current < end_time:
         slots.append(current)
-        total_minutes = current.hour * 60 + current.minute + 15
+        total_minutes = current.hour * 60 + current.minute + SLOT_MINUTES
         current = time(total_minutes // 60, total_minutes % 60)
     return slots
 
@@ -83,6 +85,14 @@ def _get_operating_hours_for_date(d):
 def _week_start(d):
     """Return Monday of the week containing date d."""
     return d - timedelta(days=d.weekday())
+
+def _total_availability_hours(avail_blocks):
+    """Sum the duration (in hours) of an iterable of WeeklyAvailability-like blocks."""
+    total_minutes = sum(
+        (a.end_time.hour * 60 + a.end_time.minute) - (a.start_time.hour * 60 + a.start_time.minute)
+        for a in avail_blocks
+    )
+    return total_minutes / 60
 
 def _is_scheduler_or_admin(user):
     return user.is_authenticated and (
@@ -160,7 +170,7 @@ def manage_availability(request):
 
             if block_start is not None:
                 last_slot = slots[-1]
-                end_total = last_slot.hour * 60 + last_slot.minute + 15
+                end_total = last_slot.hour * 60 + last_slot.minute + SLOT_MINUTES
                 end_time = time(end_total // 60, end_total % 60)
                 WeeklyAvailability.objects.create(
                     user=request.user, day_of_week=day_code,
@@ -188,12 +198,17 @@ def manage_availability(request):
             row['days'][day_code] = {'type': cell_type, 'in_hours': in_hours}
         grid.append(row)
 
+    total_availability_hours = _total_availability_hours(existing)
+
     context = {
         'grid': grid,
         'days': days,
         'start_hour': grid_start.hour,
         'end_hour': grid_end.hour,
         'preferences_form': preferences_form,
+        'total_availability_hours': total_availability_hours,
+        'min_availability_hours': MIN_AVAILABILITY_HOURS,
+        'below_min_availability': total_availability_hours < MIN_AVAILABILITY_HOURS,
     }
     return render(request, 'scheduling/availability.html', context)
 
@@ -304,6 +319,7 @@ def schedule_builder(request):
 
     # Availability data for visible employees (keyed by emp pk → day → list of blocks)
     avail_data = {}
+    avail_minutes_by_user = {}
     all_avail = WeeklyAvailability.objects.filter(user__in=visible_employees).order_by('start_time')
     for a in all_avail:
         avail_data.setdefault(str(a.user_id), {}).setdefault(a.day_of_week, []).append({
@@ -311,6 +327,14 @@ def schedule_builder(request):
             'end': a.end_time.strftime('%H:%M'),
             'type': a.availability_type,
         })
+        dur = (a.end_time.hour * 60 + a.end_time.minute) - (a.start_time.hour * 60 + a.start_time.minute)
+        avail_minutes_by_user[a.user_id] = avail_minutes_by_user.get(a.user_id, 0) + dur
+
+    # Employees who haven't marked the minimum required availability — flagged red in the sidebar
+    low_availability_flags = {
+        e.pk: (avail_minutes_by_user.get(e.pk, 0) / 60) < MIN_AVAILABILITY_HOURS
+        for e in visible_employees
+    }
 
     dept_locs = ['']
     has_locs = False
@@ -564,6 +588,7 @@ def schedule_builder(request):
         'week_label': f"{week_start.strftime('%b')} {week_start.day} – {week_dates[-1].strftime('%b')} {week_dates[-1].day}, {week_dates[-1].year}",
         'prev_week': prev_week, 'next_week': next_week,
         'col_template': col_template,
+        'num_locs': num_locs,
         'day_header_cols': day_header_cols,
         'loc_header_cells': loc_header_cells,
         'has_locs': has_locs,
@@ -581,6 +606,8 @@ def schedule_builder(request):
         'employee_other_hours_json': json.dumps({str(k): v for k, v in other_hours_map.items()}),
         'employee_desired_hours_json': json.dumps(employee_desired_hours),
         'employee_wants_lunch_json': json.dumps(employee_wants_lunch),
+        'low_availability_flags': low_availability_flags,
+        'min_availability_hours': MIN_AVAILABILITY_HOURS,
         'schedule_labels_json': json.dumps(schedule_labels_data),
         'employee_initials_json': json.dumps(employee_initials),
         'is_admin': is_admin, 'today': today,
@@ -646,6 +673,7 @@ def default_schedule_builder(request):
 
     # Availability is already day-of-week based — same shape as the live builder uses.
     avail_data = {}
+    avail_minutes_by_user = {}
     if visible_employees:
         all_avail = WeeklyAvailability.objects.filter(user__in=visible_employees).order_by('start_time')
         for a in all_avail:
@@ -654,6 +682,14 @@ def default_schedule_builder(request):
                 'end': a.end_time.strftime('%H:%M'),
                 'type': a.availability_type,
             })
+            dur = (a.end_time.hour * 60 + a.end_time.minute) - (a.start_time.hour * 60 + a.start_time.minute)
+            avail_minutes_by_user[a.user_id] = avail_minutes_by_user.get(a.user_id, 0) + dur
+
+    # Employees who haven't marked the minimum required availability — flagged red in the sidebar
+    low_availability_flags = {
+        e.pk: (avail_minutes_by_user.get(e.pk, 0) / 60) < MIN_AVAILABILITY_HOURS
+        for e in visible_employees
+    }
 
     # Conflicts = this employee's default hours on OTHER schedules (keyed by day code,
     # reusing the 'date' key so the existing conflict-matching JS works unmodified).
@@ -849,6 +885,8 @@ def default_schedule_builder(request):
         'employee_other_hours_json': json.dumps({str(k): v for k, v in other_hours_map.items()}),
         'employee_desired_hours_json': json.dumps(employee_desired_hours),
         'employee_wants_lunch_json': json.dumps(employee_wants_lunch),
+        'low_availability_flags': low_availability_flags,
+        'min_availability_hours': MIN_AVAILABILITY_HOURS,
         'schedule_labels_json': json.dumps(schedule_labels_data),
         'employee_initials_json': json.dumps(employee_initials),
         'is_admin': is_admin,
@@ -1039,8 +1077,8 @@ def _slots_to_blocks(emp_slots, slot_labels=None):
                 block_label = (slot_labels or {}).get(slot, '')
             elif prev_slot is not None:
                 expected = time(
-                    (prev_slot.hour * 60 + prev_slot.minute + 15) // 60,
-                    (prev_slot.hour * 60 + prev_slot.minute + 15) % 60,
+                    (prev_slot.hour * 60 + prev_slot.minute + SLOT_MINUTES) // 60,
+                    (prev_slot.hour * 60 + prev_slot.minute + SLOT_MINUTES) % 60,
                 )
                 current_label = (slot_labels or {}).get(slot, '')
                 if slot != expected or current_label != block_label:
@@ -1051,8 +1089,8 @@ def _slots_to_blocks(emp_slots, slot_labels=None):
 
         if block_start is not None and prev_slot is not None:
             end_t = time(
-                (prev_slot.hour * 60 + prev_slot.minute + 15) // 60,
-                (prev_slot.hour * 60 + prev_slot.minute + 15) % 60,
+                (prev_slot.hour * 60 + prev_slot.minute + SLOT_MINUTES) // 60,
+                (prev_slot.hour * 60 + prev_slot.minute + SLOT_MINUTES) % 60,
             )
             if block_start < end_t:
                 blocks.append((block_start, end_t, block_label))

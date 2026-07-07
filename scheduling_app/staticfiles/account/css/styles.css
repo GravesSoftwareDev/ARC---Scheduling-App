@@ -275,6 +275,23 @@ a:hover {
     min-width: 0;
 }
 
+.avail-preferences-summary {
+    display: flex;
+    gap: 28px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+    padding: 12px 16px;
+    background: var(--secondary-color);
+    border-left: 4px solid var(--primary-color);
+    border-radius: 6px;
+}
+
+.avail-preferences-summary .avail-preference-field {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
 .schedule-header {
     display: flex;
     align-items: center;
@@ -862,6 +879,56 @@ a:hover {
     margin-top: 20px;
 }
 
+.avail-min-hours-warning {
+    background: #FDECEA;
+    border-left: 4px solid #C0392B;
+    color: #8B1E14;
+    border-radius: 8px;
+    padding: 14px 20px;
+    margin-bottom: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.avail-preferences {
+    display: flex;
+    align-items: center;
+    gap: 28px;
+    flex-wrap: wrap;
+    background: var(--secondary-color);
+    border-left: 4px solid var(--primary-color);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+}
+
+.avail-preference-field {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.avail-preference-field label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.avail-preference-field input[type="number"] {
+    width: 90px;
+    padding: 6px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+.avail-preference-checkbox label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
 /* Hidden hour labels (non-whole-hour slots) */
 .label-hidden {
     visibility: hidden;
@@ -1397,6 +1464,23 @@ a:hover {
     box-shadow: 0 0 0 2px color-mix(in srgb, var(--emp-color, #003F7F) 30%, transparent);
     font-weight: 700;
 }
+.sb2-emp-pill.sb2-emp-pill-warning {
+    background: #C0392B;
+    border-color: #C0392B;
+    color: #fff;
+}
+.sb2-emp-pill.sb2-emp-pill-warning:hover {
+    background: #A93226;
+    border-color: #A93226;
+}
+.sb2-emp-pill.sb2-emp-pill-warning .sb2-emp-swatch {
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.7);
+}
+.sb2-emp-pill.sb2-emp-pill-warning.sb2-emp-active {
+    background: #A93226;
+    border-color: #7B241C;
+    box-shadow: 0 0 0 2px #7B241C;
+}
 .sb2-emp-swatch {
     width: 12px;
     height: 12px;
@@ -1450,6 +1534,60 @@ a:hover {
     color: #aaa;
     line-height: 1.4;
 }
+
+/* Week/Day segmented toggle */
+.sb2-view-toggle.sb2-mode-btns {
+    display: inline-flex;
+    gap: 2px;
+    background: var(--light-color);
+    border: 1px solid var(--border-color);
+    border-radius: 7px;
+    padding: 3px;
+}
+.sb2-view-toggle.sb2-mode-btns .sb2-mode-btn {
+    flex: none;
+    padding: 6px 16px;
+    border: none;
+    border-radius: 5px;
+    background: transparent;
+}
+.sb2-view-toggle.sb2-mode-btns .sb2-mode-btn.sb2-mode-active {
+    background: var(--primary-color);
+    color: white;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+/* Day picker pills (shown when the schedule builder is in Day view) */
+.sb2-day-pills {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+}
+
+.sb2-day-pill {
+    padding: 8px 16px;
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    background: white;
+    font-size: 13px;
+    font-weight: 600;
+    color: #555;
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+    transition: background 0.15s, color 0.15s, border-color 0.15s, box-shadow 0.15s;
+}
+.sb2-day-pill:hover {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+.sb2-day-pill.sb2-day-pill-active {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+    box-shadow: 0 2px 6px rgba(0, 63, 127, 0.3);
+}
 .sb2-override-btn {
     width: 100%;
     padding: 6px 10px;
@@ -1483,6 +1621,12 @@ a:hover {
     transition: background 0.12s;
 }
 .sb2-key-item.sb2-key-active { background: white; font-weight: 700; }
+.sb2-key-item.sb2-key-item-warning {
+    background: #C0392B;
+    border-radius: 4px;
+}
+.sb2-key-item.sb2-key-item-warning .sb2-key-name { color: #fff; font-weight: 700; }
+.sb2-key-item.sb2-key-item-warning .sb2-key-swatch { box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.7); }
 .sb2-key-swatch {
     width: 12px;
     height: 12px;
@@ -2250,6 +2394,33 @@ select.form-control { cursor: pointer; }
 /* =====================================================
    SCHEDULE BUILDER — HOURS COUNTER
    ===================================================== */
+.sb2-emp-preferences {
+    background: #f7f9fb;
+    border: 1px solid #e0e6ed;
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-top: 8px;
+    font-size: 13px;
+}
+.sb2-emp-pref-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 6px;
+}
+.sb2-emp-pref-row + .sb2-emp-pref-row {
+    margin-top: 4px;
+}
+.sb2-emp-pref-label {
+    color: #555;
+    font-size: 12px;
+}
+.sb2-emp-pref-value {
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--primary-dark);
+}
+
 .sb2-hours-counter {
     background: #f7f9fb;
     border: 1px solid #e0e6ed;
