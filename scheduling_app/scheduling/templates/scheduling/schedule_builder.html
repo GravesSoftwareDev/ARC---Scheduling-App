@@ -277,6 +277,7 @@ const employeeDesiredHours = JSON.parse('{{ employee_desired_hours_json|escapejs
 const employeeWantsLunch   = JSON.parse('{{ employee_wants_lunch_json|escapejs }}');
 const scheduleLabels       = JSON.parse('{{ schedule_labels_json|escapejs }}');
 const employeeInitials     = JSON.parse('{{ employee_initials_json|escapejs }}');
+const LEAD_IN_SLOT_KEY     = '{{ grid.0.slot_key|default:"" }}';
 const SCHEDULE_PK          = '{{ active_schedule_pk }}';
 const LABELS_URL_TPL       = '{% url "scheduling:schedule_labels" schedule_pk=0 %}';
 const LABEL_DELETE_URL_TPL = '{% url "scheduling:delete_shift_label" label_pk=0 %}';
@@ -506,13 +507,23 @@ function applyViewMode() {
 }
 
 // ── Hours counter ──────────────────────────────────────────────────────────
+function _slotHours(slotKey) {
+  return slotKey === LEAD_IN_SLOT_KEY ? 0.25 : 0.5;
+}
+
 function calcScheduledHours(empPk) {
   const covered = new Set();
+  let hours = 0;
   document.querySelectorAll('.sb2-cell').forEach(cell => {
-    if (cell._emps && cell._emps.has(String(empPk)))
-      covered.add(`${cell.dataset.date}__${cell.dataset.slot}`);
+    if (cell._emps && cell._emps.has(String(empPk))) {
+      const key = `${cell.dataset.date}__${cell.dataset.slot}`;
+      if (!covered.has(key)) {
+        covered.add(key);
+        hours += _slotHours(cell.dataset.slot);
+      }
+    }
   });
-  return covered.size * 0.5;
+  return hours;
 }
 
 function updateHoursCounter() {
@@ -739,7 +750,7 @@ function paintCell(cell) {
   // Block if part-time employee would exceed weekly cap
   if (employeeIsParttime[activeEmpPk]) {
     const total = calcScheduledHours(activeEmpPk) + (employeeOtherHours[activeEmpPk] || 0);
-    if (total + 0.5 > PARTTIME_MAX) {
+    if (total + _slotHours(cell.dataset.slot) > PARTTIME_MAX) {
       showHoursLimitWarning();
       return;
     }

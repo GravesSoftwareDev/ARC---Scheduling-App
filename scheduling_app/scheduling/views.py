@@ -16,6 +16,7 @@ from .forms import OpenHoursForm, DateOperatingHoursForm, EmployeePreferencesFor
 
 PARTTIME_WEEKLY_MAX = 19.5  # hours — applies to all part-time employees
 SLOT_MINUTES = 30  # granularity of the availability / schedule builder grids
+LEAD_IN_MINUTES = 15  # the opening supervisor's window before the normal start
 MIN_AVAILABILITY_HOURS = 10  # employees must mark at least this many hours to be schedulable
 
 
@@ -38,13 +39,21 @@ EMPLOYEE_PALETTE = [
 
 # ── helpers ──────────────────────────────────────────────────────────────────
 
+def _shift_earlier(t, minutes):
+    total = max(t.hour * 60 + t.minute - minutes, 0)
+    return time(total // 60, total % 60)
+
 def _build_time_slots(start_time, end_time):
+    """Build slot boundaries for a day. The first slot is LEAD_IN_MINUTES wide
+    (the opening supervisor's window); every slot after that is SLOT_MINUTES wide."""
     slots = []
     current = start_time
+    step = LEAD_IN_MINUTES
     while current < end_time:
         slots.append(current)
-        total_minutes = current.hour * 60 + current.minute + SLOT_MINUTES
+        total_minutes = current.hour * 60 + current.minute + step
         current = time(total_minutes // 60, total_minutes % 60)
+        step = SLOT_MINUTES
     return slots
 
 def _slot_display(t):
@@ -62,12 +71,14 @@ _DOW_CODE = {0: 'MON', 1: 'TUE', 2: 'WED', 3: 'THU', 4: 'FRI', 5: 'SAT', 6: 'SUN
 
 def _get_operating_hours_for_date(d):
     """Return (start_time, end_time, is_closed) for a specific date.
-    Checks DateOperatingHours first, falls back to weekly OperatingHours defaults."""
+    Checks DateOperatingHours first, falls back to weekly OperatingHours defaults.
+    start_time is shifted LEAD_IN_MINUTES earlier to include the opening
+    supervisor's lead-in window."""
     try:
         doh = DateOperatingHours.objects.get(date=d)
         if doh.is_closed:
             return None, None, True
-        return doh.start_time, doh.end_time, False
+        return _shift_earlier(doh.start_time, LEAD_IN_MINUTES), doh.end_time, False
     except DateOperatingHours.DoesNotExist:
         pass
 
@@ -75,12 +86,12 @@ def _get_operating_hours_for_date(d):
     if dow:
         try:
             oh = OperatingHours.objects.get(day_of_week=dow)
-            return oh.start_time, oh.end_time, False
+            return _shift_earlier(oh.start_time, LEAD_IN_MINUTES), oh.end_time, False
         except OperatingHours.DoesNotExist:
             pass
 
     # System default if nothing configured
-    return time(8, 0), time(17, 0), False
+    return _shift_earlier(time(8, 0), LEAD_IN_MINUTES), time(17, 0), False
 
 def _week_start(d):
     """Return Monday of the week containing date d."""
@@ -121,7 +132,10 @@ def manage_availability(request):
             day_of_week=day_code,
             defaults={'start_time': time(8, 0), 'end_time': time(18, 0)},
         )
-        operating_hours[day_code] = {'start': oh.start_time, 'end': oh.end_time}
+        operating_hours[day_code] = {
+            'start': _shift_earlier(oh.start_time, LEAD_IN_MINUTES),
+            'end': oh.end_time,
+        }
 
     all_starts = [operating_hours[day]['start'] for day, _ in days]
     all_ends = [operating_hours[day]['end'] for day, _ in days]
@@ -386,6 +400,7 @@ def schedule_builder(request):
         min(h[0] for h in open_days), max(h[1] for h in open_days)
     ) if open_days else (time(8, 0), time(17, 0))
     slots = _build_time_slots(grid_start, grid_end)
+    lead_in_slot_key = f"{slots[0].hour:02d}_{slots[0].minute:02d}" if slots else None
 
     # ── POST: rebuild schedule for this schedule/week ────────────────────────
     if request.method == 'POST':
@@ -415,7 +430,10 @@ def schedule_builder(request):
             emp = emp_lookup[epk]
             if not emp.part_time:
                 continue
-            new_mins = len(slot_set) * 15
+            new_mins = sum(
+                LEAD_IN_MINUTES if sk == lead_in_slot_key else SLOT_MINUTES
+                for _, sk in slot_set
+            )
             other_qs = ScheduleEntry.objects.filter(
                 user=emp, date__in=week_dates
             ).exclude(schedule=post_schedule)
@@ -542,7 +560,7 @@ def schedule_builder(request):
             loc_header_cells.append({'loc': loc, 'date_iso': d.isoformat()})
 
     grid = []
-    for slot in slots:
+    for idx, slot in enumerate(slots):
         sk = f"{slot.hour:02d}_{slot.minute:02d}"
         cells = []
         for d in week_dates:
@@ -567,7 +585,7 @@ def schedule_builder(request):
         grid.append({
             'time': slot, 'slot_key': sk,
             'display': _slot_display(slot),
-            'show_label': slot.minute == 0,
+            'show_label': slot.minute == 0 or idx == 0,
             'cells': cells,
         })
 
@@ -619,12 +637,14 @@ DEFAULT_BUILDER_DAYS = [d for d in DayOfWeek.choices]  # [('MON', 'Monday'), ...
 
 
 def _default_day_hours():
-    """Weekly operating-hours span for each weekday, falling back to 8–5 if unconfigured."""
+    """Weekly operating-hours span for each weekday, falling back to 8–5 if unconfigured.
+    Start times are shifted LEAD_IN_MINUTES earlier for the opening supervisor's window."""
     oh_by_day = {oh.day_of_week: oh for oh in OperatingHours.objects.all()}
     day_hours = {}
     for day_code, _label in DEFAULT_BUILDER_DAYS:
         oh = oh_by_day.get(day_code)
-        day_hours[day_code] = (oh.start_time, oh.end_time) if oh else (time(8, 0), time(17, 0))
+        start, end = (oh.start_time, oh.end_time) if oh else (time(8, 0), time(17, 0))
+        day_hours[day_code] = (_shift_earlier(start, LEAD_IN_MINUTES), end)
     return day_hours
 
 
@@ -728,6 +748,7 @@ def default_schedule_builder(request):
     grid_start = min(h[0] for h in day_hours.values())
     grid_end = max(h[1] for h in day_hours.values())
     slots = _build_time_slots(grid_start, grid_end)
+    lead_in_slot_key = f"{slots[0].hour:02d}_{slots[0].minute:02d}" if slots else None
 
     # date→day map, keyed by day code onto itself, so the shared JS's
     # `dateDayMap[dateStr]` lookup works unmodified against day codes.
@@ -761,7 +782,10 @@ def default_schedule_builder(request):
             emp = emp_lookup[epk]
             if not emp.part_time:
                 continue
-            new_mins = len(slot_set) * 15
+            new_mins = sum(
+                LEAD_IN_MINUTES if sk == lead_in_slot_key else SLOT_MINUTES
+                for _, sk in slot_set
+            )
             other_mins = sum(
                 (blk.end_time.hour * 60 + blk.end_time.minute)
                 - (blk.start_time.hour * 60 + blk.start_time.minute)
@@ -797,7 +821,7 @@ def default_schedule_builder(request):
                         per_emp_labels.setdefault(epk, {})[slot] = label
             for epk, emp_slots in per_emp.items():
                 _slots_to_weekly_blocks(emp_slots, post_schedule, day_code, emp_lookup,
-                                         slot_labels=per_emp_labels.get(epk, {}))
+                                         slot_labels=per_emp_labels.get(epk, {}), all_slots=slots)
 
         messages.success(request, f"Default weekly schedule saved for {post_schedule}.")
         return redirect(f"{request.path}?schedule={post_schedule_pk}")
@@ -836,7 +860,7 @@ def default_schedule_builder(request):
     day_header_cols = [{'code': code, 'label': label} for code, label in DEFAULT_BUILDER_DAYS]
 
     grid = []
-    for slot in slots:
+    for idx, slot in enumerate(slots):
         sk = f"{slot.hour:02d}_{slot.minute:02d}"
         cells = []
         for day_code, _label in DEFAULT_BUILDER_DAYS:
@@ -853,7 +877,7 @@ def default_schedule_builder(request):
         grid.append({
             'time': slot, 'slot_key': sk,
             'display': _slot_display(slot),
-            'show_label': slot.minute == 0,
+            'show_label': slot.minute == 0 or idx == 0,
             'cells': cells,
         })
 
@@ -1020,7 +1044,7 @@ def save_week_as_default(request):
                     per_emp_labels.setdefault(epk, {})[slot] = label
         for epk, emp_slots in per_emp.items():
             _slots_to_weekly_blocks(emp_slots, schedule, day_code, emp_lookup,
-                                     slot_labels=per_emp_labels.get(epk, {}))
+                                     slot_labels=per_emp_labels.get(epk, {}), all_slots=day_slots)
 
     messages.success(request, f"This week's schedule is now the default for {schedule}.")
     return JsonResponse({'ok': True})
@@ -1057,7 +1081,13 @@ def export_teams_shifts(request):
     return render(request, 'scheduling/export_teams_shifts.html', {'schedules': schedules})
 
 
-def _slots_to_blocks(emp_slots, slot_labels=None):
+def _slot_width(slot_time, lead_in_time):
+    """A slot is LEAD_IN_MINUTES wide if it's the day's opening-supervisor lead-in
+    slot, otherwise SLOT_MINUTES wide."""
+    return LEAD_IN_MINUTES if lead_in_time is not None and slot_time == lead_in_time else SLOT_MINUTES
+
+
+def _slots_to_blocks(emp_slots, slot_labels=None, lead_in_time=None):
     """Convert a {slot: emp_pk_str} mapping into per-employee contiguous
     (start_time, end_time, label) blocks, splitting on gaps or label changes."""
     by_emp = {}
@@ -1076,9 +1106,10 @@ def _slots_to_blocks(emp_slots, slot_labels=None):
                 block_start = slot
                 block_label = (slot_labels or {}).get(slot, '')
             elif prev_slot is not None:
+                width = _slot_width(prev_slot, lead_in_time)
                 expected = time(
-                    (prev_slot.hour * 60 + prev_slot.minute + SLOT_MINUTES) // 60,
-                    (prev_slot.hour * 60 + prev_slot.minute + SLOT_MINUTES) % 60,
+                    (prev_slot.hour * 60 + prev_slot.minute + width) // 60,
+                    (prev_slot.hour * 60 + prev_slot.minute + width) % 60,
                 )
                 current_label = (slot_labels or {}).get(slot, '')
                 if slot != expected or current_label != block_label:
@@ -1088,9 +1119,10 @@ def _slots_to_blocks(emp_slots, slot_labels=None):
             prev_slot = slot
 
         if block_start is not None and prev_slot is not None:
+            width = _slot_width(prev_slot, lead_in_time)
             end_t = time(
-                (prev_slot.hour * 60 + prev_slot.minute + SLOT_MINUTES) // 60,
-                (prev_slot.hour * 60 + prev_slot.minute + SLOT_MINUTES) % 60,
+                (prev_slot.hour * 60 + prev_slot.minute + width) // 60,
+                (prev_slot.hour * 60 + prev_slot.minute + width) % 60,
             )
             if block_start < end_t:
                 blocks.append((block_start, end_t, block_label))
@@ -1100,7 +1132,8 @@ def _slots_to_blocks(emp_slots, slot_labels=None):
 
 def _slots_to_entries(emp_slots, all_slots, schedule, d, emp_lookup, created_by, slot_labels=None):
     """Convert a {slot: emp_pk_str} mapping into contiguous ScheduleEntry objects."""
-    for epk, blocks in _slots_to_blocks(emp_slots, slot_labels).items():
+    lead_in_time = all_slots[0] if all_slots else None
+    for epk, blocks in _slots_to_blocks(emp_slots, slot_labels, lead_in_time).items():
         emp = emp_lookup[epk]
         for start_t, end_t, label in blocks:
             ScheduleEntry.objects.create(
@@ -1111,9 +1144,10 @@ def _slots_to_entries(emp_slots, all_slots, schedule, d, emp_lookup, created_by,
             )
 
 
-def _slots_to_weekly_blocks(emp_slots, schedule, day_code, emp_lookup, slot_labels=None):
+def _slots_to_weekly_blocks(emp_slots, schedule, day_code, emp_lookup, slot_labels=None, all_slots=None):
     """Convert a {slot: emp_pk_str} mapping into contiguous WeeklySchedule objects for one day-of-week."""
-    for epk, blocks in _slots_to_blocks(emp_slots, slot_labels).items():
+    lead_in_time = all_slots[0] if all_slots else None
+    for epk, blocks in _slots_to_blocks(emp_slots, slot_labels, lead_in_time).items():
         emp = emp_lookup[epk]
         for start_t, end_t, label in blocks:
             WeeklySchedule.objects.create(
