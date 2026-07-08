@@ -145,11 +145,11 @@
       </div>
 
       <a href="{% url 'scheduling:manage_availability' %}" class="mini-calendar-link">
-        <div class="mini-calendar hourly-calendar">
+        <div class="avail-main-calendar hourly-calendar">
           <div class="calendar-header">
             <div class="hour-column"></div>
             {% for day_code, day_name in avail_days %}
-            <div class="day-header">{{ day_code|slice:":2"|title }}</div>
+            <div class="day-header">{{ day_name }}</div>
             {% endfor %}
           </div>
           <div class="calendar-grid">

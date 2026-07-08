@@ -996,6 +996,19 @@ a:hover {
     background-color: #e0e0e0;
 }
 
+/* Dashboard availability calendar — full-size, not the cramped sidebar mini version */
+.avail-main-calendar .hour-cell {
+    min-height: 22px;
+}
+
+.avail-main-calendar .hour-cell:hover {
+    background-color: #FFFFFF;
+}
+
+.avail-main-calendar .out-of-hours:hover {
+    background-color: #e0e0e0;
+}
+
 /* Mini Availability Calendar (inside info card) */
 .mini-avail-section {
     margin-top: 18px;
