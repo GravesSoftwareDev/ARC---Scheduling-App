@@ -8,6 +8,7 @@ class Employee(AbstractUser):
         ASSISTANT_I = 'ASSISTANT_I', 'Assistant I'
         ASSISTANT_II = 'ASSISTANT_II', 'Assistant II'
         TUTOR = 'TUTOR', 'Tutor'
+        LIBRARY = 'LIBRARY','Library Staff'
 
     birthdate = models.DateField(null=True, blank=True)
     part_time = models.BooleanField(default=True)
