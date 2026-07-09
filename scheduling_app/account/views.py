@@ -49,7 +49,11 @@ def employee_list(request):
         .filter(is_active=True)
         .order_by('last_name', 'first_name')
     )
-    return render(request, 'account/employee_list.html', {'employees': employees})
+
+    return render(request, 'account/employee_list.html', {
+        'employees': employees,
+        'role_choices': Employee.Role.choices,
+    })
 
 
 @login_required
@@ -57,26 +61,10 @@ def employee_list(request):
 def reset_all_availability(request):
     if request.method != 'POST':
         return redirect('account:employee_list')
-    from scheduling.models import WeeklyAvailability, OperatingHours
-    operating_hours = list(OperatingHours.objects.all())
-    if not operating_hours:
-        messages.warning(request, "No operating hours configured.")
-        return redirect('account:employee_list')
+    from scheduling.models import WeeklyAvailability
     employees = Employee.objects.filter(is_active=True)
     WeeklyAvailability.objects.filter(user__in=employees).delete()
-    new_blocks = [
-        WeeklyAvailability(
-            user=emp,
-            day_of_week=oh.day_of_week,
-            start_time=oh.start_time,
-            end_time=oh.end_time,
-            availability_type=WeeklyAvailability.AvailabilityType.AVAILABLE,
-        )
-        for emp in employees
-        for oh in operating_hours
-    ]
-    WeeklyAvailability.objects.bulk_create(new_blocks)
-    messages.success(request, f"Availability reset to full operating hours for {employees.count()} employees.")
+    messages.success(request, f"Availability cleared for {employees.count()} employees.")
     return redirect('account:employee_list')
 
 

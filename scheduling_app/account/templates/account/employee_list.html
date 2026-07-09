@@ -8,13 +8,48 @@
     <a href="{% url 'dashboard:dashboard' %}" class="btn btn-secondary">Back to Dashboard</a>
   </div>
 
-  <p class="emp-list-count">{{ employees|length }} active employee{{ employees|length|pluralize }}</p>
+  <div class="emp-list-filters">
+    <div class="emp-list-filters-search">
+      <input
+        type="text"
+        id="empSearchInput"
+        placeholder="Search name, username, or email…"
+        class="roster-emp-search"
+        autocomplete="off"
+      >
+    </div>
+
+    <div class="emp-list-filters-divider"></div>
+
+    <div class="emp-list-filters-controls">
+      <div class="emp-list-filter-group">
+        <span class="emp-list-filter-label">Role</span>
+        <div class="roster-role-filters" id="empRoleFilters">
+          <button type="button" class="roster-role-btn active" data-role="">All</button>
+          {% for value, label in role_choices %}
+          <button type="button" class="roster-role-btn" data-role="{{ value }}">{{ label }}</button>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="emp-list-filter-group">
+        <span class="emp-list-filter-label">Employment</span>
+        <div class="roster-role-filters" id="empEmploymentFilters">
+          <button type="button" class="roster-role-btn active" data-employment="">All</button>
+          <button type="button" class="roster-role-btn" data-employment="full_time">Full-time</button>
+          <button type="button" class="roster-role-btn" data-employment="part_time">Part-time</button>
+        </div>
+        <button type="button" id="empClearFilters" class="roster-clear-btn" style="display:none;">Clear</button>
+      </div>
+    </div>
+  </div>
+
+  <p class="emp-list-count" id="empListCount">{{ employees|length }} employee{{ employees|length|pluralize }} active</p>
 
   {% if request.user.username == 'gravess' %}
   <form method="post" action="{% url 'account:reset_all_availability' %}" style="margin-bottom: 16px;"
-        onsubmit="return confirm('Reset ALL employees availability to full operating hours?\n\nThis will overwrite any existing availability for every employee.\n\nThis cannot be undone.');">
+        onsubmit="return confirm('Reset ALL employees availability to empty?\n\nThis will delete any existing availability for every employee.\n\nThis cannot be undone.');">
     {% csrf_token %}
-    <button type="submit" class="btn btn-secondary">Reset All Availability to Open Hours</button>
+    <button type="submit" class="btn btn-secondary">Reset All Availability to Empty</button>
   </form>
   {% endif %}
 
@@ -30,9 +65,12 @@
           <th></th>
         </tr>
       </thead>
-      <tbody>
+      <tbody id="empListBody">
         {% for emp in employees %}
-        <tr class="emp-list-row">
+        <tr class="emp-list-row"
+            data-search="{{ emp.first_name }} {{ emp.last_name }} {{ emp.username }} {{ emp.email }}"
+            data-role="{{ emp.role }}"
+            data-employment="{% if emp.part_time %}part_time{% else %}full_time{% endif %}">
           <td class="emp-name">{{ emp.last_name }}, {{ emp.first_name }}</td>
           <td class="emp-username">{{ emp.username }}</td>
           <td>
@@ -53,8 +91,79 @@
         {% empty %}
         <tr><td colspan="6" class="emp-list-empty">No active employees found.</td></tr>
         {% endfor %}
+        <tr id="empListNoMatches" class="emp-list-row" hidden>
+          <td colspan="6" class="emp-list-empty">No employees match your search.</td>
+        </tr>
       </tbody>
     </table>
   </div>
 </div>
+
+<script>
+(function () {
+  var searchInput = document.getElementById('empSearchInput');
+  var roleBtns = Array.prototype.slice.call(document.querySelectorAll('#empRoleFilters .roster-role-btn'));
+  var employmentBtns = Array.prototype.slice.call(document.querySelectorAll('#empEmploymentFilters .roster-role-btn'));
+  var clearBtn = document.getElementById('empClearFilters');
+  var countEl = document.getElementById('empListCount');
+  var noMatchesRow = document.getElementById('empListNoMatches');
+  var rows = Array.prototype.slice.call(
+    document.querySelectorAll('#empListBody .emp-list-row[data-search]')
+  );
+
+  var activeRole = '';
+  var activeEmployment = '';
+
+  function applyFilters() {
+    var query = searchInput.value.trim().toLowerCase();
+    var visibleCount = 0;
+
+    rows.forEach(function (row) {
+      var matchesQuery = !query || row.dataset.search.toLowerCase().indexOf(query) !== -1;
+      var matchesRole = !activeRole || row.dataset.role === activeRole;
+      var matchesEmployment = !activeEmployment || row.dataset.employment === activeEmployment;
+      var visible = matchesQuery && matchesRole && matchesEmployment;
+      row.hidden = !visible;
+      if (visible) visibleCount++;
+    });
+
+    var filtering = Boolean(query || activeRole || activeEmployment);
+    noMatchesRow.hidden = !(filtering && visibleCount === 0);
+    clearBtn.style.display = filtering ? '' : 'none';
+    countEl.textContent = visibleCount + ' employee' + (visibleCount === 1 ? '' : 's') +
+      (filtering ? ' matching filters' : ' active');
+  }
+
+  searchInput.addEventListener('input', applyFilters);
+
+  roleBtns.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      roleBtns.forEach(function (b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      activeRole = btn.dataset.role;
+      applyFilters();
+    });
+  });
+
+  employmentBtns.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      employmentBtns.forEach(function (b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      activeEmployment = btn.dataset.employment;
+      applyFilters();
+    });
+  });
+
+  clearBtn.addEventListener('click', function () {
+    searchInput.value = '';
+    roleBtns.forEach(function (b) { b.classList.remove('active'); });
+    roleBtns[0].classList.add('active');
+    employmentBtns.forEach(function (b) { b.classList.remove('active'); });
+    employmentBtns[0].classList.add('active');
+    activeRole = '';
+    activeEmployment = '';
+    applyFilters();
+  });
+})();
+</script>
 {% endblock %}
