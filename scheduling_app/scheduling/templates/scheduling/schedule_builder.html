@@ -30,7 +30,7 @@
       <button type="button" class="btn btn-secondary" id="save-as-default-btn" onclick="saveWeekAsDefault()">Save Week as Default</button>
       {% endif %}
       <a href="{% url 'scheduling:default_schedule_builder' %}?schedule={{ active_schedule_pk }}" class="btn btn-secondary" id="nav-manage-default">Manage Default Week</a>
-      {% if is_admin %}<a href="{% url 'scheduling:export_teams_shifts' %}" class="btn btn-secondary">Export</a>{% endif %}
+      <a href="{% url 'scheduling:export_teams_shifts' %}" class="btn btn-secondary">Export</a>
       <a href="{% url 'dashboard:dashboard' %}" class="btn btn-secondary" id="nav-dashboard">← Dashboard</a>
     </div>
   </div>
