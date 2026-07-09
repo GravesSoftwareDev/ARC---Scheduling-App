@@ -77,7 +77,38 @@ class WeeklyAvailability(models.Model):
         ordering = [DAY_ORDER, 'start_time']
         verbose_name_plural = 'Weekly Availabilities'
 
+class AvailabilityWindow(models.Model):
+    """Global on/off switch (with optional date range) for editing availability."""
+    is_open = models.BooleanField(default=True)
+    opens_at = models.DateField(null=True, blank=True)
+    closes_at = models.DateField(null=True, blank=True)
 
+    def clean(self):
+        if self.opens_at and self.closes_at and self.opens_at > self.closes_at:
+            raise ValidationError("Opens date must be before closes date.")
+    
+    def is_currently_open(self):
+        if not self.is_open:
+            return False
+        today = datetime.date.today()
+        if self.opens_at and today < self.opens_at:
+            return False
+        if self.closes_at and today > self.closes_at:
+            return False
+        return True
+    
+    @classmethod
+    def current(cls):
+        obj, _ = cls.objects.get_or_create(pk=1)
+        return obj
+    
+    def __str__(self):
+        return f"Availability editing {'open' if self.is_open else 'closed'}."
+    
+    class Meta:
+        verbose_name_plural = 'Availability Window'
+    
+    
 class OperatingHours(models.Model):
 
     day_of_week = models.CharField(

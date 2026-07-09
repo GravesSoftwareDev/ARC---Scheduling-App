@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import MinValueValidator
-
+import datetime
 
 class Employee(AbstractUser):
     class Role(models.TextChoices):
@@ -21,3 +21,11 @@ class Employee(AbstractUser):
         null=True, blank=True, validators=[MinValueValidator(0)]
     )
     wants_lunch_break = models.BooleanField(default=False)
+
+    availability_override_until = models.DateField(null=True, blank=True)
+
+    def has_availability_override(self):
+        return bool(
+            self.availability_override_until
+            and self.availability_override_until >= datetime.date.today()
+        )

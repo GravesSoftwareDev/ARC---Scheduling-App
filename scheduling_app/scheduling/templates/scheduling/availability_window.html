@@ -1,0 +1,63 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Availability Window – Academic Resource Center{% endblock %}
+
+{% block content %}
+<div class="oh-container">
+
+  <div class="oh-page-header">
+    <div>
+      <h1 class="oh-title">Availability Window</h1>
+      <p class="oh-subtitle">Control when employees can edit their availability. Individual exceptions are granted from the Employee List.</p>
+    </div>
+    <a href="{% url 'dashboard:dashboard' %}" class="btn btn-secondary">← Back to Dashboard</a>
+  </div>
+
+  <div class="oh-card aw-card">
+    <div class="aw-status-row">
+      <span class="aw-status-badge {% if window.is_currently_open %}aw-status-open{% else %}aw-status-closed{% endif %}">
+        {% if window.is_currently_open %}Open{% else %}Closed{% endif %}
+      </span>
+      <span class="aw-status-desc">
+        {% if window.is_currently_open %}
+          Employees can currently edit their availability.
+        {% else %}
+          Employees cannot edit their availability right now (unless individually granted an exception).
+        {% endif %}
+      </span>
+    </div>
+
+    <form method="post" class="registration-form">
+      {% csrf_token %}
+
+      <div class="reg-field">
+        <label class="reg-checkbox-item">
+          {{ form.is_open }}
+          <span class="reg-label">Editing enabled</span>
+        </label>
+        {% if form.is_open.errors %}<p class="reg-error">{{ form.is_open.errors|join:" " }}</p>{% endif %}
+      </div>
+
+      <div class="reg-row">
+        <div class="reg-field">
+          <label class="reg-label" for="{{ form.opens_at.id_for_label }}">Opens on (optional)</label>
+          {{ form.opens_at }}
+          {% if form.opens_at.errors %}<p class="reg-error">{{ form.opens_at.errors|join:" " }}</p>{% endif %}
+        </div>
+        <div class="reg-field">
+          <label class="reg-label" for="{{ form.closes_at.id_for_label }}">Closes on (optional)</label>
+          {{ form.closes_at }}
+          {% if form.closes_at.errors %}<p class="reg-error">{{ form.closes_at.errors|join:" " }}</p>{% endif %}
+        </div>
+      </div>
+      <p class="oh-card-desc">Leave both dates blank to rely only on the "Editing enabled" toggle. If set, editing is only open on dates within this range, and only while the toggle above is on.</p>
+
+      {% if form.non_field_errors %}
+      <p class="reg-error">{{ form.non_field_errors|join:" " }}</p>
+      {% endif %}
+
+      <button type="submit" class="btn btn-primary">Save</button>
+    </form>
+  </div>
+
+</div>
+{% endblock %}

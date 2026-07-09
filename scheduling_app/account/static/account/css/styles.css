@@ -890,6 +890,40 @@ a:hover {
     font-weight: 500;
 }
 
+.avail-closed-banner {
+    background: #FFF4E5;
+    border-left: 4px solid var(--warning-color);
+    color: #8A5A00;
+    border-radius: 8px;
+    padding: 14px 20px;
+    margin-bottom: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.avail-override-banner {
+    background: #EAF6EE;
+    border-left: 4px solid var(--success-color);
+    color: #1E5C38;
+    border-radius: 8px;
+    padding: 14px 20px;
+    margin-bottom: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.avail-grid-locked {
+    opacity: 0.85;
+}
+
+.hour-cell.avail-locked {
+    cursor: not-allowed;
+}
+
+.avail-grid-locked .hour-cell:hover {
+    background-color: inherit;
+}
+
 .avail-preferences {
     display: flex;
     align-items: center;
@@ -1915,6 +1949,46 @@ select.form-control { cursor: pointer; }
 }
 .oh-card-desc {
     margin: 0 0 20px;
+    font-size: 13px;
+    color: #666;
+}
+
+/* Availability window (admin) */
+.aw-card {
+    max-width: 520px;
+}
+
+.aw-status-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.aw-status-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    flex-shrink: 0;
+}
+
+.aw-status-open {
+    background: #EAF6EE;
+    color: #1E5C38;
+}
+
+.aw-status-closed {
+    background: #FFF4E5;
+    color: #8A5A00;
+}
+
+.aw-status-desc {
     font-size: 13px;
     color: #666;
 }

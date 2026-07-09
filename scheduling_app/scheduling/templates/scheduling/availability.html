@@ -27,6 +27,17 @@
         </div>
     </div>
 
+    {% if not can_edit %}
+    <div class="avail-closed-banner">
+        Availability editing is currently closed.
+        {% if availability_window.opens_at %}It reopens {{ availability_window.opens_at|date:"D, M j, Y" }}.{% endif %}
+    </div>
+    {% elif has_override %}
+    <div class="avail-override-banner">
+        You've been granted an exception to edit your availability until {{ user.availability_override_until|date:"D, M j, Y" }}.
+    </div>
+    {% endif %}
+
     {% if below_min_availability %}
     <div class="avail-min-hours-warning">
         You are required to mark a minimum of {{ min_availability_hours }} hours available in order to be scheduled.
@@ -50,7 +61,7 @@
             </div>
         </div>
 
-        <div class="hourly-calendar">
+        <div class="hourly-calendar{% if not can_edit %} avail-grid-locked{% endif %}">
             <!-- Header row -->
             <div class="calendar-header">
                 <div class="hour-column"></div>
@@ -70,7 +81,7 @@
 
                     {% for day_code, day_name in days %}
                     {% with cell=row.days|dict_lookup:day_code %}
-                    <div class="hour-cell {% if cell.in_hours %}avail-edit{% else %}out-of-hours{% endif %} {% if cell.type == 'AVAILABLE' %}state-available{% elif cell.type == 'PREFERRED' %}state-preferred{% endif %}"
+                    <div class="hour-cell {% if cell.in_hours and can_edit %}avail-edit{% elif cell.in_hours %}avail-locked{% else %}out-of-hours{% endif %} {% if cell.type == 'AVAILABLE' %}state-available{% elif cell.type == 'PREFERRED' %}state-preferred{% endif %}"
                          data-day="{{ day_code }}"
                          data-hour="{{ row.time.hour|stringformat:'02d' }}"
                          data-minute="{{ row.time.minute|stringformat:'02d' }}"
@@ -89,7 +100,7 @@
 
         <div class="avail-actions">
             <a href="{% url 'dashboard:dashboard' %}" class="btn btn-primary">Cancel</a>
-            <button type="submit" class="btn btn-primary">Save Availability</button>
+            <button type="submit" class="btn btn-primary" {% if not can_edit %}disabled title="Availability editing is currently closed"{% endif %}>Save Availability</button>
         </div>
     </form>
 </div>

@@ -10,8 +10,8 @@ import json
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 
-from .models import WeeklyAvailability, OperatingHours, DayOfWeek, ScheduleEntry, DateOperatingHours, Schedule, ShiftLabel, LABEL_PALETTE, WeeklySchedule
-from .forms import OpenHoursForm, DateOperatingHoursForm, EmployeePreferencesForm
+from .models import WeeklyAvailability, OperatingHours, DayOfWeek, ScheduleEntry, DateOperatingHours, Schedule, ShiftLabel, LABEL_PALETTE, WeeklySchedule, AvailabilityWindow
+from .forms import OpenHoursForm, DateOperatingHoursForm, EmployeePreferencesForm, AvailabilityWindowForm
 
 
 PARTTIME_WEEKLY_MAX = 19.5  # hours — applies to all part-time employees
@@ -125,7 +125,7 @@ def manage_availability(request):
         ('MON', 'Monday'), ('TUE', 'Tuesday'), ('WED', 'Wednesday'),
         ('THU', 'Thursday'), ('FRI', 'Friday'),
     ]
-
+    can_edit = _can_edit_availability(request.user)
     operating_hours = {}
     for day_code, _ in days:
         oh, _ = OperatingHours.objects.get_or_create(
@@ -144,6 +144,9 @@ def manage_availability(request):
     slots = _build_time_slots(grid_start, grid_end)
 
     if request.method == 'POST':
+        if not can_edit:
+            messages.error(request, "Availability editing is currently closed.")
+            return redirect('scheduling:manage_availability')
         preferences_form = EmployeePreferencesForm(request.POST, instance=request.user)
         if preferences_form.is_valid():
             preferences_form.save()
@@ -213,6 +216,7 @@ def manage_availability(request):
         grid.append(row)
 
     total_availability_hours = _total_availability_hours(existing)
+    window = AvailabilityWindow.current()
 
     context = {
         'grid': grid,
@@ -223,10 +227,26 @@ def manage_availability(request):
         'total_availability_hours': total_availability_hours,
         'min_availability_hours': MIN_AVAILABILITY_HOURS,
         'below_min_availability': total_availability_hours < MIN_AVAILABILITY_HOURS,
+        'can_edit': can_edit,
+        'availability_window': window,
+        'has_override': request.user.has_availability_override(),
     }
     return render(request, 'scheduling/availability.html', context)
 
 # ── operating hours (admin, calendar-aware) ───────────────────────────────────
+@login_required
+@user_passes_test(_is_admin)
+def availability_window(request):
+    window = AvailabilityWindow.current()
+    if request.method == 'POST':
+        form = AvailabilityWindowForm(request.POST, instance=window)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Availability window updated.")
+            return redirect('scheduling:availability_window')
+    else:
+        form = AvailabilityWindowForm(instance=window)
+    return render(request, 'scheduling/availability_window.html', {'form': form})
 
 @login_required
 @user_passes_test(_is_admin)
@@ -1155,3 +1175,10 @@ def _slots_to_weekly_blocks(emp_slots, schedule, day_code, emp_lookup, slot_labe
                 start_time=start_t, end_time=end_t,
                 custom_label=label,
             )
+
+def _can_edit_availability(user):
+    if not user.is_authenticated:
+        return False
+    if user.is_admin or user.has_availability_override():
+        return True
+    return AvailabilityWindow.current().is_currently_open()

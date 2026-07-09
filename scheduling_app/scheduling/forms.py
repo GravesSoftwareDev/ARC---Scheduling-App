@@ -1,5 +1,5 @@
 from django import forms
-from .models import OperatingHours, ScheduleEntry, DateOperatingHours, Schedule
+from .models import OperatingHours, ScheduleEntry, DateOperatingHours, Schedule, AvailabilityWindow
 
 
 class EmployeePreferencesForm(forms.ModelForm):
@@ -78,3 +78,11 @@ class ScheduleForm(forms.ModelForm):
             'color': forms.TextInput(attrs={'type': 'color', 'class': 'roster-color-input'}),
         }
 
+class AvailabilityWindowForm(forms.ModelForm):
+    class Meta:
+        model = AvailabilityWindow
+        fields = ('is_open', 'opens_at', 'closes_at')
+        widgets = {
+            'opens_at':forms.DateInput(attrs={'type':'date'}),
+            'closes_at':forms.DateInput(attrs={'type':'date'})
+        }

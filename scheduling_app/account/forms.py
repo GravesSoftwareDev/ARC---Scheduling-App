@@ -9,10 +9,14 @@ class EditEmployeeForm(forms.ModelForm):
     part_time = forms.BooleanField(required=False)
     role = forms.ChoiceField(choices=User.Role.choices, required=True)
     is_admin = forms.BooleanField(required=False)
+    availability_override_until = forms.DateField(
+        required=False, widget=forms.DateInput(attrs={'type': 'date'})
+    )
 
     class Meta:
         model = User
-        fields = ('username', 'email', 'first_name', 'last_name', 'birthdate', 'part_time', 'role', 'is_admin')
+        fields = ('username', 'email', 'first_name', 'last_name', 'birthdate',
+                   'part_time', 'role', 'is_admin', 'availability_override_until')
 
 
 class RegistrationForm(UserCreationForm):
@@ -36,3 +40,4 @@ class RegistrationForm(UserCreationForm):
         if commit:
             user.save()
         return user
+

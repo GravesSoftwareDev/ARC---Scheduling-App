@@ -14,4 +14,6 @@ urlpatterns = [
     path('schedule/save-day/', views.save_schedule_day, name='save_schedule_day'),
     path('schedule/save-as-default/', views.save_week_as_default, name='save_week_as_default'),
     path('export/teams/', views.export_teams_shifts, name='export_teams_shifts'),
+    path('availability-window/', views.availability_window, name='availability_window'),
+
 ]
