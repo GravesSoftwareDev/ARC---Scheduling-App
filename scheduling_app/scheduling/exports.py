@@ -6,8 +6,14 @@ from openpyxl import load_workbook
 
 from .models import ScheduleEntry
 
+# Microsoft Teams' own "Shifts" import template — starting from it (rather
+# than building a workbook from scratch) guarantees the sheet names, header
+# row, and column order match exactly what Teams' importer expects.
 TEMPLATE_PATH = os.path.join(os.path.dirname(__file__), 'data', 'TeamsShiftsTemplate.xlsx')
 
+# Literal values Teams' importer expects in the "Shared" and "Theme Color"
+# columns — these aren't free text, they must match one of Teams' own preset
+# option strings exactly.
 SHARED_VALUE = '2. Not Shared'
 THEME_COLOR = '6. Yellow'
 
@@ -53,6 +59,9 @@ def build_teams_shifts_xlsx(schedule_pks, date_from: date, date_to: date) -> byt
         .order_by('schedule__name', 'date', 'start_time', 'user__last_name', 'user__first_name')
     )
 
+    # Column order below must match the template's "Shifts" sheet header row
+    # exactly: Member, Work Email, Group, Start Date, Start Time, End Date,
+    # End Time, Theme Color, Custom Label, Unpaid Break (minutes), Notes, Shared.
     write_row = 2
     for entry in entries:
         emp = entry.user

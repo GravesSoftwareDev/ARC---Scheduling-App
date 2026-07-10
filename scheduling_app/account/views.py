@@ -9,6 +9,9 @@ from .forms import RegistrationForm, EditEmployeeForm
 from .models import Employee, SecuritySettings
 
 
+# The app's two permission tiers, used as @user_passes_test checks throughout
+# this file and scheduling/views.py. Neither is Django's own is_staff/is_superuser
+# — schedulers are admins or anyone listed as a `scheduler` on at least one Schedule.
 _admin_check = lambda u: u.is_admin
 _is_scheduler_or_admin = lambda u: u.is_admin or u.scheduler_of.exists()
 
@@ -16,6 +19,9 @@ _is_scheduler_or_admin = lambda u: u.is_admin or u.scheduler_of.exists()
 @login_required
 @user_passes_test(_is_scheduler_or_admin)
 def registration(request):
+    # `requester` lets RegistrationForm restrict which schedules a non-admin
+    # scheduler can register someone onto, and hide the is_admin field for
+    # them entirely — see RegistrationForm.__init__ in forms.py.
     if request.method == 'POST':
         user_form = RegistrationForm(request.POST, requester=request.user)
         if user_form.is_valid():
@@ -62,6 +68,9 @@ def employee_list(request):
         if emp_pk:
             emp = get_object_or_404(Employee, pk=emp_pk)
             name = emp.get_full_name()
+            # Despite the field name, this is an immediate hard delete, not a
+            # soft-deactivate — it cascades to the employee's WeeklyAvailability,
+            # WeeklySchedule, and ScheduleEntry rows and cannot be undone.
             emp.delete()
             messages.success(request, f"{name} has been removed.")
         return redirect('account:employee_list')
@@ -80,7 +89,7 @@ def employee_list(request):
 
 
 @login_required
-@user_passes_test(lambda u: u.username == 'gravess')
+@user_passes_test(_admin_check)
 def reset_all_availability(request):
     if request.method != 'POST':
         return redirect('account:employee_list')
@@ -145,6 +154,9 @@ def roster(request):
         elif action == 'delete_schedule' and schedule:
             from scheduling.models import ScheduleEntry, WeeklySchedule
             name = schedule.name
+            # ScheduleEntry/WeeklySchedule use on_delete=PROTECT on their
+            # `schedule` FK, so schedule.delete() would raise ProtectedError
+            # unless their rows are cleared first.
             ScheduleEntry.objects.filter(schedule=schedule).delete()
             WeeklySchedule.objects.filter(schedule=schedule).delete()
             schedule.delete()

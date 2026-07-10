@@ -113,6 +113,10 @@ def _is_scheduler_or_admin(user):
 def _is_admin(user):
     return user.is_authenticated and user.is_admin
 
+# Used only for "Load Default Week": WeeklySchedule template blocks are
+# dateless, but the grid-rendering code below expects ScheduleEntry-shaped
+# objects with a concrete date. This wraps a template block with a real date
+# for display, without writing anything to the database until the user saves.
 _VirtualEntry = namedtuple(
     '_VirtualEntry', ['user', 'date', 'start_time', 'end_time', 'location', 'custom_label']
 )
@@ -151,6 +155,10 @@ def manage_availability(request):
         if preferences_form.is_valid():
             preferences_form.save()
 
+        # The submitted form has one AVAILABLE/PREFERRED/empty value per slot
+        # checkbox, not per block, so the simplest correct update is to wipe
+        # this employee's availability and rebuild it by run-length-encoding
+        # contiguous same-type slots back into WeeklyAvailability blocks.
         WeeklyAvailability.objects.filter(user=request.user).delete()
 
         for day_code, _ in days:
@@ -1181,6 +1189,8 @@ def _slots_to_weekly_blocks(emp_slots, schedule, day_code, emp_lookup, slot_labe
             )
 
 def _can_edit_availability(user):
+    """Admins and employees with an active per-user override bypass the
+    global AvailabilityWindow entirely; everyone else is subject to it."""
     if not user.is_authenticated:
         return False
     if user.is_admin or user.has_availability_override():

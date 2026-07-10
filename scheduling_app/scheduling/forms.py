@@ -1,5 +1,5 @@
 from django import forms
-from .models import OperatingHours, ScheduleEntry, DateOperatingHours, Schedule, AvailabilityWindow
+from .models import OperatingHours, DateOperatingHours, Schedule, AvailabilityWindow
 
 
 class EmployeePreferencesForm(forms.ModelForm):
@@ -29,34 +29,6 @@ class OpenHoursForm(forms.ModelForm):
         }
 
 
-class ScheduleEntryForm(forms.ModelForm):
-    class Meta:
-        model = ScheduleEntry
-        fields = ['user', 'schedule', 'date', 'start_time', 'end_time']
-        widgets = {
-            'date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
-            'start_time': forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}),
-            'end_time': forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}),
-            'user': forms.Select(attrs={'class': 'form-control'}),
-            'schedule': forms.Select(attrs={'class': 'form-control'}),
-        }
-
-    def __init__(self, *args, scheduler=None, **kwargs):
-        super().__init__(*args, **kwargs)
-        from account.models import Employee
-        from .models import Schedule
-        if scheduler:
-            managed = Schedule.objects.filter(schedulers=scheduler)
-            self.fields['user'].queryset = Employee.objects.filter(
-                member_of__in=managed
-            ).distinct().order_by('last_name', 'first_name')
-            self.fields['schedule'].queryset = managed
-        else:
-            self.fields['user'].queryset = Employee.objects.all().order_by('last_name', 'first_name')
-            self.fields['schedule'].queryset = Schedule.objects.all()
-
-        self.fields['user'].label_from_instance = lambda u: f"{u.last_name}, {u.first_name} ({u.username})"
-
 class DateOperatingHoursForm(forms.ModelForm):
     class Meta:
         model = DateOperatingHours
@@ -69,6 +41,7 @@ class DateOperatingHoursForm(forms.ModelForm):
             'is_closed': forms.CheckboxInput(attrs={'class': 'form-check-input', 'id': 'id_is_closed'}),
         }
 
+
 class ScheduleForm(forms.ModelForm):
     class Meta:
         model = Schedule
@@ -78,11 +51,12 @@ class ScheduleForm(forms.ModelForm):
             'color': forms.TextInput(attrs={'type': 'color', 'class': 'roster-color-input'}),
         }
 
+
 class AvailabilityWindowForm(forms.ModelForm):
     class Meta:
         model = AvailabilityWindow
         fields = ('is_open', 'opens_at', 'closes_at')
         widgets = {
-            'opens_at':forms.DateInput(attrs={'type':'date'}),
-            'closes_at':forms.DateInput(attrs={'type':'date'})
+            'opens_at': forms.DateInput(attrs={'type': 'date'}),
+            'closes_at': forms.DateInput(attrs={'type': 'date'}),
         }

@@ -1087,6 +1087,7 @@ a:hover {
 
 .mini-calendar .calendar-row {
     grid-template-columns: 30px repeat(5, 1fr);
+    border-bottom: none;
 }
 
 .mini-calendar .hour-label {
@@ -1094,6 +1095,7 @@ a:hover {
     padding: 0 2px;
     min-height: 7px;
     line-height: 1.2;
+    border-right: none;
 }
 
 .mini-calendar .hour-cell {
@@ -1102,16 +1104,8 @@ a:hover {
     border-right: none;
 }
 
-.mini-calendar .calendar-row {
-    border-bottom: none;
-}
-
 .mini-calendar .hour-row {
     border-top: none;
-}
-
-.mini-calendar .hour-label {
-    border-right: none;
 }
 
 .mini-calendar .hour-cell:hover {
@@ -1164,12 +1158,6 @@ a:hover {
     color: var(--primary-color);
     font-size: 22px;
     font-weight: 600;
-}
-
-.oh-subtitle {
-    margin: 0;
-    font-size: 14px;
-    color: #666;
 }
 
 .oh-days {
@@ -1270,20 +1258,6 @@ a:hover {
     display: flex;
     justify-content: flex-end;
     gap: 12px;
-}
-
-.btn-secondary {
-    background-color: transparent;
-    color: var(--primary-color);
-    border: 1px solid var(--border-color);
-    text-decoration: none;
-    display: inline-flex;
-    align-items: center;
-}
-
-.btn-secondary:hover {
-    background-color: var(--light-color);
-    text-decoration: none;
 }
 
 /* Operating Hours Table */
@@ -2421,7 +2395,7 @@ select.form-control { cursor: pointer; }
     border: 1px solid #d0d0d0;
     border-radius: 6px;
     background: #fff;
-    color: var(--text-dark);
+    color: var(--text-color);
 }
 .btn-add {
     padding: 6px 14px;
@@ -2442,7 +2416,7 @@ select.form-control { cursor: pointer; }
     padding: 8px 18px;
     font-size: 14px;
     background: #f0f0f0;
-    color: var(--text-dark);
+    color: var(--text-color);
     border: 1px solid #d0d0d0;
     border-radius: 7px;
     cursor: pointer;
@@ -2522,7 +2496,7 @@ select.form-control { cursor: pointer; }
 }
 .emp-list-table th {
     background: #f5f7fa;
-    color: var(--text-dark);
+    color: var(--text-color);
     font-weight: 700;
     padding: 12px 14px;
     text-align: left;

@@ -21,7 +21,6 @@ class WeeklyScheduleAdmin(admin.ModelAdmin):
     ordering = ['day_of_week', 'start_time']
 
 
-
 @admin.register(ScheduleEntry)
 class ScheduleEntryAdmin(admin.ModelAdmin):
     list_display = ['user', 'schedule', 'date', 'start_time', 'end_time', 'created_by']
@@ -37,8 +36,9 @@ class DateOperatingHoursAdmin(admin.ModelAdmin):
     ordering = ['date']
     list_filter = ['is_closed']
 
+
 @admin.register(Schedule)
 class ScheduleAdmin(admin.ModelAdmin):
     list_display = ['name']
     search_fields = ['name']
-    filter_horizontal = ['schedulers','members']
+    filter_horizontal = ['schedulers', 'members']

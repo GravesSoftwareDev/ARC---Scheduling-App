@@ -27,6 +27,10 @@ def _schedules_for_role(Schedule, role):
 
 @receiver(post_save, sender='account.Employee')
 def sync_employee_to_schedules(sender, instance, created, **kwargs):
+    """When an employee is created/edited with role ASSISTANT_I or
+    ASSISTANT_II, add them as a member of every matching "Assistant I"/
+    "Assistant II"-named schedule. Only adds membership — never removes it,
+    so changing someone's role away from Assistant doesn't un-schedule them."""
     from scheduling.models import Schedule
     keyword = _role_keyword(instance.role)
     if not keyword:
@@ -38,6 +42,11 @@ def sync_employee_to_schedules(sender, instance, created, **kwargs):
 
 @receiver(post_save, sender='scheduling.Schedule')
 def sync_schedule_to_employees(sender, instance, created, **kwargs):
+    """The mirror image of sync_employee_to_schedules: when a Schedule is
+    created or renamed to contain "assistant i"/"assistant ii" in its name,
+    every active employee with the matching role is added as a member. This
+    means renaming any schedule to include that phrase will bulk-add every
+    Assistant I/II employee to it, even if that wasn't the intent."""
     from account.models import Employee
     name_lower = instance.name.lower()
 

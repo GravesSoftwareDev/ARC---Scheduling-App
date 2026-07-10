@@ -1,6 +1,7 @@
 from django.shortcuts import render
 from django.http import HttpResponse
 from scheduling.models import WeeklyAvailability, OperatingHours, ScheduleEntry, DateOperatingHours
+from scheduling.views import MIN_AVAILABILITY_HOURS
 from datetime import time, date, timedelta, datetime, timezone as dt_timezone
 from django.contrib.auth.decorators import login_required
 from django.utils.dateparse import parse_date
@@ -72,6 +73,10 @@ def _get_operating_hours_for_date(d):
 
 @login_required
 def dashboard(request):
+    """The logged-in landing page. Builds two independent grids for the
+    requested week: the employee's actual scheduled shifts (`grid`) and their
+    recurring weekly availability (`avail_grid`, day-of-week based, always
+    the same regardless of which week is being viewed)."""
     today = date.today()
     week_param = request.GET.get('week')
     if week_param:
@@ -120,7 +125,6 @@ def dashboard(request):
     # Weekly availability (still day-of-week based)
     avail_list = list(WeeklyAvailability.objects.filter(user=request.user))
 
-    MIN_AVAILABILITY_HOURS = 10
     total_availability_hours = sum(
         (a.end_time.hour * 60 + a.end_time.minute) - (a.start_time.hour * 60 + a.start_time.minute)
         for a in avail_list
@@ -255,6 +259,9 @@ def _ics_fold(line):
 
 @login_required
 def export_schedule_ics(request):
+    """Export every ScheduleEntry the logged-in employee is assigned to,
+    across all schedules and all dates, as a single .ics file they can
+    subscribe to (or import) in an external calendar app."""
     entries = (
         ScheduleEntry.objects
         .filter(user=request.user)
@@ -274,6 +281,10 @@ def export_schedule_ics(request):
     ]
 
     for entry in entries:
+        # No trailing "Z" or TZID here on purpose — these are RFC 5545
+        # "floating" local times, which is correct for a physical location's
+        # posted schedule: the shift is at this wall-clock time regardless of
+        # which timezone the viewer's calendar app is set to.
         dtstart = entry.date.strftime('%Y%m%d') + 'T' + entry.start_time.strftime('%H%M%S')
         dtend   = entry.date.strftime('%Y%m%d') + 'T' + entry.end_time.strftime('%H%M%S')
         uid     = f'scheduleentry-{entry.pk}-{user_slug}@arc-scheduling'

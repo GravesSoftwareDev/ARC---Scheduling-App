@@ -21,6 +21,9 @@ class DayOfWeek(models.TextChoices):
     FRIDAY = 'FRI', 'Friday'
 
 class Schedule(models.Model):
+    """A department/team (e.g. "Math", "Assistant I"). `members` can be
+    assigned shifts on it; `schedulers` (plus admins) can build its schedule.
+    Schedules named to match a Role (see signals.py) auto-sync membership."""
     name = models.CharField(max_length=100, unique=True)
     color = models.CharField(max_length=7, default='#003F7F')
     schedulers = models.ManyToManyField(
@@ -38,6 +41,10 @@ class Schedule(models.Model):
         return self.name
     
 class WeeklyAvailability(models.Model):
+    """An employee's recurring weekly availability (no specific date — just a
+    day of week + time range). This is what the Schedule Builder checks
+    proposed shifts against; it's unrelated to any specific week's shifts,
+    which live in ScheduleEntry instead."""
 
     class AvailabilityType(models.TextChoices):
         AVAILABLE = 'AVAILABLE', 'Available'
@@ -114,6 +121,9 @@ class AvailabilityWindow(models.Model):
     
     
 class OperatingHours(models.Model):
+    """Weekly default open/close hours, one row per weekday. A date that has
+    a matching DateOperatingHours row uses that instead (holidays, one-off
+    closures) — see DateOperatingHours below."""
 
     day_of_week = models.CharField(
         max_length=3,
@@ -136,6 +146,10 @@ class OperatingHours(models.Model):
         verbose_name_plural = 'Operating Hours'
 
 class WeeklySchedule(models.Model):
+    """The recurring, dateless default-week template for a Schedule (day of
+    week + times, no specific date) — the starting point "Load Default Week"
+    copies into a real week. Not to be confused with ScheduleEntry, which is
+    an actual dated shift copied *from* this template (or painted directly)."""
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -219,6 +233,10 @@ class ScheduleEntry(models.Model):
         ordering = ['date', 'start_time']
 
 
+# Candidate colors for new ShiftLabels: schedule_labels() (views.py) picks
+# the first entry not already used by another label on the same schedule.
+# Unrelated to employee colors, which come from a separate EMPLOYEE_PALETTE
+# constant in views.py.
 LABEL_PALETTE = [
     '#FF3B30',  # red
     '#FF9500',  # orange
