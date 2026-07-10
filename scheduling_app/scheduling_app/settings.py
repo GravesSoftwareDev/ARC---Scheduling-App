@@ -3,17 +3,8 @@ Django settings for scheduling_app project.
 """
 
 import os
-import socket
 from pathlib import Path
 import dj_database_url
-
-# Django's SMTP email backend calls socket.getfqdn() to build the Message-ID
-# header. On Railway (and most container platforms) that triggers a reverse
-# DNS lookup with no PTR record, which the resolver retries for 10+ minutes
-# instead of failing fast -- this stalls the gunicorn worker well past
-# EMAIL_TIMEOUT (which only covers the SMTP socket, not this local lookup)
-# and Railway's proxy returns 502 once the worker is killed. Short-circuit it.
-socket.getfqdn = lambda name='': socket.gethostname()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -115,18 +106,6 @@ LOGIN_REDIRECT_URL = 'dashboard:dashboard'
 LOGOUT_REDIRECT_URL = 'account:login'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-EMAIL_BACKEND = os.environ.get(
-    'EMAIL_BACKEND',
-    'django.core.mail.backends.smtp.EmailBackend' if os.environ.get('EMAIL_HOST') else 'django.core.mail.backends.console.EmailBackend'
-)
-EMAIL_HOST = os.environ.get('EMAIL_HOST', '')
-EMAIL_PORT = int(os.environ.get('EMAIL_PORT', 587))
-EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True') == 'True'
-EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
-EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
-EMAIL_TIMEOUT = int(os.environ.get('EMAIL_TIMEOUT', 10))
-DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'noreply@example.com')
 
 if not DEBUG:
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')

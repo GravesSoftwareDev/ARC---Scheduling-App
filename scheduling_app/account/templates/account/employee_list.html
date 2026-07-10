@@ -80,6 +80,11 @@
           <td>{% if emp.part_time %}<span class="emp-parttime">Part-time</span>{% else %}<span class="emp-fulltime">Full-time</span>{% endif %}</td>
           <td class="emp-actions">
             <a href="{% url 'account:edit_employee' emp.pk %}" class="btn-action btn-action-edit">Edit</a>
+            <form method="post" action="{% url 'account:reset_employee_password' emp.pk %}" class="inline-form"
+                  onsubmit="return confirm('Reset {{ emp.first_name }} {{ emp.last_name }}\'s password to the default?');">
+              {% csrf_token %}
+              <button type="submit" class="btn-action btn-action-edit">Reset Password</button>
+            </form>
             <form method="post" class="inline-form"
                   onsubmit="return confirm('Permanently delete {{ emp.first_name }} {{ emp.last_name }}?\n\nThis will also delete all of their schedule entries and availability.\n\nThis cannot be undone.');">
               {% csrf_token %}

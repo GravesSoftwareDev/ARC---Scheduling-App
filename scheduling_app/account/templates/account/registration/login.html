@@ -17,9 +17,6 @@
             </div>
             <button type="submit" class="auth-btn">Login</button>
         </form>
-        <p class="auth-links">
-            <a href="{% url 'account:password_reset' %}">Forgot your password?</a>
-        </p>
         {% if form.errors %}
         <div class="error-messages">
             {% for field in form %}

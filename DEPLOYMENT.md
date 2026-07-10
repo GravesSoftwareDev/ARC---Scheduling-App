@@ -101,8 +101,6 @@ DJANGO_SECRET_KEY=your-secret-key-here
 DJANGO_DEBUG=False
 DJANGO_ALLOWED_HOSTS=yourdomain.com www.yourdomain.com
 DATABASE_URL=postgres://user:password@localhost:5432/scheduling_db
-EMAIL_HOST_USER=your-email@gmail.com
-EMAIL_HOST_PASSWORD=your-app-password
 EOF
 
 # Prepare static files
@@ -130,13 +128,6 @@ DJANGO_ALLOWED_HOSTS=yourdomain.com www.yourdomain.com
 
 # Database (auto-generated on Heroku/Railway, required for VPS)
 DATABASE_URL=postgres://user:password@host:5432/dbname
-
-# Email (optional but recommended)
-EMAIL_HOST_USER=your-email@gmail.com
-EMAIL_HOST_PASSWORD=your-app-specific-password
-EMAIL_HOST=smtp.gmail.com
-EMAIL_PORT=587
-EMAIL_USE_TLS=True
 ```
 
 ---

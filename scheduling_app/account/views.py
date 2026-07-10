@@ -72,6 +72,18 @@ def reset_all_availability(request):
 
 @login_required
 @user_passes_test(_admin_check)
+def reset_employee_password(request, pk):
+    if request.method != 'POST':
+        return redirect('account:employee_list')
+    emp = get_object_or_404(Employee, pk=pk)
+    emp.set_password('Test123!')
+    emp.save()
+    messages.success(request, f"{emp.get_full_name()}'s password has been reset to the default.")
+    return redirect('account:employee_list')
+
+
+@login_required
+@user_passes_test(_admin_check)
 def edit_employee(request, pk):
     emp = get_object_or_404(Employee, pk=pk)
     if request.method == 'POST':
