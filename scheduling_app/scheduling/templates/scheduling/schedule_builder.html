@@ -71,7 +71,7 @@
 
       <!-- Employee selector -->
       <div class="sb2-sidebar-section">
-        <div class="sb2-sidebar-label">Select Employee to Schedule</div>
+        <div class="sb2-sidebar-label">Select Employee(s) to Schedule</div>
         <div id="emp-list" class="sb2-emp-list">
           {% for emp in visible_employees %}
           <button type="button"
@@ -79,7 +79,7 @@
                   data-emp="{{ emp.pk }}"
                   style="--emp-color: {{ employee_colors|dict_lookup:emp.pk }};"
                   {% if low_availability_flags|dict_lookup:emp.pk %}title="Has not marked the minimum {{ min_availability_hours }} hours of availability"{% endif %}
-                  onclick="selectEmployee('{{ emp.pk }}', '{{ employee_colors|dict_lookup:emp.pk }}')">
+                  onclick="selectEmployee('{{ emp.pk }}')">
             <span class="sb2-emp-swatch" style="background:{{ employee_colors|dict_lookup:emp.pk }};"></span>
             {{ emp.last_name }}, {{ emp.first_name }}
           </button>
@@ -101,6 +101,7 @@
             <span id="emp-pref-lunch" class="sb2-emp-pref-value">—</span>
           </div>
         </div>
+        <div id="multi-emp-stats" class="sb2-multi-emp-stats" style="display:none;"></div>
         <div id="label-input-wrap" style="margin-top:6px;">
           <!-- Label selector + delete -->
           <div style="display:flex;gap:4px;align-items:center;">
@@ -304,8 +305,7 @@ const COL_TEMPLATE_DAY     = '72px repeat({{ num_locs|default:1 }}, 1fr)';
 const hasLocs = {{ has_locs|yesno:"true,false" }};
 const PARTTIME_MAX = 19.5;
 
-let activeEmpPk    = null;
-let activeEmpColor = null;
+let activeEmpPks   = new Set();
 let activeLabelText = '';
 let activeSchedulePk = '{{ active_schedule_pk }}';
 let drawMode  = 'draw';
@@ -373,100 +373,156 @@ document.addEventListener('keydown', e => {
   if (mod && (e.key === 'y' || (e.shiftKey && e.key === 'z'))) { e.preventDefault(); redo(); }
 });
 
-// ── Employee selection ─────────────────────────────────────────────────────
-function selectEmployee(empPk, color) {
-  activeEmpPk   = String(empPk);
-  activeEmpColor = color;
-  document.querySelectorAll('.sb2-emp-pill').forEach(p => p.classList.remove('sb2-emp-active'));
-  document.querySelector(`.sb2-emp-pill[data-emp="${empPk}"]`)?.classList.add('sb2-emp-active');
-  document.getElementById('active-emp-label').style.display = 'flex';
-  const pill = document.querySelector(`.sb2-emp-pill[data-emp="${empPk}"]`);
-  document.getElementById('active-emp-name').textContent = pill ? pill.textContent.trim() : empPk;
-  document.querySelectorAll('.sb2-key-item').forEach(k => k.classList.remove('sb2-key-active'));
-  document.querySelector(`.sb2-key-item[data-emp-key="${empPk}"]`)?.classList.add('sb2-key-active');
-  applyAvailabilityHighlight(empPk);
+// ── Employee selection (multi-select: click toggles an employee in/out) ────
+function selectEmployee(empPk) {
+  empPk = String(empPk);
+  if (activeEmpPks.has(empPk)) {
+    activeEmpPks.delete(empPk);
+  } else {
+    activeEmpPks.add(empPk);
+  }
+  refreshEmployeeSelectionUI();
+}
+
+function refreshEmployeeSelectionUI() {
+  document.querySelectorAll('.sb2-emp-pill').forEach(p => {
+    p.classList.toggle('sb2-emp-active', activeEmpPks.has(p.dataset.emp));
+  });
+  document.querySelectorAll('.sb2-key-item').forEach(k => {
+    k.classList.toggle('sb2-key-active', activeEmpPks.has(k.dataset.empKey));
+  });
+
+  const label = document.getElementById('active-emp-label');
+  if (activeEmpPks.size === 0) {
+    label.style.display = 'none';
+  } else {
+    label.style.display = 'flex';
+    const names = Array.from(activeEmpPks).map(pk => {
+      const pill = document.querySelector(`.sb2-emp-pill[data-emp="${pk}"]`);
+      return pill ? pill.textContent.trim() : pk;
+    });
+    document.getElementById('active-emp-name').textContent = names.join(', ');
+  }
+
+  applyAvailabilityHighlight();
   updateHoursCounter();
-  updateEmpPreferences(empPk);
+  updateEmpPreferences();
 }
 
 function clearEmployee() {
-  activeEmpPk = null; activeEmpColor = null; activeLabelText = '';
-  document.querySelectorAll('.sb2-emp-pill').forEach(p => p.classList.remove('sb2-emp-active'));
-  document.querySelectorAll('.sb2-key-item').forEach(k => k.classList.remove('sb2-key-active'));
-  document.getElementById('active-emp-label').style.display = 'none';
-  document.getElementById('emp-preferences').style.display = 'none';
-  document.getElementById('hours-counter').style.display = 'none';
+  activeEmpPks.clear();
+  activeLabelText = '';
   document.getElementById('new-label-wrap').style.display = 'none';
-  document.getElementById('hours-value').className = 'sb2-hours-value';
-  clearAvailabilityHighlight();
+  refreshEmployeeSelectionUI();
 }
 
 // ── Employee preferences (desired weekly hours + lunch break) ─────────────
-function updateEmpPreferences(empPk) {
-  const desired = employeeDesiredHours[String(empPk)];
-  const wantsLunch = employeeWantsLunch[String(empPk)];
+// Only shown when a single employee is selected — see updateHoursCounter()
+// for the multi-employee compact stats list.
+function updateEmpPreferences() {
+  const panel = document.getElementById('emp-preferences');
+  if (activeEmpPks.size !== 1) { panel.style.display = 'none'; return; }
+  const empPk = Array.from(activeEmpPks)[0];
+  const desired = employeeDesiredHours[empPk];
+  const wantsLunch = employeeWantsLunch[empPk];
   document.getElementById('emp-pref-hours').textContent = (desired === null || desired === undefined) ? 'Not set' : `${desired} hrs/wk`;
   document.getElementById('emp-pref-lunch').textContent = wantsLunch ? 'Requested' : 'Not requested';
-  document.getElementById('emp-preferences').style.display = 'block';
+  panel.style.display = 'block';
 }
 
-// ── Availability + conflict highlighting ───────────────────────────────────
-function applyAvailabilityHighlight(empPk) {
-  clearAvailabilityHighlight();
-  const avail     = employeeAvailability[String(empPk)];
+// ── Availability + conflict status for one employee at one cell ────────────
+function empCellStatus(empPk, cell) {
+  const dateStr = cell.dataset.date;
+  const [h, m] = cell.dataset.slot.split('_').map(Number);
+  const slotMin = h * 60 + m;
+
   const conflicts = employeeConflicts[String(empPk)] || [];
+  const conflictMatches = conflicts.filter(c => {
+    if (c.date !== dateStr) return false;
+    const [sh, sm] = c.start.split(':').map(Number);
+    const [eh, em] = c.end.split(':').map(Number);
+    return slotMin >= sh * 60 + sm && slotMin < eh * 60 + em;
+  });
+  if (conflictMatches.length > 0) {
+    return {
+      conflict: true,
+      conflictNames: [...new Set(conflictMatches.map(c => c.schedule))],
+      conflictColor: conflictMatches[0].schedule_color,
+      available: false,
+      preferred: false,
+    };
+  }
+
+  const avail = employeeAvailability[String(empPk)];
+  const day = dateDayMap[dateStr];
+  const dayBlocks = (avail && avail[day]) ? avail[day] : [];
+  let inAvail = false, isPreferred = false;
+  for (const b of dayBlocks) {
+    const [bh, bm] = b.start.split(':').map(Number);
+    const [eh, em] = b.end.split(':').map(Number);
+    if (slotMin >= bh * 60 + bm && slotMin < eh * 60 + em) {
+      inAvail = true;
+      if (b.type === 'PREFERRED') isPreferred = true;
+      break;
+    }
+  }
+  return { conflict: false, conflictNames: [], available: inAvail, preferred: isPreferred };
+}
+
+// A schedule conflict always blocks painting; plain unavailability only
+// blocks when the "Override Availability" toggle is off.
+function isEmpBlockedForCell(empPk, cell) {
+  const status = empCellStatus(empPk, cell);
+  if (status.conflict) return true;
+  if (overrideAvailability) return false;
+  return !status.available;
+}
+
+// ── Availability + conflict highlighting for the current selection ────────
+function applyAvailabilityHighlight() {
+  clearAvailabilityHighlight();
+  if (activeEmpPks.size === 0) return;
+  const pks = Array.from(activeEmpPks);
 
   document.querySelectorAll('.sb2-cell.sb2-in-hours').forEach(cell => {
-    const [h, m] = cell.dataset.slot.split('_').map(Number);
-    const slotMin = h * 60 + m;
-    const dateStr = cell.dataset.date;
+    const statuses = pks.map(pk => ({ pk, ...empCellStatus(pk, cell) }));
 
-    const conflictMatches = conflicts.filter(c => {
-      if (c.date !== dateStr) return false;
-      const [sh, sm] = c.start.split(':').map(Number);
-      const [eh, em] = c.end.split(':').map(Number);
-      return slotMin >= sh * 60 + sm && slotMin < eh * 60 + em;
-    });
-    if (conflictMatches.length > 0) {
-      const color = conflictMatches[0].schedule_color;
-      const names = [...new Set(conflictMatches.map(c => c.schedule))].join(', ');
+    const conflicted = statuses.filter(s => s.conflict);
+    if (conflicted.length === statuses.length) {
+      const color = conflicted[0].conflictColor;
+      const names = [...new Set(conflicted.flatMap(s => s.conflictNames))].join(', ');
       cell.classList.add('sb2-sched-conflict');
       cell.style.setProperty('--conflict-bg', color + '22');
       cell.style.setProperty('--conflict-border', color);
       cell.title = names;
-      const label = document.createElement('span');
-      label.className = 'sb2-conflict-label';
-      label.textContent = names;
-      cell.appendChild(label);
+      const labelEl = document.createElement('span');
+      labelEl.className = 'sb2-conflict-label';
+      labelEl.textContent = names;
+      cell.appendChild(labelEl);
       return;
     }
 
-    const day = dateDayMap[dateStr];
-    const dayBlocks = (avail && avail[day]) ? avail[day] : [];
-    let inAvail = false, isPreferred = false;
-    for (const b of dayBlocks) {
-      const [bh, bm] = b.start.split(':').map(Number);
-      const [eh, em] = b.end.split(':').map(Number);
-      if (slotMin >= bh * 60 + bm && slotMin < eh * 60 + em) {
-        inAvail = true;
-        if (b.type === 'PREFERRED') isPreferred = true;
-        break;
-      }
-    }
-    if (inAvail) {
-      cell.classList.add(isPreferred ? 'sb2-avail-preferred' : 'sb2-avail-ok');
-    } else if (!cell._emps.has(empPk)) {
-      // Only grey/override-color empty cells — painted cells use the red outline warning instead
+    // Only weigh employees not already painted in this cell — painted cells
+    // use the red outline warning (updateAvailabilityWarnings) instead.
+    const relevant = statuses.filter(s => !s.conflict && !cell._emps.has(s.pk));
+    if (relevant.length === 0) return;
+
+    const availCount = relevant.filter(s => s.available).length;
+    if (availCount === relevant.length) {
+      cell.classList.add(relevant.every(s => s.preferred) ? 'sb2-avail-preferred' : 'sb2-avail-ok');
+    } else if (availCount === 0) {
       cell.classList.add(overrideAvailability ? 'sb2-avail-override' : 'sb2-avail-blocked');
+    } else {
+      cell.classList.add('sb2-avail-partial');
     }
   });
 }
 
 function clearAvailabilityHighlight() {
   document.querySelectorAll(
-    '.sb2-avail-ok, .sb2-avail-blocked, .sb2-avail-preferred, .sb2-sched-conflict, .sb2-avail-override'
+    '.sb2-avail-ok, .sb2-avail-blocked, .sb2-avail-preferred, .sb2-sched-conflict, .sb2-avail-override, .sb2-avail-partial'
   ).forEach(c => {
-    c.classList.remove('sb2-avail-ok', 'sb2-avail-blocked', 'sb2-avail-preferred', 'sb2-sched-conflict', 'sb2-avail-override');
+    c.classList.remove('sb2-avail-ok', 'sb2-avail-blocked', 'sb2-avail-preferred', 'sb2-sched-conflict', 'sb2-avail-override', 'sb2-avail-partial');
     c.style.removeProperty('--conflict-bg');
     c.style.removeProperty('--conflict-border');
     c.title = '';
@@ -479,7 +535,7 @@ function toggleOverride() {
   overrideAvailability = !overrideAvailability;
   document.getElementById('toggle-override').classList.toggle('sb2-override-active', overrideAvailability);
   updateAvailabilityWarnings();
-  if (activeEmpPk) applyAvailabilityHighlight(activeEmpPk);
+  applyAvailabilityHighlight();
 }
 
 // ── Draw mode ──────────────────────────────────────────────────────────────
@@ -542,8 +598,49 @@ function calcScheduledHours(empPk) {
 
 function updateHoursCounter() {
   const counter = document.getElementById('hours-counter');
-  if (!activeEmpPk) { counter.style.display = 'none'; return; }
+  const multi   = document.getElementById('multi-emp-stats');
 
+  if (activeEmpPks.size === 0) {
+    counter.style.display = 'none';
+    multi.style.display = 'none';
+    return;
+  }
+
+  if (activeEmpPks.size > 1) {
+    counter.style.display = 'none';
+    multi.style.display = 'block';
+    multi.innerHTML = '';
+    activeEmpPks.forEach(pk => {
+      const thisHrs  = calcScheduledHours(pk);
+      const otherHrs = employeeOtherHours[pk] || 0;
+      const total    = thisHrs + otherHrs;
+      const isParttime = employeeIsParttime[pk];
+      const over = isParttime && total > PARTTIME_MAX;
+      const pill = document.querySelector(`.sb2-emp-pill[data-emp="${pk}"]`);
+
+      const row = document.createElement('div');
+      row.className = 'sb2-multi-emp-row' + (over ? ' sb2-multi-emp-over' : '');
+
+      const swatch = document.createElement('span');
+      swatch.className = 'sb2-multi-emp-swatch';
+      swatch.style.background = employeeColors[pk] || '#aaa';
+
+      const name = document.createElement('span');
+      name.className = 'sb2-multi-emp-name';
+      name.textContent = pill ? pill.textContent.trim() : pk;
+
+      const hrs = document.createElement('span');
+      hrs.className = 'sb2-multi-emp-hours';
+      hrs.textContent = isParttime ? `${total.toFixed(2)} / ${PARTTIME_MAX} hrs` : `${total.toFixed(2)} hrs`;
+
+      row.append(swatch, name, hrs);
+      multi.appendChild(row);
+    });
+    return;
+  }
+
+  multi.style.display = 'none';
+  const activeEmpPk = Array.from(activeEmpPks)[0];
   const thisHrs  = calcScheduledHours(activeEmpPk);
   const otherHrs = employeeOtherHours[activeEmpPk] || 0;
   const total    = thisHrs + otherHrs;
@@ -724,29 +821,38 @@ function clearAll() {
 }
 
 // ── Cell painting ──────────────────────────────────────────────────────────
+function rerenderNeighbors(cell) {
+  const pc = getPrevCell(cell); if (pc) renderCell(pc);
+  const nc = getNextCell(cell); if (nc) renderCell(nc);
+}
+
 function paintCell(cell) {
   if (!cell.classList.contains('sb2-in-hours')) return;
 
   if (drawMode === 'erase') {
-    if (!activeEmpPk) {
+    if (activeEmpPks.size === 0) {
       if (cell._emps.size > 0) {
         cell._emps.clear();
         cell._labels?.clear();
         renderCell(cell);
-        const pc = getPrevCell(cell); if (pc) renderCell(pc);
-        const nc = getNextCell(cell); if (nc) renderCell(nc);
+        rerenderNeighbors(cell);
         markUnsaved();
         updateHoursCounter();
         updateAvailabilityWarnings();
       }
       return;
     }
-    if (cell._emps.has(activeEmpPk)) {
-      cell._emps.delete(activeEmpPk);
-      cell._labels?.delete(activeEmpPk);
+    let changed = false;
+    activeEmpPks.forEach(pk => {
+      if (cell._emps.has(pk)) {
+        cell._emps.delete(pk);
+        cell._labels?.delete(pk);
+        changed = true;
+      }
+    });
+    if (changed) {
       renderCell(cell);
-      const pc = getPrevCell(cell); if (pc) renderCell(pc);
-      const nc = getNextCell(cell); if (nc) renderCell(nc);
+      rerenderNeighbors(cell);
       markUnsaved();
       updateHoursCounter();
       updateAvailabilityWarnings();
@@ -754,29 +860,33 @@ function paintCell(cell) {
     return;
   }
 
-  if (!activeEmpPk) return;
-  if (cell.classList.contains('sb2-avail-blocked') ||
-      cell.classList.contains('sb2-sched-conflict')) return;
+  if (activeEmpPks.size === 0) return;
 
-  // Already has this employee — no-op while dragging
-  if (cell._emps.has(activeEmpPk)) return;
+  let changed = false;
+  activeEmpPks.forEach(pk => {
+    // Already has this employee — no-op while dragging
+    if (cell._emps.has(pk)) return;
+    if (isEmpBlockedForCell(pk, cell)) return;
 
-  // Block if part-time employee would exceed weekly cap
-  if (employeeIsParttime[activeEmpPk]) {
-    const total = calcScheduledHours(activeEmpPk) + (employeeOtherHours[activeEmpPk] || 0);
-    if (total + _slotHours(cell.dataset.slot) > PARTTIME_MAX) {
-      showHoursLimitWarning();
-      return;
+    // Block if part-time employee would exceed weekly cap
+    if (employeeIsParttime[pk]) {
+      const total = calcScheduledHours(pk) + (employeeOtherHours[pk] || 0);
+      if (total + _slotHours(cell.dataset.slot) > PARTTIME_MAX) {
+        showHoursLimitWarning();
+        return;
+      }
     }
-  }
 
-  cell._emps.set(activeEmpPk, activeEmpColor);
-  if (activeLabelText) {
-    cell._labels.set(activeEmpPk, activeLabelText);
-  }
+    cell._emps.set(pk, employeeColors[pk]);
+    if (activeLabelText) {
+      cell._labels.set(pk, activeLabelText);
+    }
+    changed = true;
+  });
+
+  if (!changed) return;
   renderCell(cell);
-  const pc = getPrevCell(cell); if (pc) renderCell(pc);
-  const nc = getNextCell(cell); if (nc) renderCell(nc);
+  rerenderNeighbors(cell);
   markUnsaved();
   updateHoursCounter();
   updateAvailabilityWarnings();
@@ -917,7 +1027,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (inp.dataset.emp && inp.value) cell._labels.set(inp.dataset.emp, inp.value);
     });
     cell.addEventListener('mousedown', e => {
-      if (drawMode === 'erase' || activeEmpPk) {
+      if (drawMode === 'erase' || activeEmpPks.size > 0) {
         e.preventDefault();
         pushUndo();
         isDragging = true;
@@ -925,7 +1035,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
     cell.addEventListener('mouseenter', () => {
-      if (isDragging && (drawMode === 'erase' || activeEmpPk)) paintCell(cell);
+      if (isDragging && (drawMode === 'erase' || activeEmpPks.size > 0)) paintCell(cell);
     });
   });
   // Pass 2: render all cells so outline borders see correct neighbor state

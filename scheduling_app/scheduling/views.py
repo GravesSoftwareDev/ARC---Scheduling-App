@@ -246,7 +246,7 @@ def availability_window(request):
             return redirect('scheduling:availability_window')
     else:
         form = AvailabilityWindowForm(instance=window)
-    return render(request, 'scheduling/availability_window.html', {'form': form})
+    return render(request, 'scheduling/availability_window.html', {'form': form, 'window': window})
 
 @login_required
 @user_passes_test(_is_admin)
