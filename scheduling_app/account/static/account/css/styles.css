@@ -2493,6 +2493,7 @@ select.form-control { cursor: pointer; }
     background: #fff;
     color: var(--primary-color);
     border-color: var(--primary-color);
+    text-decoration: none;
 }
 .btn-action-delete {
     background: #fff;
