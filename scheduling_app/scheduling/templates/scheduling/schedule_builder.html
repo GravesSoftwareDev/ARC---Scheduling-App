@@ -23,13 +23,27 @@
         <a href="?week={{ prev_week }}&schedule={{ active_schedule_pk }}" class="week-nav-btn" id="nav-prev">&#8592;</a>
         <span class="week-nav-label">{{ week_label }}</span>
         <a href="?week={{ next_week }}&schedule={{ active_schedule_pk }}" class="week-nav-btn" id="nav-next">&#8594;</a>
+        <div class="week-date-dropdown">
+          <button type="button" id="week-date-trigger" class="week-date-trigger" aria-haspopup="true" aria-expanded="false" aria-label="Pick a date">
+            <span class="chevron">&#9662;</span>
+          </button>
+          <div id="week-date-panel" class="week-date-panel" hidden>
+            <div class="week-date-panel-header">
+              <select id="week-date-month" class="week-date-select" aria-label="Month"></select>
+              <select id="week-date-year" class="week-date-select" aria-label="Year"></select>
+            </div>
+            <div class="week-date-weekday-row">
+              <span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span>
+            </div>
+            <div id="week-date-grid" class="week-date-grid"></div>
+          </div>
+        </div>
       </div>
-      {% if active_schedule %}
-      <a href="?week={{ week_start|date:'Y-m-d' }}&schedule={{ active_schedule_pk }}&load_default=1"
-         class="btn btn-secondary" id="nav-load-default">Load Default Week</a>
-      <button type="button" class="btn btn-secondary" id="save-as-default-btn" onclick="saveWeekAsDefault()">Save Week as Default</button>
-      {% endif %}
       <a href="{% url 'scheduling:default_schedule_builder' %}?schedule={{ active_schedule_pk }}" class="btn btn-secondary" id="nav-manage-default">Manage Default Week</a>
+      {% if active_schedule %}
+      <button type="button" class="btn btn-secondary" id="save-as-default-btn" onclick="saveWeekAsDefault()">Save Week as Default</button>
+      <a href="?week={{ week_start|date:'Y-m-d' }}&schedule={{ active_schedule_pk }}&load_default=1"class="btn btn-secondary" id="nav-load-default">Load Default Week</a>
+      {% endif %}
       <a href="{% url 'scheduling:export_teams_shifts' %}" class="btn btn-secondary">Export</a>
       <a href="{% url 'dashboard:dashboard' %}" class="btn btn-secondary" id="nav-dashboard">← Dashboard</a>
     </div>
@@ -1031,6 +1045,99 @@ document.getElementById('schedule-select').addEventListener('change', function()
     window.location = targetUrl;
   }
 });
+
+// ── Date dropdown: jump to the week containing a picked date ──────────────
+(function() {
+  const trigger = document.getElementById('week-date-trigger');
+  const panel = document.getElementById('week-date-panel');
+  const monthSelect = document.getElementById('week-date-month');
+  const yearSelect = document.getElementById('week-date-year');
+  const grid = document.getElementById('week-date-grid');
+
+  const MONTH_NAMES = ['January','February','March','April','May','June',
+                        'July','August','September','October','November','December'];
+  const thisYear = new Date().getFullYear();
+
+  MONTH_NAMES.forEach((name, idx) => {
+    const opt = document.createElement('option');
+    opt.value = idx;
+    opt.textContent = name;
+    monthSelect.appendChild(opt);
+  });
+  [thisYear - 1, thisYear, thisYear + 1].forEach(y => {
+    const opt = document.createElement('option');
+    opt.value = y;
+    opt.textContent = y;
+    yearSelect.appendChild(opt);
+  });
+
+  function toISO(d) {
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
+  function sundayOf(d) {
+    const sunday = new Date(d);
+    sunday.setDate(d.getDate() - d.getDay()); // getDay(): 0=Sun..6=Sat
+    return sunday;
+  }
+
+  const [wy, wm, wd] = WEEK_START_ISO.split('-').map(Number);
+  const activeMonday = new Date(wy, wm - 1, wd);
+  const activeFriday = new Date(activeMonday);
+  activeFriday.setDate(activeMonday.getDate() + 4);
+
+  let displayMonth = activeMonday.getMonth();
+  let displayYear = Math.min(Math.max(activeMonday.getFullYear(), thisYear - 1), thisYear + 1);
+
+  function pickDate(iso) {
+    panel.hidden = true;
+    trigger.setAttribute('aria-expanded', 'false');
+    const targetUrl = `?week=${iso}&schedule=${activeSchedulePk}`;
+    if (hasUnsaved) {
+      pendingNavUrl = targetUrl;
+      document.getElementById('unsaved-dialog').style.display = 'flex';
+    } else {
+      window.location = targetUrl;
+    }
+  }
+
+  function renderGrid() {
+    monthSelect.value = displayMonth;
+    yearSelect.value = displayYear;
+    grid.innerHTML = '';
+    const startGrid = sundayOf(new Date(displayYear, displayMonth, 1));
+    for (let i = 0; i < 42; i++) {
+      const cellDate = new Date(startGrid);
+      cellDate.setDate(startGrid.getDate() + i);
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'week-date-day';
+      btn.textContent = cellDate.getDate();
+      if (cellDate.getMonth() !== displayMonth) btn.classList.add('week-date-day-outside');
+      if (cellDate >= activeMonday && cellDate <= activeFriday) btn.classList.add('week-date-day-active');
+      btn.addEventListener('click', () => pickDate(toISO(cellDate)));
+      grid.appendChild(btn);
+    }
+  }
+
+  monthSelect.addEventListener('change', () => { displayMonth = Number(monthSelect.value); renderGrid(); });
+  yearSelect.addEventListener('change', () => { displayYear = Number(yearSelect.value); renderGrid(); });
+
+  trigger.addEventListener('click', e => {
+    e.stopPropagation();
+    const wasHidden = panel.hidden;
+    panel.hidden = !wasHidden;
+    trigger.setAttribute('aria-expanded', String(wasHidden));
+    if (wasHidden) renderGrid();
+  });
+  document.addEventListener('click', e => {
+    if (!panel.hidden && !panel.contains(e.target) && e.target !== trigger) {
+      panel.hidden = true;
+      trigger.setAttribute('aria-expanded', 'false');
+    }
+  });
+
+  renderGrid();
+})();
 
 function discardAndNavigate() {
   hasUnsaved = false;

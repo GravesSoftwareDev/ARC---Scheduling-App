@@ -1532,12 +1532,6 @@ a:hover {
     align-items: center;
     gap: 10px;
 }
-/* Unlike the other topbar buttons (anchor tags matching the global a:hover
-   rule), this is a <button> element, so it needs its own hover color to
-   match the blue text-on-hover the anchor buttons get for free. */
-#save-as-default-btn:hover {
-    color: var(--primary-light);
-}
 
 /* Body: sidebar + grid */
 .sb2-body {

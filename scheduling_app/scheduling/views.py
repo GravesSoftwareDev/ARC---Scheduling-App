@@ -307,7 +307,7 @@ def schedule_builder(request):
     from account.models import Employee
 
     today = date.today()
-    week_start = parse_date(request.GET.get('week', '')) or _week_start(today)
+    week_start = _week_start(parse_date(request.GET.get('week', '')) or today)
     week_dates = [week_start + timedelta(days=i) for i in range(5)]
     prev_week = (week_start - timedelta(weeks=1)).isoformat()
     next_week = (week_start + timedelta(weeks=1)).isoformat()
