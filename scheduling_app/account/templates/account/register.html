@@ -67,6 +67,22 @@
       </label>
     </div>
 
+    <!-- Schedules -->
+    <div class="reg-field">
+      <label class="reg-label">Add to schedules</label>
+      <div class="reg-checkbox-grid">
+        {% for checkbox in user_form.schedules %}
+          <label class="reg-checkbox-item">
+            {{ checkbox.tag }}
+            <span>{{ checkbox.choice_label }}</span>
+          </label>
+        {% empty %}
+          <p class="reg-help">No schedules exist yet.</p>
+        {% endfor %}
+      </div>
+      {% if user_form.schedules.errors %}<p class="reg-error">{{ user_form.schedules.errors|join:" " }}</p>{% endif %}
+    </div>
+
     <!-- Password -->
     <div class="reg-field">
       <label class="reg-label" for="{{ user_form.password1.id_for_label }}">Password</label>

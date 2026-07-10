@@ -18,6 +18,7 @@ def registration(request):
         if user_form.is_valid():
             new_user = user_form.save(commit=False)
             new_user.save()
+            new_user.member_of.set(user_form.cleaned_data['schedules'])
             return render(
                 request,
                 'account/register_done.html',

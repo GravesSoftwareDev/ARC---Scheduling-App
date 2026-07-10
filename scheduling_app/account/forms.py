@@ -1,6 +1,7 @@
 from django import forms
 from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import UserCreationForm
+from scheduling.models import Schedule
 User = get_user_model()
 
 
@@ -25,6 +26,11 @@ class RegistrationForm(UserCreationForm):
     part_time = forms.BooleanField(required=False)
     role = forms.ChoiceField(choices=User.Role.choices, required=True)
     is_admin = forms.BooleanField(required=False)
+    schedules = forms.ModelMultipleChoiceField(
+        queryset=Schedule.objects.order_by('name'),
+        required=False,
+        widget=forms.CheckboxSelectMultiple,
+    )
 
     class Meta:
         model = User
