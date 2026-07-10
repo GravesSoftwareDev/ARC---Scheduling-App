@@ -49,7 +49,7 @@
           {% if form.closes_at.errors %}<p class="reg-error">{{ form.closes_at.errors|join:" " }}</p>{% endif %}
         </div>
       </div>
-      <p class="oh-card-desc">Leave both dates blank to rely only on the "Editing enabled" toggle. If set, editing is only open on dates within this range, and only while the toggle above is on.</p>
+      <p class="oh-card-desc">Editing is open whenever "Editing enabled" is checked, OR whenever today falls within the optional date range below — either one alone is enough to open editing. Leave both dates blank to rely only on the toggle.</p>
 
       {% if form.non_field_errors %}
       <p class="reg-error">{{ form.non_field_errors|join:" " }}</p>

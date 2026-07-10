@@ -88,14 +88,18 @@ class AvailabilityWindow(models.Model):
             raise ValidationError("Opens date must be before closes date.")
     
     def is_currently_open(self):
-        if not self.is_open:
-            return False
-        today = datetime.date.today()
-        if self.opens_at and today < self.opens_at:
-            return False
-        if self.closes_at and today > self.closes_at:
-            return False
-        return True
+        """Open when the manual toggle is on, OR when today falls within the
+        optional date range (the two are independent — either one is enough)."""
+        if self.is_open:
+            return True
+        if self.opens_at or self.closes_at:
+            today = datetime.date.today()
+            if self.opens_at and today < self.opens_at:
+                return False
+            if self.closes_at and today > self.closes_at:
+                return False
+            return True
+        return False
     
     @classmethod
     def current(cls):
