@@ -4,6 +4,8 @@
     /* OTC Deep Blue */
     --primary-light: #0052A3;
     /* Lighter Blue */
+    --primary-dark: #002C59;
+    /* Darker Blue */
     --secondary-color: #FFFFFF;
     /* White */
     --accent-color: #E8F0F7;
@@ -2488,8 +2490,9 @@ select.form-control { cursor: pointer; }
     margin-right: 6px;
 }
 .btn-action-edit:hover {
-    background: var(--primary-dark);
-    border-color: var(--primary-dark);
+    background: #fff;
+    color: var(--primary-color);
+    border-color: var(--primary-color);
 }
 .btn-action-delete {
     background: #fff;
