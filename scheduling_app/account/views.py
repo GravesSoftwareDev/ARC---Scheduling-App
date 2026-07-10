@@ -25,14 +25,18 @@ def registration(request):
             return render(
                 request,
                 'account/register_done.html',
-                {'new_user': new_user}
+                {'new_user': new_user, 'default_password': SecuritySettings.load().default_password}
             )
     else:
         user_form = RegistrationForm(requester=request.user)
     return render(
         request,
         'account/register.html',
-        {'user_form': user_form, 'can_grant_admin': request.user.is_admin}
+        {
+            'user_form': user_form,
+            'can_grant_admin': request.user.is_admin,
+            'default_password': SecuritySettings.load().default_password,
+        }
     )
 
 

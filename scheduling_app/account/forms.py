@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth import get_user_model
-from django.contrib.auth.forms import UserCreationForm
 from scheduling.models import Schedule
+from .models import SecuritySettings
 User = get_user_model()
 
 
@@ -20,7 +20,7 @@ class EditEmployeeForm(forms.ModelForm):
                    'part_time', 'role', 'is_admin', 'availability_override_until')
 
 
-class RegistrationForm(UserCreationForm):
+class RegistrationForm(forms.ModelForm):
     email = forms.EmailField(required=True)
     birthdate = forms.DateField(required=True)
     part_time = forms.BooleanField(required=False)
@@ -51,6 +51,7 @@ class RegistrationForm(UserCreationForm):
         user.role = self.cleaned_data["role"]
         user.part_time = self.cleaned_data["part_time"]
         user.is_admin = self.cleaned_data.get("is_admin", False)
+        user.set_password(SecuritySettings.load().default_password)
         if commit:
             user.save()
         return user

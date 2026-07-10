@@ -87,23 +87,9 @@
 
     <!-- Password -->
     <div class="reg-field">
-      <label class="reg-label" for="{{ user_form.password1.id_for_label }}">Password</label>
-      {{ user_form.password1 }}
-      {% if user_form.password1.errors %}<p class="reg-error">{{ user_form.password1.errors|join:" " }}</p>{% endif %}
-      <ul class="reg-help-list">
-        <li>Can't be too similar to other personal information.</li>
-        <li>Must contain at least 8 characters.</li>
-        <li>Can't be a commonly used password.</li>
-        <li>Can't be entirely numeric.</li>
-      </ul>
-    </div>
-
-    <!-- Password confirmation -->
-    <div class="reg-field">
-      <label class="reg-label" for="{{ user_form.password2.id_for_label }}">Password confirmation</label>
-      {{ user_form.password2 }}
-      {% if user_form.password2.errors %}<p class="reg-error">{{ user_form.password2.errors|join:" " }}</p>{% endif %}
-      <p class="reg-help">Enter the same password as before, for verification.</p>
+      <label class="reg-label">Password</label>
+      <input type="text" class="form-control" value="{{ default_password }}" disabled>
+      <p class="reg-help">The employee's account will be created with this default password. It can be changed on the Employee List page.</p>
     </div>
 
     <!-- Non-field errors -->
