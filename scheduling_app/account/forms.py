@@ -36,13 +36,21 @@ class RegistrationForm(UserCreationForm):
         model = User
         fields = ("username", "email", "first_name", "last_name", "birthdate", "part_time", "role", "is_admin")
 
+    def __init__(self, *args, requester=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if requester is not None and not requester.is_admin:
+            # Non-admin schedulers can only register employees onto schedules
+            # they themselves manage, and can't grant admin privileges.
+            self.fields['schedules'].queryset = requester.scheduler_of.order_by('name')
+            del self.fields['is_admin']
+
     def save(self, commit=True):
         user = super().save(commit=False)
         user.email = self.cleaned_data["email"]
         user.birthdate = self.cleaned_data["birthdate"]
         user.role = self.cleaned_data["role"]
         user.part_time = self.cleaned_data["part_time"]
-        user.is_admin = self.cleaned_data["is_admin"]
+        user.is_admin = self.cleaned_data.get("is_admin", False)
         if commit:
             user.save()
         return user

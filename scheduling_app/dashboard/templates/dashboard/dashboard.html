@@ -29,9 +29,9 @@
         {% if user.scheduler_of.exists or user.is_admin %}
         <a href="{% url 'scheduling:schedule_builder' %}" class="card-link-item card-link-scheduler">Build Schedule</a>
         <a href="{% url 'scheduling:default_schedule_builder' %}" class="card-link-item card-link-scheduler">Default Weekly Schedule</a>
+        <a href="{% url 'account:registration' %}" class="card-link-item card-link-scheduler">Register Employee</a>
         {% endif %}
         {% if user.is_admin %}
-        <a href="{% url 'account:registration' %}" class="card-link-item card-link-admin">Register Employee</a>
         <a href="{% url 'account:employee_list' %}" class="card-link-item card-link-admin">Employee List</a>
         <a href="{% url 'account:roster' %}" class="card-link-item card-link-admin">Schedule Roster</a>
         <a href="{% url 'scheduling:operating_hours' %}" class="card-link-item card-link-admin">Edit Operating Hours</a>

@@ -60,12 +60,14 @@
     </div>
 
     <!-- Admin -->
+    {% if can_grant_admin %}
     <div class="reg-field">
       <label class="reg-checkbox-item">
         {{ user_form.is_admin }}
         <span class="reg-label">Admin privileges</span>
       </label>
     </div>
+    {% endif %}
 
     <!-- Schedules -->
     <div class="reg-field">
@@ -77,7 +79,7 @@
             <span>{{ checkbox.choice_label }}</span>
           </label>
         {% empty %}
-          <p class="reg-help">No schedules exist yet.</p>
+          <p class="reg-help">No schedules to add to.</p>
         {% endfor %}
       </div>
       {% if user_form.schedules.errors %}<p class="reg-error">{{ user_form.schedules.errors|join:" " }}</p>{% endif %}

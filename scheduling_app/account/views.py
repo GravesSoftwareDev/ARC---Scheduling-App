@@ -8,13 +8,14 @@ from .models import Employee
 
 
 _admin_check = lambda u: u.is_admin
+_is_scheduler_or_admin = lambda u: u.is_admin or u.scheduler_of.exists()
 
 
 @login_required
-@user_passes_test(_admin_check)
+@user_passes_test(_is_scheduler_or_admin)
 def registration(request):
     if request.method == 'POST':
-        user_form = RegistrationForm(request.POST)
+        user_form = RegistrationForm(request.POST, requester=request.user)
         if user_form.is_valid():
             new_user = user_form.save(commit=False)
             new_user.save()
@@ -25,11 +26,11 @@ def registration(request):
                 {'new_user': new_user}
             )
     else:
-        user_form = RegistrationForm()
+        user_form = RegistrationForm(requester=request.user)
     return render(
         request,
         'account/register.html',
-        {'user_form': user_form}
+        {'user_form': user_form, 'can_grant_admin': request.user.is_admin}
     )
 
 
