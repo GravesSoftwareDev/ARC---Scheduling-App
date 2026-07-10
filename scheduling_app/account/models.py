@@ -30,3 +30,19 @@ class Employee(AbstractUser):
             self.availability_override_until
             and self.availability_override_until >= datetime.date.today()
         )
+
+
+class SecuritySettings(models.Model):
+    default_password = models.CharField(max_length=128, default='Test123!')
+
+    def save(self, *args, **kwargs):
+        self.pk = 1
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        pass
+
+    @classmethod
+    def load(cls):
+        obj, _ = cls.objects.get_or_create(pk=1)
+        return obj

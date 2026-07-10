@@ -3,8 +3,10 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
 from django.http import JsonResponse
 from django.db.models import Case, IntegerField, Value, When
+from django.core.exceptions import ValidationError
+from django.contrib.auth.password_validation import validate_password
 from .forms import RegistrationForm, EditEmployeeForm
-from .models import Employee
+from .models import Employee, SecuritySettings
 
 
 _admin_check = lambda u: u.is_admin
@@ -38,6 +40,20 @@ def registration(request):
 @user_passes_test(_admin_check)
 def employee_list(request):
     if request.method == 'POST':
+        if 'default_password' in request.POST:
+            new_default = request.POST.get('default_password', '')
+            try:
+                validate_password(new_default)
+            except ValidationError as e:
+                for error in e.messages:
+                    messages.error(request, error)
+            else:
+                settings_obj = SecuritySettings.load()
+                settings_obj.default_password = new_default
+                settings_obj.save()
+                messages.success(request, "Default password updated.")
+            return redirect('account:employee_list')
+
         emp_pk = request.POST.get('deactivate')
         if emp_pk:
             emp = get_object_or_404(Employee, pk=emp_pk)
@@ -55,6 +71,7 @@ def employee_list(request):
     return render(request, 'account/employee_list.html', {
         'employees': employees,
         'role_choices': Employee.Role.choices,
+        'default_password': SecuritySettings.load().default_password,
     })
 
 
@@ -76,7 +93,7 @@ def reset_employee_password(request, pk):
     if request.method != 'POST':
         return redirect('account:employee_list')
     emp = get_object_or_404(Employee, pk=pk)
-    emp.set_password('Test123!')
+    emp.set_password(SecuritySettings.load().default_password)
     emp.save()
     messages.success(request, f"{emp.get_full_name()}'s password has been reset to the default.")
     return redirect('account:employee_list')

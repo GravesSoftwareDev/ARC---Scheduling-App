@@ -45,6 +45,24 @@
 
   <p class="emp-list-count" id="empListCount">{{ employees|length }} employee{{ employees|length|pluralize }} active</p>
 
+  <form method="post" class="default-password-form" style="margin-bottom: 16px;">
+    {% csrf_token %}
+    <label for="defaultPasswordInput" class="form-label">Default Reset Password</label>
+    <div style="display:flex; align-items:center; gap:8px;">
+      <input
+        type="text"
+        id="defaultPasswordInput"
+        name="default_password"
+        value="{{ default_password }}"
+        class="form-control"
+        style="max-width: 240px;"
+        autocomplete="off"
+      >
+      <button type="submit" class="btn btn-secondary">Update Default Password</button>
+    </div>
+    <p class="reg-help">Used whenever "Reset Password" is clicked below. Change this if the current default has been compromised.</p>
+  </form>
+
   {% if request.user.username == 'gravess' %}
   <form method="post" action="{% url 'account:reset_all_availability' %}" style="margin-bottom: 16px;"
         onsubmit="return confirm('Reset ALL employees availability to empty?\n\nThis will delete any existing availability for every employee.\n\nThis cannot be undone.');">
