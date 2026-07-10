@@ -3,8 +3,17 @@ Django settings for scheduling_app project.
 """
 
 import os
+import socket
 from pathlib import Path
 import dj_database_url
+
+# Django's SMTP email backend calls socket.getfqdn() to build the Message-ID
+# header. On Railway (and most container platforms) that triggers a reverse
+# DNS lookup with no PTR record, which the resolver retries for 10+ minutes
+# instead of failing fast -- this stalls the gunicorn worker well past
+# EMAIL_TIMEOUT (which only covers the SMTP socket, not this local lookup)
+# and Railway's proxy returns 502 once the worker is killed. Short-circuit it.
+socket.getfqdn = lambda name='': socket.gethostname()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
