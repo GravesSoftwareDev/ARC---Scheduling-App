@@ -1071,9 +1071,12 @@ def save_week_as_default(request):
 
 
 @login_required
-@user_passes_test(_is_admin)
+@user_passes_test(_is_scheduler_or_admin)
 def export_teams_shifts(request):
-    schedules = Schedule.objects.order_by('name')
+    if request.user.is_admin:
+        schedules = Schedule.objects.order_by('name')
+    else:
+        schedules = request.user.scheduler_of.order_by('name')
 
     if request.method == 'POST':
         from django.http import HttpResponse
@@ -1081,13 +1084,14 @@ def export_teams_shifts(request):
 
         date_from = parse_date(request.POST.get('date_from', ''))
         date_to = parse_date(request.POST.get('date_to', ''))
-        schedule_pks = request.POST.getlist('schedules')
+        allowed_pks = set(schedules.values_list('pk', flat=True))
+        schedule_pks = [p for p in request.POST.getlist('schedules') if int(p) in allowed_pks]
 
         if not date_from or not date_to or date_from > date_to:
             messages.error(request, "Please select a valid date range.")
             return redirect('scheduling:export_teams_shifts')
         if not schedule_pks:
-            schedule_pks = list(schedules.values_list('pk', flat=True))
+            schedule_pks = list(allowed_pks)
 
         xlsx_bytes = build_teams_shifts_xlsx(schedule_pks, date_from, date_to)
         filename = f"TeamsShifts_{date_from}_{date_to}.xlsx"

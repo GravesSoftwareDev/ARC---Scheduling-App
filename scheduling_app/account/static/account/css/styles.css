@@ -14,6 +14,8 @@
     /* Deep Red */
     --warning-color: #FF9800;
     /* Orange */
+    --gold-color: #B8860B;
+    /* Dark Goldenrod */
     --info-color: #2196F3;
     /* Light Blue */
     --light-color: #F5F7FA;
@@ -259,13 +261,13 @@ a:hover {
 
 .card-link-admin {
     border-color: transparent;
-    background: rgba(0, 63, 127, 0.06);
-    color: var(--primary-light);
+    background: rgba(184, 134, 11, 0.08);
+    color: var(--gold-color);
 }
 
 .card-link-admin:hover {
-    background: var(--primary-light);
-    border-color: var(--primary-light);
+    background: var(--gold-color);
+    border-color: var(--gold-color);
     color: var(--secondary-color);
 }
 
