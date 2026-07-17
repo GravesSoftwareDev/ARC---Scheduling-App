@@ -166,7 +166,9 @@ class WeeklySchedule(models.Model):
     )
     start_time = models.TimeField()
     end_time = models.TimeField()
-    custom_label = models.CharField(max_length=100, blank=True, default='')
+    # May hold several ShiftLabel names joined by ", " (schedule builder lets
+    # a supervisor tag one employee/slot with multiple position labels).
+    custom_label = models.CharField(max_length=255, blank=True, default='')
 
     def clean(self):
         if self.start_time and self.end_time:
@@ -204,7 +206,8 @@ class ScheduleEntry(models.Model):
     start_time = models.TimeField()
     end_time = models.TimeField()
     location = models.CharField(max_length=50, blank=True, default='')
-    custom_label = models.CharField(max_length=100, blank=True, default='')
+    # May hold several ShiftLabel names joined by ", " — see WeeklySchedule.custom_label.
+    custom_label = models.CharField(max_length=255, blank=True, default='')
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,

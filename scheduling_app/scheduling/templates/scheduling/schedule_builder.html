@@ -104,15 +104,9 @@
         </div>
         <div id="multi-emp-stats" class="sb2-multi-emp-stats" style="display:none;"></div>
         <div id="label-input-wrap" style="margin-top:6px;">
-          <!-- Label selector + delete -->
-          <div style="display:flex;gap:4px;align-items:center;">
-            <select id="active-label-select"
-                    style="flex:1;min-width:0;box-sizing:border-box;padding:5px 8px;font-size:12px;border:1px solid #ddd;border-radius:4px;background:#fff;">
-              <option value="">No label</option>
-            </select>
-            <button type="button" id="label-delete-btn" onclick="deleteActiveLabel()" title="Delete this label"
-                    style="display:none;padding:4px 7px;font-size:12px;background:#c0392b;color:#fff;border:none;border-radius:4px;cursor:pointer;flex-shrink:0;">✕</button>
-          </div>
+          <div class="sb2-sidebar-label" style="margin-top:2px;">Position label(s)</div>
+          <p class="sb2-mode-hint" style="margin-top:0;">Click to toggle &nbsp;·&nbsp; an employee can carry more than one</p>
+          <div id="label-picker-list" class="sb2-label-pill-list"></div>
           <!-- Add new label inline -->
           <div id="new-label-wrap" style="display:none;margin-top:4px;gap:4px;align-items:center;flex-wrap:wrap;">
             <input type="text" id="new-label-input" placeholder="Label name…"
@@ -307,7 +301,7 @@ const hasLocs = {{ has_locs|yesno:"true,false" }};
 const PARTTIME_MAX = 19.5;
 
 let activeEmpPks   = new Set();
-let activeLabelText = '';
+let activeLabelNames = new Set();
 let activeSchedulePk = '{{ active_schedule_pk }}';
 let drawMode  = 'draw';
 let viewMode = 'week';
@@ -328,7 +322,7 @@ function snapshotState() {
     const key = `${cell.dataset.date}__${cell.dataset.slot}__${cell.dataset.loc||''}`;
     snap[key] = {
       emps:   Array.from(cell._emps   || []),
-      labels: Array.from(cell._labels || []),
+      labels: Array.from(cell._labels || [], ([epk, names]) => [epk, new Set(names)]),
     };
   });
   return snap;
@@ -340,7 +334,7 @@ function applySnapshot(snap) {
     const key = `${cell.dataset.date}__${cell.dataset.slot}__${cell.dataset.loc||''}`;
     if (snap[key] !== undefined) {
       cell._emps   = new Map(snap[key].emps);
-      cell._labels = new Map(snap[key].labels);
+      cell._labels = new Map(snap[key].labels.map(([epk, names]) => [epk, new Set(names)]));
     }
   });
   // Pass 2: render
@@ -420,9 +414,10 @@ function refreshEmployeeSelectionUI() {
 
 function clearEmployee() {
   activeEmpPks.clear();
-  activeLabelText = '';
+  activeLabelNames.clear();
   document.getElementById('new-label-wrap').style.display = 'none';
   refreshEmployeeSelectionUI();
+  refreshLabelPickerUI();
 }
 
 // ── Employee preferences (desired weekly hours + lunch break) ─────────────
@@ -740,6 +735,12 @@ const getPrevCell = cell => _adjCell(cell, -30);
 const getNextCell = cell => _adjCell(cell, +30);
 
 // ── Cell rendering ─────────────────────────────────────────────────────────
+const LABEL_SEP = ', ';
+
+function sortedLabelArray(labelSet) {
+  return labelSet ? Array.from(labelSet).sort((a, b) => a.localeCompare(b)) : [];
+}
+
 function renderCell(cell) {
   cell.querySelectorAll('.sb2-cell-input, .sb2-cell-label-inp, .sb2-initials').forEach(e => e.remove());
 
@@ -749,33 +750,32 @@ function renderCell(cell) {
     return;
   }
 
-  // Build background: each employee stripe is solid emp color, or a gradient
-  // from label color → emp color when a position label is assigned.
+  // Build background: each employee gets an equal-width segment, solid in
+  // their own color. If they carry position labels, a leading sub-stripe
+  // per label (evenly split) is inset at the start of their segment.
   const empEntries = Array.from(cell._emps.entries());
-  if (empEntries.length === 1) {
-    const [epk, empColor] = empEntries[0];
-    const lbl = cell._labels?.get(epk);
-    const labelColor = lbl ? getLabelColor(lbl) : null;
-    cell.style.background = labelColor
-      ? `linear-gradient(to right, ${labelColor} 0%, ${labelColor} 18%, ${empColor} 18%)`
-      : empColor;
-  } else {
-    const pct = 100 / empEntries.length;
-    const stops = [];
-    empEntries.forEach(([epk, empColor], i) => {
-      const s = (i * pct).toFixed(1);
-      const e = ((i + 1) * pct).toFixed(1);
-      const stripe = (i * pct + pct * 0.18).toFixed(1);
-      const lbl = cell._labels?.get(epk);
-      const labelColor = lbl ? getLabelColor(lbl) : null;
-      if (labelColor) {
-        stops.push(`${labelColor} ${s}%`, `${labelColor} ${stripe}%`, `${empColor} ${stripe}%`, `${empColor} ${e}%`);
-      } else {
-        stops.push(`${empColor} ${s}%`, `${empColor} ${e}%`);
-      }
+  const pct = 100 / empEntries.length;
+  const stops = [];
+  empEntries.forEach(([epk, empColor], i) => {
+    const segStart = i * pct;
+    const segEnd = (i + 1) * pct;
+    const names = sortedLabelArray(cell._labels?.get(epk));
+    if (names.length === 0) {
+      stops.push(`${empColor} ${segStart.toFixed(1)}%`, `${empColor} ${segEnd.toFixed(1)}%`);
+      return;
+    }
+    const stripeTotalPct = Math.min(18 + (names.length - 1) * 10, 60); // % of this employee's segment
+    const stripeWidth = (pct * stripeTotalPct / 100) / names.length;
+    let pos = segStart;
+    names.forEach(name => {
+      const color = getLabelColor(name);
+      const next = pos + stripeWidth;
+      stops.push(`${color} ${pos.toFixed(1)}%`, `${color} ${next.toFixed(1)}%`);
+      pos = next;
     });
-    cell.style.background = `linear-gradient(to right, ${stops.join(', ')})`;
-  }
+    stops.push(`${empColor} ${pos.toFixed(1)}%`, `${empColor} ${segEnd.toFixed(1)}%`);
+  });
+  cell.style.background = `linear-gradient(to right, ${stops.join(', ')})`;
   cell.style.opacity = '0.82';
 
   const inpName = cell.dataset.inpName;
@@ -787,12 +787,12 @@ function renderCell(cell) {
     inp.className = 'sb2-cell-input';
     cell.appendChild(inp);
 
-    const lbl = cell._labels?.get(epk);
-    if (lbl) {
+    const names = sortedLabelArray(cell._labels?.get(epk));
+    if (names.length > 0) {
       const lblInp = document.createElement('input');
       lblInp.type = 'hidden';
       lblInp.name = `${inpName}__label__${epk}`;
-      lblInp.value = lbl;
+      lblInp.value = names.join(LABEL_SEP);
       lblInp.className = 'sb2-cell-label-inp';
       lblInp.dataset.emp = epk;
       cell.appendChild(lblInp);
@@ -887,8 +887,8 @@ function paintCell(cell) {
     }
 
     cell._emps.set(pk, employeeColors[pk]);
-    if (activeLabelText) {
-      cell._labels.set(pk, activeLabelText);
+    if (activeLabelNames.size > 0) {
+      cell._labels.set(pk, new Set(activeLabelNames));
     }
     changed = true;
   });
@@ -921,25 +921,75 @@ function renderLabelKey() {
   scheduleLabels.forEach(lbl => {
     const item = document.createElement('div');
     item.className = 'sb2-key-item';
-    item.innerHTML = `<span class="sb2-key-swatch" style="background:${lbl.color};border-radius:2px;border:1px solid rgba(0,0,0,0.15);"></span>`
-                   + `<span class="sb2-key-name">${lbl.name}</span>`;
+    const swatch = document.createElement('span');
+    swatch.className = 'sb2-key-swatch';
+    swatch.style.cssText = 'border-radius:2px;border:1px solid rgba(0,0,0,0.15);';
+    swatch.style.background = lbl.color;
+    const name = document.createElement('span');
+    name.className = 'sb2-key-name';
+    name.textContent = lbl.name;
+    item.append(swatch, name);
     list.appendChild(item);
   });
 }
 
-function rebuildLabelSelect() {
-  const sel = document.getElementById('active-label-select');
-  const prev = activeLabelText;
-  sel.innerHTML = '<option value="">No label</option>';
-  scheduleLabels.forEach(lbl => {
-    const opt = document.createElement('option');
-    opt.value = lbl.name; opt.textContent = lbl.name;
-    sel.appendChild(opt);
+// Click a pill to toggle that label in/out of the active multi-select set —
+// painting then stamps every currently-active label onto the employee.
+function toggleActiveLabel(name) {
+  if (activeLabelNames.has(name)) activeLabelNames.delete(name);
+  else activeLabelNames.add(name);
+  refreshLabelPickerUI();
+}
+
+function refreshLabelPickerUI() {
+  document.querySelectorAll('.sb2-label-pill').forEach(p => {
+    p.classList.toggle('sb2-label-active', activeLabelNames.has(p.dataset.label));
   });
-  const stillExists = scheduleLabels.some(l => l.name === prev);
-  sel.value = stillExists ? prev : '';
-  activeLabelText = sel.value;
-  document.getElementById('label-delete-btn').style.display = activeLabelText ? 'block' : 'none';
+}
+
+function rebuildLabelPicker() {
+  const list = document.getElementById('label-picker-list');
+  list.innerHTML = '';
+  if (!scheduleLabels.length) {
+    const empty = document.createElement('p');
+    empty.className = 'sb2-no-labels';
+    empty.textContent = 'No labels yet — add one below.';
+    list.appendChild(empty);
+  }
+  scheduleLabels.forEach(lbl => {
+    const row = document.createElement('div');
+    row.className = 'sb2-label-pill-row';
+
+    const pill = document.createElement('button');
+    pill.type = 'button';
+    pill.className = 'sb2-label-pill';
+    pill.dataset.label = lbl.name;
+    pill.style.setProperty('--label-color', lbl.color);
+    const swatch = document.createElement('span');
+    swatch.className = 'sb2-label-swatch';
+    swatch.style.background = lbl.color;
+    const name = document.createElement('span');
+    name.className = 'sb2-label-pill-name';
+    name.textContent = lbl.name;
+    pill.append(swatch, name);
+    pill.addEventListener('click', () => toggleActiveLabel(lbl.name));
+    row.appendChild(pill);
+
+    const del = document.createElement('button');
+    del.type = 'button';
+    del.className = 'sb2-label-pill-del';
+    del.title = 'Delete this label';
+    del.textContent = '✕';
+    del.addEventListener('click', () => deleteLabel(lbl.pk, lbl.name));
+    row.appendChild(del);
+
+    list.appendChild(row);
+  });
+
+  // Drop any active selections whose label no longer exists
+  const validNames = new Set(scheduleLabels.map(l => l.name));
+  Array.from(activeLabelNames).forEach(n => { if (!validNames.has(n)) activeLabelNames.delete(n); });
+  refreshLabelPickerUI();
 }
 
 function showAddLabel() {
@@ -963,8 +1013,8 @@ async function confirmNewLabel() {
     scheduleLabels.sort((a, b) => a.name.localeCompare(b.name));
     input.value = '';
     document.getElementById('new-label-wrap').style.display = 'none';
-    activeLabelText = data.name;
-    rebuildLabelSelect();
+    activeLabelNames.add(data.name);
+    rebuildLabelPicker();
     renderLabelKey();
   } catch (e) { alert('Network error'); }
 }
@@ -974,29 +1024,30 @@ function cancelNewLabel() {
   document.getElementById('new-label-input').value = '';
 }
 
-async function deleteActiveLabel() {
-  if (!activeLabelText) return;
-  const labelObj = scheduleLabels.find(l => l.name === activeLabelText);
-  if (!labelObj) return;
-  if (!confirm(`Delete position label "${activeLabelText}"? It will be removed from all cells in the current view.`)) return;
+async function deleteLabel(pk, name) {
+  if (!confirm(`Delete position label "${name}"? It will be removed from all cells in the current view.`)) return;
   try {
-    const resp = await fetch(LABEL_DELETE_URL_TPL.replace('/0/', `/${labelObj.pk}/`), {
+    const resp = await fetch(LABEL_DELETE_URL_TPL.replace('/0/', `/${pk}/`), {
       method: 'DELETE',
       headers: {'X-CSRFToken': getCsrf()},
     });
     if (!resp.ok) { alert('Failed to delete label'); return; }
-    const idx = scheduleLabels.findIndex(l => l.pk === labelObj.pk);
+    const idx = scheduleLabels.findIndex(l => l.pk === pk);
     if (idx !== -1) scheduleLabels.splice(idx, 1);
-    const deletedName = activeLabelText;
-    activeLabelText = '';
-    rebuildLabelSelect();
+    activeLabelNames.delete(name);
+    rebuildLabelPicker();
     renderLabelKey();
-    // Strip deleted label from all cells and re-render
+    // Strip the deleted label from every cell (leaving any other labels that
+    // employee carries in that slot intact) and re-render.
     document.querySelectorAll('.sb2-cell').forEach(cell => {
       if (!cell._labels) return;
       let changed = false;
-      for (const [epk, lbl] of cell._labels) {
-        if (lbl === deletedName) { cell._labels.delete(epk); changed = true; }
+      for (const [epk, names] of cell._labels) {
+        if (names.has(name)) {
+          names.delete(name);
+          if (names.size === 0) cell._labels.delete(epk);
+          changed = true;
+        }
       }
       if (changed) {
         renderCell(cell);
@@ -1012,12 +1063,8 @@ document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('.sb2-day-pill').forEach(p => {
     p.classList.toggle('sb2-day-pill-active', p.dataset.date === activeDayIso);
   });
-  rebuildLabelSelect();
+  rebuildLabelPicker();
   renderLabelKey();
-  document.getElementById('active-label-select').addEventListener('change', function() {
-    activeLabelText = this.value;
-    document.getElementById('label-delete-btn').style.display = activeLabelText ? 'block' : 'none';
-  });
   document.getElementById('new-label-input').addEventListener('keydown', function(e) {
     if (e.key === 'Enter') { e.preventDefault(); confirmNewLabel(); }
     if (e.key === 'Escape') cancelNewLabel();
@@ -1033,7 +1080,9 @@ document.addEventListener('DOMContentLoaded', () => {
       if (epk && color) cell._emps.set(epk, color);
     });
     cell.querySelectorAll('.sb2-cell-label-inp').forEach(inp => {
-      if (inp.dataset.emp && inp.value) cell._labels.set(inp.dataset.emp, inp.value);
+      if (!inp.dataset.emp || !inp.value) return;
+      const names = inp.value.split(',').map(s => s.trim()).filter(Boolean);
+      if (names.length) cell._labels.set(inp.dataset.emp, new Set(names));
     });
     cell.addEventListener('mousedown', e => {
       if (drawMode === 'erase' || activeEmpPks.size > 0) {
