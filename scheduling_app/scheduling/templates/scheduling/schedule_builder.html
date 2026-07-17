@@ -72,6 +72,7 @@
       <!-- Employee selector -->
       <div class="sb2-sidebar-section">
         <div class="sb2-sidebar-label">Select Employee(s) to Schedule</div>
+        <p class="sb2-mode-hint" style="margin-top:0;">Click to select one &nbsp;·&nbsp; Shift+click to add/remove</p>
         <div id="emp-list" class="sb2-emp-list">
           {% for emp in visible_employees %}
           <button type="button"
@@ -79,7 +80,7 @@
                   data-emp="{{ emp.pk }}"
                   style="--emp-color: {{ employee_colors|dict_lookup:emp.pk }};"
                   {% if low_availability_flags|dict_lookup:emp.pk %}title="Has not marked the minimum {{ min_availability_hours }} hours of availability"{% endif %}
-                  onclick="selectEmployee('{{ emp.pk }}')">
+                  onclick="selectEmployee('{{ emp.pk }}', event)">
             <span class="sb2-emp-swatch" style="background:{{ employee_colors|dict_lookup:emp.pk }};"></span>
             {{ emp.last_name }}, {{ emp.first_name }}
           </button>
@@ -373,12 +374,20 @@ document.addEventListener('keydown', e => {
   if (mod && (e.key === 'y' || (e.shiftKey && e.key === 'z'))) { e.preventDefault(); redo(); }
 });
 
-// ── Employee selection (multi-select: click toggles an employee in/out) ────
-function selectEmployee(empPk) {
+// ── Employee selection ──────────────────────────────────────────────────────
+// Plain click selects only that employee (replacing any existing selection).
+// Shift+click adds/removes that employee from the current selection, for
+// intentional multi-select.
+function selectEmployee(empPk, event) {
   empPk = String(empPk);
-  if (activeEmpPks.has(empPk)) {
-    activeEmpPks.delete(empPk);
+  if (event && event.shiftKey) {
+    if (activeEmpPks.has(empPk)) {
+      activeEmpPks.delete(empPk);
+    } else {
+      activeEmpPks.add(empPk);
+    }
   } else {
+    activeEmpPks.clear();
     activeEmpPks.add(empPk);
   }
   refreshEmployeeSelectionUI();
