@@ -31,6 +31,9 @@ class RegistrationForm(forms.ModelForm):
         required=False,
         widget=forms.CheckboxSelectMultiple,
     )
+    availability_override_until = forms.DateField(
+        required=False, widget=forms.DateInput(attrs={'type': 'date'})
+    )
 
     class Meta:
         model = User
@@ -51,6 +54,7 @@ class RegistrationForm(forms.ModelForm):
         user.role = self.cleaned_data["role"]
         user.part_time = self.cleaned_data["part_time"]
         user.is_admin = self.cleaned_data.get("is_admin", False)
+        user.availability_override_until = self.cleaned_data.get("availability_override_until")
         # New employees always start on the shared org-wide default password
         # (editable on Employee List) rather than a random/emailed one — this
         # app has no outbound email, so there's no way to deliver a random

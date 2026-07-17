@@ -69,6 +69,18 @@
     </div>
     {% endif %}
 
+    <!-- Availability override -->
+    <div class="reg-field">
+      <label class="reg-label" for="{{ user_form.availability_override_until.id_for_label }}">
+        Availability edit exception (until)
+      </label>
+      {{ user_form.availability_override_until }}
+      <p class="reg-help">
+        Lets this employee edit their availability even while the window is closed, up to and including this date. Leave blank for no exception.
+      </p>
+      {% if user_form.availability_override_until.errors %}<p class="reg-error">{{ user_form.availability_override_until.errors|join:" " }}</p>{% endif %}
+    </div>
+
     <!-- Schedules -->
     <div class="reg-field">
       <label class="reg-label">Add to schedules</label>
