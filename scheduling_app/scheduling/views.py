@@ -1242,10 +1242,11 @@ def _slots_to_weekly_blocks(emp_slots, schedule, day_code, emp_lookup, slot_labe
             )
 
 def _can_edit_availability(user):
-    """Admins and employees with an active per-user override bypass the
-    global AvailabilityWindow entirely; everyone else is subject to it."""
+    """Employees with an active per-user override bypass the global
+    AvailabilityWindow entirely; everyone else — admins included — is
+    subject to it when editing their own availability."""
     if not user.is_authenticated:
         return False
-    if user.is_admin or user.has_availability_override():
+    if user.has_availability_override():
         return True
     return AvailabilityWindow.current().is_currently_open()
