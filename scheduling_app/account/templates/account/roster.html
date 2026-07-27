@@ -30,9 +30,9 @@
 
       <div class="roster-role-filters">
         <button class="roster-role-btn active" data-role="">All</button>
-        <button class="roster-role-btn" data-role="assistant_i">Asst I</button>
-        <button class="roster-role-btn" data-role="assistant_ii">Asst II</button>
-        <button class="roster-role-btn" data-role="tutor">Tutor</button>
+        {% for value, label in role_choices %}
+        <button class="roster-role-btn" data-role="{{ value|lower }}">{{ label }}</button>
+        {% endfor %}
       </div>
 
       <p class="roster-panel-hint">Click to select · drag to add<span id="roster-sel-count"></span><button type="button" id="roster-sel-all" class="roster-clear-btn">All</button><button type="button" id="roster-clear-sel" class="roster-clear-btn" style="display:none;">Clear</button></p>

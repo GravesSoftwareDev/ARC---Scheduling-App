@@ -372,11 +372,16 @@ def schedule_builder(request):
         dur = (a.end_time.hour * 60 + a.end_time.minute) - (a.start_time.hour * 60 + a.start_time.minute)
         avail_minutes_by_user[a.user_id] = avail_minutes_by_user.get(a.user_id, 0) + dur
 
-    # Employees who haven't marked the minimum required availability — flagged red in the sidebar
-    low_availability_flags = {
-        e.pk: (avail_minutes_by_user.get(e.pk, 0) / 60) < MIN_AVAILABILITY_HOURS
-        for e in visible_employees
-    }
+    # Employees who haven't marked the minimum required availability — flagged
+    # in the sidebar: 'none' (zero hours entered, red) is more urgent than
+    # 'low' (some hours entered but still under the minimum, yellow).
+    low_availability_flags = {}
+    for e in visible_employees:
+        hours = avail_minutes_by_user.get(e.pk, 0) / 60
+        if hours <= 0:
+            low_availability_flags[e.pk] = 'none'
+        elif hours < MIN_AVAILABILITY_HOURS:
+            low_availability_flags[e.pk] = 'low'
 
     dept_locs = ['']
     has_locs = False
@@ -733,11 +738,16 @@ def default_schedule_builder(request):
             dur = (a.end_time.hour * 60 + a.end_time.minute) - (a.start_time.hour * 60 + a.start_time.minute)
             avail_minutes_by_user[a.user_id] = avail_minutes_by_user.get(a.user_id, 0) + dur
 
-    # Employees who haven't marked the minimum required availability — flagged red in the sidebar
-    low_availability_flags = {
-        e.pk: (avail_minutes_by_user.get(e.pk, 0) / 60) < MIN_AVAILABILITY_HOURS
-        for e in visible_employees
-    }
+    # Employees who haven't marked the minimum required availability — flagged
+    # in the sidebar: 'none' (zero hours entered, red) is more urgent than
+    # 'low' (some hours entered but still under the minimum, yellow).
+    low_availability_flags = {}
+    for e in visible_employees:
+        hours = avail_minutes_by_user.get(e.pk, 0) / 60
+        if hours <= 0:
+            low_availability_flags[e.pk] = 'none'
+        elif hours < MIN_AVAILABILITY_HOURS:
+            low_availability_flags[e.pk] = 'low'
 
     # Conflicts = this employee's default hours on OTHER schedules (keyed by day code,
     # reusing the 'date' key so the existing conflict-matching JS works unmodified).
@@ -1100,6 +1110,49 @@ def export_teams_shifts(request):
             return redirect('scheduling:export_teams_shifts')
         if not schedule_pks:
             schedule_pks = list(allowed_pks)
+
+        # Part-time employees are no longer blocked from being over-scheduled
+        # while drawing (their sidebar pill just flags fuchsia instead) — the
+        # weekly cap is enforced here instead, at the point the schedule
+        # actually leaves the building. Checked per calendar week across ALL
+        # of the employee's schedules, not just the ones being exported,
+        # since the cap is a total-hours-per-week limit, not a per-schedule one.
+        from account.models import Employee
+        parttime_pks = set(
+            Employee.objects.filter(part_time=True, is_active=True).values_list('pk', flat=True)
+        )
+        overages = []
+        if parttime_pks:
+            week_cursor = _week_start(date_from)
+            last_week_start = _week_start(date_to)
+            while week_cursor <= last_week_start:
+                week_end = week_cursor + timedelta(days=6)
+                hours_by_emp = {}
+                week_entries = ScheduleEntry.objects.filter(
+                    date__gte=week_cursor, date__lte=week_end, user_id__in=parttime_pks,
+                ).select_related('user')
+                for entry in week_entries:
+                    dur_minutes = (
+                        (entry.end_time.hour * 60 + entry.end_time.minute)
+                        - (entry.start_time.hour * 60 + entry.start_time.minute)
+                    )
+                    info = hours_by_emp.setdefault(entry.user_id, {'hours': 0.0, 'name': entry.user.get_full_name()})
+                    info['hours'] += dur_minutes / 60
+                for info in hours_by_emp.values():
+                    if info['hours'] > PARTTIME_WEEKLY_MAX:
+                        overages.append(
+                            f"{info['name']}: {info['hours']:.2f} hrs the week of {week_cursor.strftime('%b %d, %Y')} "
+                            f"(limit {PARTTIME_WEEKLY_MAX} hrs)"
+                        )
+                week_cursor += timedelta(weeks=1)
+
+        if overages:
+            messages.error(
+                request,
+                "Cannot export — the following part-time employees are over the weekly hour cap: "
+                + "; ".join(overages)
+            )
+            return redirect('scheduling:export_teams_shifts')
 
         xlsx_bytes = build_teams_shifts_xlsx(schedule_pks, date_from, date_to)
         filename = f"TeamsShifts_{date_from}_{date_to}.xlsx"

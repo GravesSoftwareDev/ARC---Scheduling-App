@@ -215,4 +215,5 @@ def roster(request):
         'schedules': schedules,
         'all_employees': all_employees,
         'schedule_form': ScheduleForm(),
+        'role_choices': Employee.Role.choices,
     })

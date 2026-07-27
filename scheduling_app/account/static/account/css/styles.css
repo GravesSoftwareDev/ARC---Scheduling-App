@@ -384,7 +384,8 @@ a:hover {
     gap: 0;
     background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-light) 100%);
     padding: 0;
-    sticky: top 0;
+    position: sticky;
+    top: 0;
     z-index: 10;
 }
 
@@ -1513,7 +1514,11 @@ a:hover {
     color: var(--primary-light);
 }
 
-/* Body: sidebar + grid */
+/* Body: sidebar + grid. The sidebar keeps its own natural height (no scroll,
+   no stretching) and the grid is set to match it in pixels via JS (see
+   syncGridHeight below) — flexbox stretch can't do this alone, since it can
+   only grow the shorter side up to the taller one's natural size, never
+   shrink the taller one down. */
 .sb2-body {
     display: flex;
     gap: 20px;
@@ -1607,12 +1612,81 @@ a:hover {
     border-color: #7B241C;
     box-shadow: 0 0 0 2px #7B241C;
 }
+/* Has marked some availability, just not the minimum — less urgent than
+   sb2-emp-pill-warning (zero availability marked at all). */
+.sb2-emp-pill.sb2-emp-pill-caution {
+    background: #F1C40F;
+    border-color: #F1C40F;
+    color: #4d3800;
+}
+.sb2-emp-pill.sb2-emp-pill-caution:hover {
+    background: #D4AC0D;
+    border-color: #D4AC0D;
+}
+.sb2-emp-pill.sb2-emp-pill-caution .sb2-emp-swatch {
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
+}
+.sb2-emp-pill.sb2-emp-pill-caution.sb2-emp-active {
+    background: #D4AC0D;
+    border-color: #9C7A0A;
+    box-shadow: 0 0 0 2px #9C7A0A;
+}
+/* Part-time employee currently scheduled over the weekly hour cap. Painting
+   past the cap is no longer blocked — this is the replacement signal, and it
+   takes priority over the availability warning/caution colors above since
+   it reflects what's actively happening in the schedule being built right
+   now. The export flow is what actually enforces the cap. */
+.sb2-emp-pill.sb2-emp-pill-over {
+    background: #E91E8C;
+    border-color: #E91E8C;
+    color: #fff;
+}
+.sb2-emp-pill.sb2-emp-pill-over:hover {
+    background: #C8177A;
+    border-color: #C8177A;
+}
+.sb2-emp-pill.sb2-emp-pill-over .sb2-emp-swatch {
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.7);
+}
+.sb2-emp-pill.sb2-emp-pill-over.sb2-emp-active {
+    background: #C8177A;
+    border-color: #8E0F57;
+    box-shadow: 0 0 0 2px #8E0F57;
+}
 .sb2-emp-swatch {
     width: 12px;
     height: 12px;
     border-radius: 3px;
     flex-shrink: 0;
 }
+
+/* Name tag color key — explains what the sb2-emp-pill-warning/-caution/-over
+   colors mean, since those are computed from availability/hours data rather
+   than being an employee's own assigned color. */
+.sb2-status-key {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--accent-color);
+}
+.sb2-status-key-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--text-color);
+}
+.sb2-status-swatch {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    flex-shrink: 0;
+}
+.sb2-status-swatch-warning { background: #C0392B; }
+.sb2-status-swatch-caution { background: #F1C40F; }
+.sb2-status-swatch-over    { background: #E91E8C; }
 
 /* Position label picker — click to toggle, multiple can be active at once */
 .sb2-label-pill-list {
@@ -1818,6 +1892,14 @@ a:hover {
 }
 .sb2-key-item.sb2-key-item-warning .sb2-key-name { color: #fff; font-weight: 700; }
 .sb2-key-item.sb2-key-item-warning .sb2-key-swatch { box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.7); }
+/* Has marked some availability, just not the minimum — less urgent than
+   sb2-key-item-warning (zero availability marked at all). */
+.sb2-key-item.sb2-key-item-caution {
+    background: #F1C40F;
+    border-radius: 4px;
+}
+.sb2-key-item.sb2-key-item-caution .sb2-key-name { color: #4d3800; font-weight: 700; }
+.sb2-key-item.sb2-key-item-caution .sb2-key-swatch { box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35); }
 .sb2-key-swatch {
     width: 12px;
     height: 12px;
@@ -1826,9 +1908,30 @@ a:hover {
 }
 .sb2-key-name { font-size: 12px; }
 
-/* Grid wrap */
-.sb2-grid-wrap { flex: 1; min-width: 0; overflow: hidden; }
-.sb2-calendar-scroll { overflow-x: auto; }
+/* Grid wrap — flex column so the day-view pills (when shown) keep their
+   natural height while the form/calendar-scroll below fills the rest and
+   scrolls vertically within the height JS sets to match the sidebar
+   (syncGridHeight, wired up near the bottom of this template's script). */
+.sb2-grid-wrap {
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+#schedule-form {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+.sb2-calendar-scroll {
+    flex: 1;
+    min-height: 0;
+    overflow-x: auto;
+    overflow-y: auto;
+}
 .sb2-calendar { user-select: none; }
 
 /* Multi-location two-row header */
@@ -2006,6 +2109,10 @@ a:hover {
 @media (max-width: 860px) {
     .sb2-body { flex-direction: column; }
     .sb2-sidebar { flex: none; width: 100%; position: static; }
+    /* Stacked layout — matching heights side-by-side no longer applies, and
+       !important is needed since JS sets an inline height on this element. */
+    .sb2-grid-wrap { flex: none; height: auto !important; }
+    .sb2-calendar-scroll { flex: none; }
     .sb2-emp-list { max-height: 120px; flex-direction: row; flex-wrap: wrap; }
 }
 
@@ -2853,17 +2960,6 @@ select.form-control { cursor: pointer; }
     color: #B71C1C;
     text-align: center;
 }
-@keyframes sb2-shake {
-    0%,100% { transform: translateX(0); }
-    20%      { transform: translateX(-4px); }
-    40%      { transform: translateX(4px); }
-    60%      { transform: translateX(-3px); }
-    80%      { transform: translateX(3px); }
-}
-.sb2-hours-shake {
-    animation: sb2-shake 0.45s ease;
-}
-
 /* ── Drag-and-drop Roster ──────────────────────────────────────────────────── */
 
 .roster-create-bar {

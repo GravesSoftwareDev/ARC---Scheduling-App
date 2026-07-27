@@ -45,18 +45,25 @@
         <div class="sb2-sidebar-label">Select Employee to Schedule</div>
         <div id="emp-list" class="sb2-emp-list">
           {% for emp in visible_employees %}
+          {% with avail_flag=low_availability_flags|dict_lookup:emp.pk %}
           <button type="button"
-                  class="sb2-emp-pill {% if low_availability_flags|dict_lookup:emp.pk %}sb2-emp-pill-warning{% endif %}"
+                  class="sb2-emp-pill {% if avail_flag == 'none' %}sb2-emp-pill-warning{% elif avail_flag == 'low' %}sb2-emp-pill-caution{% endif %}"
                   data-emp="{{ emp.pk }}"
                   style="--emp-color: {{ employee_colors|dict_lookup:emp.pk }};"
-                  {% if low_availability_flags|dict_lookup:emp.pk %}title="Has not marked the minimum {{ min_availability_hours }} hours of availability"{% endif %}
+                  {% if avail_flag == 'none' %}title="Has not marked any availability"{% elif avail_flag == 'low' %}title="Has not marked the minimum {{ min_availability_hours }} hours of availability"{% endif %}
                   onclick="selectEmployee('{{ emp.pk }}', '{{ employee_colors|dict_lookup:emp.pk }}')">
             <span class="sb2-emp-swatch" style="background:{{ employee_colors|dict_lookup:emp.pk }};"></span>
             {{ emp.last_name }}, {{ emp.first_name }}
           </button>
+          {% endwith %}
           {% empty %}
           <p class="sb2-no-emp">No employees in this schedule.</p>
           {% endfor %}
+        </div>
+        <div class="sb2-status-key">
+          <div class="sb2-status-key-item"><span class="sb2-status-swatch sb2-status-swatch-warning"></span>No availability marked</div>
+          <div class="sb2-status-key-item"><span class="sb2-status-swatch sb2-status-swatch-caution"></span>Not enough availability</div>
+          <div class="sb2-status-key-item"><span class="sb2-status-swatch sb2-status-swatch-over"></span>Overscheduled (part-time)</div>
         </div>
         <div id="active-emp-label" class="sb2-active-label" style="display:none;">
           Drawing for: <strong id="active-emp-name"></strong>
@@ -133,27 +140,6 @@
           ✕ Clear All
         </button>
       </div>
-
-      <!-- Label key -->
-      <div class="sb2-sidebar-section sb2-key-section" id="label-key-section" style="display:none;">
-        <div class="sb2-sidebar-label">Label Key</div>
-        <div class="sb2-key-list" id="label-key-list"></div>
-      </div>
-
-      <!-- Color key -->
-      <div class="sb2-sidebar-section sb2-key-section">
-        <div class="sb2-sidebar-label">Color Key</div>
-        <div class="sb2-key-list">
-          {% for emp in visible_employees %}
-          <div class="sb2-key-item {% if low_availability_flags|dict_lookup:emp.pk %}sb2-key-item-warning{% endif %}" data-emp-key="{{ emp.pk }}"
-               {% if low_availability_flags|dict_lookup:emp.pk %}title="Has not marked the minimum {{ min_availability_hours }} hours of availability"{% endif %}>
-            <span class="sb2-key-swatch" style="background:{{ employee_colors|dict_lookup:emp.pk }};"></span>
-            <span class="sb2-key-name">{{ emp.first_name }} {{ emp.last_name }}</span>
-          </div>
-          {% endfor %}
-        </div>
-      </div>
-
     </div>
 
     <!-- Grid area -->
@@ -324,8 +310,6 @@ function selectEmployee(empPk, color) {
   document.getElementById('active-emp-label').style.display = 'flex';
   const pill = document.querySelector(`.sb2-emp-pill[data-emp="${empPk}"]`);
   document.getElementById('active-emp-name').textContent = pill ? pill.textContent.trim() : empPk;
-  document.querySelectorAll('.sb2-key-item').forEach(k => k.classList.remove('sb2-key-active'));
-  document.querySelector(`.sb2-key-item[data-emp-key="${empPk}"]`)?.classList.add('sb2-key-active');
   applyAvailabilityHighlight(empPk);
   updateHoursCounter();
   updateEmpPreferences(empPk);
@@ -342,7 +326,6 @@ function updateEmpPreferences(empPk) {
 function clearEmployee() {
   activeEmpPk = null; activeEmpColor = null; activeLabelText = '';
   document.querySelectorAll('.sb2-emp-pill').forEach(p => p.classList.remove('sb2-emp-active'));
-  document.querySelectorAll('.sb2-key-item').forEach(k => k.classList.remove('sb2-key-active'));
   document.getElementById('active-emp-label').style.display = 'none';
   document.getElementById('emp-preferences').style.display = 'none';
   document.getElementById('hours-counter').style.display = 'none';
@@ -451,7 +434,22 @@ function calcScheduledHours(empPk) {
   return hours;
 }
 
+// Flags every part-time employee's own sidebar pill fuchsia once their total
+// scheduled hours (this schedule + others) exceed the weekly cap — runs for
+// all of them, not just the current selection, since painting one employee
+// doesn't change another's total but the cap itself is no longer enforced
+// by blocking paint, so this is the only remaining "you're over" signal.
+function updatePartTimeOverFlags() {
+  Object.keys(employeeIsParttime).forEach(pk => {
+    if (!employeeIsParttime[pk]) return;
+    const total = calcScheduledHours(pk) + (employeeOtherHours[pk] || 0);
+    const pill = document.querySelector(`.sb2-emp-pill[data-emp="${pk}"]`);
+    if (pill) pill.classList.toggle('sb2-emp-pill-over', total > PARTTIME_MAX);
+  });
+}
+
 function updateHoursCounter() {
+  updatePartTimeOverFlags();
   const counter = document.getElementById('hours-counter');
   if (!activeEmpPk) { counter.style.display = 'none'; return; }
 
@@ -494,14 +492,6 @@ function updateHoursCounter() {
     fill.className  = 'sb2-hours-fill';
     valEl.className = 'sb2-hours-value';
   }
-}
-
-let hoursWarnTimeout = null;
-function showHoursLimitWarning() {
-  const counter = document.getElementById('hours-counter');
-  counter.classList.add('sb2-hours-shake');
-  clearTimeout(hoursWarnTimeout);
-  hoursWarnTimeout = setTimeout(() => counter.classList.remove('sb2-hours-shake'), 500);
 }
 
 // ── Out-of-availability warning (always-on red outline on painted cells) ──
@@ -685,14 +675,6 @@ function paintCell(cell) {
 
   if (cell._emps.has(activeEmpPk)) return;
 
-  if (employeeIsParttime[activeEmpPk]) {
-    const total = calcScheduledHours(activeEmpPk) + (employeeOtherHours[activeEmpPk] || 0);
-    if (total + _slotHours(cell.dataset.slot) > PARTTIME_MAX) {
-      showHoursLimitWarning();
-      return;
-    }
-  }
-
   cell._emps.set(activeEmpPk, activeEmpColor);
   if (activeLabelText) {
     cell._labels.set(activeEmpPk, activeLabelText);
@@ -715,21 +697,6 @@ function getCsrf() {
 function getLabelColor(labelName) {
   const found = scheduleLabels.find(l => l.name === labelName);
   return found ? found.color : '#aaaaaa';
-}
-
-function renderLabelKey() {
-  const section = document.getElementById('label-key-section');
-  const list = document.getElementById('label-key-list');
-  list.innerHTML = '';
-  if (!scheduleLabels.length) { section.style.display = 'none'; return; }
-  section.style.display = 'block';
-  scheduleLabels.forEach(lbl => {
-    const item = document.createElement('div');
-    item.className = 'sb2-key-item';
-    item.innerHTML = `<span class="sb2-key-swatch" style="background:${lbl.color};border-radius:2px;border:1px solid rgba(0,0,0,0.15);"></span>`
-                   + `<span class="sb2-key-name">${lbl.name}</span>`;
-    list.appendChild(item);
-  });
 }
 
 function rebuildLabelSelect() {
@@ -770,7 +737,6 @@ async function confirmNewLabel() {
     document.getElementById('new-label-wrap').style.display = 'none';
     activeLabelText = data.name;
     rebuildLabelSelect();
-    renderLabelKey();
   } catch (e) { alert('Network error'); }
 }
 
@@ -795,7 +761,6 @@ async function deleteActiveLabel() {
     const deletedName = activeLabelText;
     activeLabelText = '';
     rebuildLabelSelect();
-    renderLabelKey();
     document.querySelectorAll('.sb2-cell').forEach(cell => {
       if (!cell._labels) return;
       let changed = false;
@@ -814,7 +779,6 @@ async function deleteActiveLabel() {
 // Wire up all cells on DOMContentLoaded
 document.addEventListener('DOMContentLoaded', () => {
   rebuildLabelSelect();
-  renderLabelKey();
   document.getElementById('active-label-select').addEventListener('change', function() {
     activeLabelText = this.value;
     document.getElementById('label-delete-btn').style.display = activeLabelText ? 'block' : 'none';
@@ -849,6 +813,21 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   document.querySelectorAll('.sb2-cell').forEach(cell => renderCell(cell));
   updateAvailabilityWarnings();
+  updatePartTimeOverFlags();
+
+  // Keep the grid's height matched to the sidebar's own (unconstrained,
+  // non-scrolling) height — flexbox stretch can only grow the shorter side
+  // up to the taller one's natural size, never shrink the taller one down,
+  // so this has to be measured and applied directly. ResizeObserver keeps it
+  // in sync as sidebar content changes (selecting an employee, adding a
+  // label, etc.), not just at page load.
+  const sb2Sidebar  = document.querySelector('.sb2-sidebar');
+  const sb2GridWrap = document.querySelector('.sb2-grid-wrap');
+  if (sb2Sidebar && sb2GridWrap && 'ResizeObserver' in window) {
+    const syncGridHeight = () => { sb2GridWrap.style.height = sb2Sidebar.offsetHeight + 'px'; };
+    new ResizeObserver(syncGridHeight).observe(sb2Sidebar);
+    syncGridHeight();
+  }
 });
 
 document.addEventListener('mouseup', () => { isDragging = false; });
