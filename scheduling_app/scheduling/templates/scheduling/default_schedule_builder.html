@@ -358,6 +358,8 @@ function applyAvailabilityHighlight(empPk) {
   const conflicts = employeeConflicts[String(empPk)] || [];
 
   document.querySelectorAll('.sb2-cell.sb2-in-hours').forEach(cell => {
+    updateCellDim(cell);
+
     const [h, m] = cell.dataset.slot.split('_').map(Number);
     const slotMin = h * 60 + m;
     const dateStr = cell.dataset.date;
@@ -404,9 +406,9 @@ function applyAvailabilityHighlight(empPk) {
 
 function clearAvailabilityHighlight() {
   document.querySelectorAll(
-    '.sb2-avail-ok, .sb2-avail-blocked, .sb2-avail-preferred, .sb2-sched-conflict, .sb2-avail-override'
+    '.sb2-avail-ok, .sb2-avail-blocked, .sb2-avail-preferred, .sb2-sched-conflict, .sb2-avail-override, .sb2-cell-dim'
   ).forEach(c => {
-    c.classList.remove('sb2-avail-ok', 'sb2-avail-blocked', 'sb2-avail-preferred', 'sb2-sched-conflict', 'sb2-avail-override');
+    c.classList.remove('sb2-avail-ok', 'sb2-avail-blocked', 'sb2-avail-preferred', 'sb2-sched-conflict', 'sb2-avail-override', 'sb2-cell-dim');
     c.style.removeProperty('--conflict-bg');
     c.style.removeProperty('--conflict-border');
     c.title = '';
@@ -543,11 +545,16 @@ const getNextCell = cell => _adjCell(cell, +30);
 // ── Cell rendering ─────────────────────────────────────────────────────────
 function renderCell(cell) {
   cell.querySelectorAll('.sb2-cell-input, .sb2-cell-label-inp, .sb2-initials').forEach(e => e.remove());
+  let fill = cell.querySelector('.sb2-fill');
 
   if (!cell._emps || cell._emps.size === 0) {
-    cell.style.background = '';
-    cell.style.opacity = '';
+    if (fill) fill.remove();
     return;
+  }
+  if (!fill) {
+    fill = document.createElement('div');
+    fill.className = 'sb2-fill';
+    cell.insertBefore(fill, cell.firstChild);
   }
 
   const empEntries = Array.from(cell._emps.entries());
@@ -555,7 +562,7 @@ function renderCell(cell) {
     const [epk, empColor] = empEntries[0];
     const lbl = cell._labels?.get(epk);
     const labelColor = lbl ? getLabelColor(lbl) : null;
-    cell.style.background = labelColor
+    fill.style.background = labelColor
       ? `linear-gradient(to right, ${labelColor} 0%, ${labelColor} 18%, ${empColor} 18%)`
       : empColor;
   } else {
@@ -573,9 +580,8 @@ function renderCell(cell) {
         stops.push(`${empColor} ${s}%`, `${empColor} ${e}%`);
       }
     });
-    cell.style.background = `linear-gradient(to right, ${stops.join(', ')})`;
+    fill.style.background = `linear-gradient(to right, ${stops.join(', ')})`;
   }
-  cell.style.opacity = '0.82';
 
   const inpName = cell.dataset.inpName;
   for (const epk of cell._emps.keys()) {
@@ -607,7 +613,7 @@ function renderCell(cell) {
     span.textContent = initials;
     const pct = 100 / total;
     span.style.left = `${(i * pct + pct / 2).toFixed(1)}%`;
-    cell.appendChild(span);
+    fill.appendChild(span);
   });
 }
 
@@ -627,6 +633,19 @@ function clearAll() {
   updateAvailabilityWarnings();
 }
 
+// Dim is only recomputed by applyAvailabilityHighlight() (on select/toggle),
+// so painting/erasing a cell after that point leaves its dim class stale —
+// e.g. drawing the selected employee into a cell that already held someone
+// else keeps showing it as dimmed. Call this after any cell._emps mutation
+// so the dim state always reflects the CURRENT contents immediately.
+function updateCellDim(cell) {
+  if (!activeEmpPk || !cell._emps || cell._emps.size === 0) {
+    cell.classList.remove('sb2-cell-dim');
+    return;
+  }
+  cell.classList.toggle('sb2-cell-dim', !cell._emps.has(activeEmpPk));
+}
+
 // ── Cell painting ──────────────────────────────────────────────────────────
 function paintCell(cell) {
   if (!cell.classList.contains('sb2-in-hours')) return;
@@ -637,6 +656,7 @@ function paintCell(cell) {
         cell._emps.clear();
         cell._labels?.clear();
         renderCell(cell);
+        updateCellDim(cell);
         const pc = getPrevCell(cell); if (pc) renderCell(pc);
         const nc = getNextCell(cell); if (nc) renderCell(nc);
         markUnsaved();
@@ -649,6 +669,7 @@ function paintCell(cell) {
       cell._emps.delete(activeEmpPk);
       cell._labels?.delete(activeEmpPk);
       renderCell(cell);
+      updateCellDim(cell);
       const pc = getPrevCell(cell); if (pc) renderCell(pc);
       const nc = getNextCell(cell); if (nc) renderCell(nc);
       markUnsaved();
@@ -677,6 +698,7 @@ function paintCell(cell) {
     cell._labels.set(activeEmpPk, activeLabelText);
   }
   renderCell(cell);
+  updateCellDim(cell);
   const pc = getPrevCell(cell); if (pc) renderCell(pc);
   const nc = getNextCell(cell); if (nc) renderCell(nc);
   markUnsaved();

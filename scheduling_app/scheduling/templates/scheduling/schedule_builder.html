@@ -105,7 +105,7 @@
         <div id="multi-emp-stats" class="sb2-multi-emp-stats" style="display:none;"></div>
         <div id="label-input-wrap" style="margin-top:6px;">
           <div class="sb2-sidebar-label" style="margin-top:2px;">Position label(s)</div>
-          <p class="sb2-mode-hint" style="margin-top:0;">Click to toggle &nbsp;·&nbsp; an employee can carry more than one</p>
+          <p class="sb2-mode-hint" style="margin-top:0;">Click to select one &nbsp;·&nbsp; Shift+click to add/remove</p>
           <div id="label-picker-list" class="sb2-label-pill-list"></div>
           <!-- Add new label inline -->
           <div id="new-label-wrap" style="display:none;margin-top:4px;gap:4px;align-items:center;flex-wrap:wrap;">
@@ -489,6 +489,8 @@ function applyAvailabilityHighlight() {
   const pks = Array.from(activeEmpPks);
 
   document.querySelectorAll('.sb2-cell.sb2-in-hours').forEach(cell => {
+    updateCellDim(cell);
+
     const statuses = pks.map(pk => ({ pk, ...empCellStatus(pk, cell) }));
 
     const conflicted = statuses.filter(s => s.conflict);
@@ -524,9 +526,9 @@ function applyAvailabilityHighlight() {
 
 function clearAvailabilityHighlight() {
   document.querySelectorAll(
-    '.sb2-avail-ok, .sb2-avail-blocked, .sb2-avail-preferred, .sb2-sched-conflict, .sb2-avail-override, .sb2-avail-partial'
+    '.sb2-avail-ok, .sb2-avail-blocked, .sb2-avail-preferred, .sb2-sched-conflict, .sb2-avail-override, .sb2-avail-partial, .sb2-cell-dim'
   ).forEach(c => {
-    c.classList.remove('sb2-avail-ok', 'sb2-avail-blocked', 'sb2-avail-preferred', 'sb2-sched-conflict', 'sb2-avail-override', 'sb2-avail-partial');
+    c.classList.remove('sb2-avail-ok', 'sb2-avail-blocked', 'sb2-avail-preferred', 'sb2-sched-conflict', 'sb2-avail-override', 'sb2-avail-partial', 'sb2-cell-dim');
     c.style.removeProperty('--conflict-bg');
     c.style.removeProperty('--conflict-border');
     c.title = '';
@@ -743,11 +745,16 @@ function sortedLabelArray(labelSet) {
 
 function renderCell(cell) {
   cell.querySelectorAll('.sb2-cell-input, .sb2-cell-label-inp, .sb2-initials').forEach(e => e.remove());
+  let fill = cell.querySelector('.sb2-fill');
 
   if (!cell._emps || cell._emps.size === 0) {
-    cell.style.background = '';
-    cell.style.opacity = '';
+    if (fill) fill.remove();
     return;
+  }
+  if (!fill) {
+    fill = document.createElement('div');
+    fill.className = 'sb2-fill';
+    cell.insertBefore(fill, cell.firstChild);
   }
 
   // Build background: each employee gets an equal-width segment, solid in
@@ -775,8 +782,7 @@ function renderCell(cell) {
     });
     stops.push(`${empColor} ${pos.toFixed(1)}%`, `${empColor} ${segEnd.toFixed(1)}%`);
   });
-  cell.style.background = `linear-gradient(to right, ${stops.join(', ')})`;
-  cell.style.opacity = '0.82';
+  fill.style.background = `linear-gradient(to right, ${stops.join(', ')})`;
 
   const inpName = cell.dataset.inpName;
   for (const epk of cell._emps.keys()) {
@@ -799,7 +805,8 @@ function renderCell(cell) {
     }
   }
 
-  // Initials overlay — one per employee, positioned in their stripe
+  // Initials overlay — one per employee, positioned in their stripe. Lives
+  // inside .sb2-fill so it dims along with the color fill.
   const total = empEntries.length;
   empEntries.forEach(([epk], i) => {
     const initials = employeeInitials[epk];
@@ -809,7 +816,7 @@ function renderCell(cell) {
     span.textContent = initials;
     const pct = 100 / total;
     span.style.left = `${(i * pct + pct / 2).toFixed(1)}%`;
-    cell.appendChild(span);
+    fill.appendChild(span);
   });
 }
 
@@ -835,6 +842,20 @@ function rerenderNeighbors(cell) {
   const nc = getNextCell(cell); if (nc) renderCell(nc);
 }
 
+// Dim is only recomputed by applyAvailabilityHighlight() (on select/toggle),
+// so painting/erasing a cell after that point leaves its dim class stale —
+// e.g. drawing the selected employee into a cell that already held someone
+// else keeps showing it as dimmed. Call this after any cell._emps mutation
+// so the dim state always reflects the CURRENT contents immediately.
+function updateCellDim(cell) {
+  if (activeEmpPks.size === 0 || !cell._emps || cell._emps.size === 0) {
+    cell.classList.remove('sb2-cell-dim');
+    return;
+  }
+  const pks = Array.from(activeEmpPks);
+  cell.classList.toggle('sb2-cell-dim', !pks.some(pk => cell._emps.has(pk)));
+}
+
 function paintCell(cell) {
   if (!cell.classList.contains('sb2-in-hours')) return;
 
@@ -844,6 +865,7 @@ function paintCell(cell) {
         cell._emps.clear();
         cell._labels?.clear();
         renderCell(cell);
+        updateCellDim(cell);
         rerenderNeighbors(cell);
         markUnsaved();
         updateHoursCounter();
@@ -861,6 +883,7 @@ function paintCell(cell) {
     });
     if (changed) {
       renderCell(cell);
+      updateCellDim(cell);
       rerenderNeighbors(cell);
       markUnsaved();
       updateHoursCounter();
@@ -895,6 +918,7 @@ function paintCell(cell) {
 
   if (!changed) return;
   renderCell(cell);
+  updateCellDim(cell);
   rerenderNeighbors(cell);
   markUnsaved();
   updateHoursCounter();
@@ -933,11 +957,19 @@ function renderLabelKey() {
   });
 }
 
-// Click a pill to toggle that label in/out of the active multi-select set —
-// painting then stamps every currently-active label onto the employee.
-function toggleActiveLabel(name) {
-  if (activeLabelNames.has(name)) activeLabelNames.delete(name);
-  else activeLabelNames.add(name);
+// Click a pill to select just that label; Shift+click adds/removes it from
+// the active multi-select set, same as the employee picker above — painting
+// then stamps every currently-active label onto the employee.
+function toggleActiveLabel(name, event) {
+  if (event && event.shiftKey) {
+    if (activeLabelNames.has(name)) activeLabelNames.delete(name);
+    else activeLabelNames.add(name);
+  } else if (activeLabelNames.size === 1 && activeLabelNames.has(name)) {
+    activeLabelNames.clear();
+  } else {
+    activeLabelNames.clear();
+    activeLabelNames.add(name);
+  }
   refreshLabelPickerUI();
 }
 
@@ -972,7 +1004,7 @@ function rebuildLabelPicker() {
     name.className = 'sb2-label-pill-name';
     name.textContent = lbl.name;
     pill.append(swatch, name);
-    pill.addEventListener('click', () => toggleActiveLabel(lbl.name));
+    pill.addEventListener('click', (e) => toggleActiveLabel(lbl.name, e));
     row.appendChild(pill);
 
     const del = document.createElement('button');
