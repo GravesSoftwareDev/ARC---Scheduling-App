@@ -80,20 +80,23 @@
           </div>
         </div>
         <div id="label-input-wrap" style="margin-top:6px;">
-          <!-- Label selector + delete -->
+          <!-- Label selector + edit + delete -->
           <div style="display:flex;gap:4px;align-items:center;">
             <select id="active-label-select"
                     style="flex:1;min-width:0;box-sizing:border-box;padding:5px 8px;font-size:12px;border:1px solid #ddd;border-radius:4px;background:#fff;">
               <option value="">No label</option>
             </select>
+            <button type="button" id="label-edit-btn" onclick="startEditActiveLabel()" title="Edit this label"
+                    style="display:none;padding:4px 7px;font-size:12px;background:none;color:#888;border:none;border-radius:4px;cursor:pointer;flex-shrink:0;">✎</button>
             <button type="button" id="label-delete-btn" onclick="deleteActiveLabel()" title="Delete this label"
                     style="display:none;padding:4px 7px;font-size:12px;background:#c0392b;color:#fff;border:none;border-radius:4px;cursor:pointer;flex-shrink:0;">✕</button>
           </div>
-          <!-- Add new label inline -->
+          <!-- Add/edit label inline — confirmNewLabel() branches on labelWrapMode -->
           <div id="new-label-wrap" style="display:none;margin-top:4px;gap:4px;align-items:center;flex-wrap:wrap;">
+            <input type="color" id="label-color-input" style="display:none;width:28px;height:28px;padding:0;border:1px solid #ddd;border-radius:4px;cursor:pointer;flex-shrink:0;">
             <input type="text" id="new-label-input" placeholder="Label name…"
                    style="flex:1;min-width:0;padding:5px 8px;font-size:12px;border:1px solid #ddd;border-radius:4px;">
-            <button type="button" onclick="confirmNewLabel()"
+            <button type="button" id="new-label-confirm-btn" onclick="confirmNewLabel()"
                     style="padding:4px 8px;font-size:12px;background:#1565C0;color:#fff;border:none;border-radius:4px;cursor:pointer;">Add</button>
             <button type="button" onclick="cancelNewLabel()"
                     style="padding:4px 6px;font-size:12px;background:#eee;border:none;border-radius:4px;cursor:pointer;">✕</button>
@@ -234,11 +237,13 @@ const LEAD_IN_SLOT_KEY     = '{{ grid.0.slot_key|default:"" }}';
 const SCHEDULE_PK          = '{{ active_schedule_pk }}';
 const LABELS_URL_TPL       = '{% url "scheduling:schedule_labels" schedule_pk=0 %}';
 const LABEL_DELETE_URL_TPL = '{% url "scheduling:delete_shift_label" label_pk=0 %}';
+const LABEL_EDIT_URL_TPL   = '{% url "scheduling:edit_shift_label" label_pk=0 %}';
 const PARTTIME_MAX = 19.5;
 
 let activeEmpPk    = null;
 let activeEmpColor = null;
 let activeLabelText = '';
+let labelWrapMode = 'add';
 let activeSchedulePk = '{{ active_schedule_pk }}';
 let drawMode  = 'draw';
 let isDragging = false;
@@ -711,15 +716,35 @@ function rebuildLabelSelect() {
   const stillExists = scheduleLabels.some(l => l.name === prev);
   sel.value = stillExists ? prev : '';
   activeLabelText = sel.value;
+  document.getElementById('label-edit-btn').style.display = activeLabelText ? 'block' : 'none';
   document.getElementById('label-delete-btn').style.display = activeLabelText ? 'block' : 'none';
 }
 
 function showAddLabel() {
+  labelWrapMode = 'add';
+  document.getElementById('label-color-input').style.display = 'none';
+  document.getElementById('new-label-input').value = '';
+  document.getElementById('new-label-confirm-btn').textContent = 'Add';
+  document.getElementById('new-label-wrap').style.display = 'flex';
+  document.getElementById('new-label-input').focus();
+}
+
+function startEditActiveLabel() {
+  if (!activeLabelText) return;
+  const labelObj = scheduleLabels.find(l => l.name === activeLabelText);
+  if (!labelObj) return;
+  labelWrapMode = 'edit';
+  const colorInp = document.getElementById('label-color-input');
+  colorInp.value = labelObj.color;
+  colorInp.style.display = '';
+  document.getElementById('new-label-input').value = labelObj.name;
+  document.getElementById('new-label-confirm-btn').textContent = 'Save';
   document.getElementById('new-label-wrap').style.display = 'flex';
   document.getElementById('new-label-input').focus();
 }
 
 async function confirmNewLabel() {
+  if (labelWrapMode === 'edit') { await saveEditActiveLabel(); return; }
   const input = document.getElementById('new-label-input');
   const name = input.value.trim();
   if (!name || !SCHEDULE_PK) return;
@@ -740,9 +765,55 @@ async function confirmNewLabel() {
   } catch (e) { alert('Network error'); }
 }
 
+async function saveEditActiveLabel() {
+  const labelObj = scheduleLabels.find(l => l.name === activeLabelText);
+  if (!labelObj) return;
+  const name = document.getElementById('new-label-input').value.trim();
+  const color = document.getElementById('label-color-input').value;
+  if (!name) { alert('Name required'); return; }
+  try {
+    const resp = await fetch(LABEL_EDIT_URL_TPL.replace('/0/', `/${labelObj.pk}/`), {
+      method: 'PATCH',
+      headers: {'Content-Type': 'application/json', 'X-CSRFToken': getCsrf()},
+      body: JSON.stringify({name, color}),
+    });
+    const data = await resp.json();
+    if (!resp.ok) { alert(data.error || 'Failed to update label'); return; }
+
+    const oldName = data.old_name;
+    labelObj.name = data.name;
+    labelObj.color = data.color;
+    scheduleLabels.sort((a, b) => a.name.localeCompare(b.name));
+    activeLabelText = data.name;
+    document.getElementById('new-label-wrap').style.display = 'none';
+    rebuildLabelSelect();
+
+    // Cells store the label as a name string, not a pk, so a rename has to
+    // be propagated to every cell carrying the old name. A pure color
+    // change needs no cell update — getLabelColor() looks the color up by
+    // name at render time — but the cells still need repainting to show it.
+    document.querySelectorAll('.sb2-cell').forEach(cell => {
+      if (!cell._labels) return;
+      let changed = false;
+      for (const [epk, lbl] of cell._labels) {
+        if (lbl === oldName) {
+          if (oldName !== data.name) cell._labels.set(epk, data.name);
+          changed = true;
+        }
+      }
+      if (changed) {
+        renderCell(cell);
+        const pc = getPrevCell(cell); if (pc) renderCell(pc);
+        const nc = getNextCell(cell); if (nc) renderCell(nc);
+      }
+    });
+  } catch (e) { alert('Network error'); }
+}
+
 function cancelNewLabel() {
   document.getElementById('new-label-wrap').style.display = 'none';
   document.getElementById('new-label-input').value = '';
+  document.getElementById('label-color-input').style.display = 'none';
 }
 
 async function deleteActiveLabel() {
@@ -781,6 +852,7 @@ document.addEventListener('DOMContentLoaded', () => {
   rebuildLabelSelect();
   document.getElementById('active-label-select').addEventListener('change', function() {
     activeLabelText = this.value;
+    document.getElementById('label-edit-btn').style.display = activeLabelText ? 'block' : 'none';
     document.getElementById('label-delete-btn').style.display = activeLabelText ? 'block' : 'none';
   });
   document.getElementById('new-label-input').addEventListener('keydown', function(e) {

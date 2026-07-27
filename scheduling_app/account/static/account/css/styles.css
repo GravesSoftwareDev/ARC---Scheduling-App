@@ -1736,6 +1736,7 @@ a:hover {
     border-radius: 3px;
     flex-shrink: 0;
 }
+.sb2-label-pill-edit,
 .sb2-label-pill-del {
     flex-shrink: 0;
     padding: 4px 7px;
@@ -1746,7 +1747,44 @@ a:hover {
     border-radius: 4px;
     cursor: pointer;
 }
+.sb2-label-pill-edit:hover { color: #fff; background: var(--primary-color); }
 .sb2-label-pill-del:hover { color: #fff; background: #c0392b; }
+
+/* Inline label edit row — replaces the pill/edit/delete row for the label
+   currently being renamed/recolored. */
+.sb2-label-pill-row-editing {
+    align-items: center;
+}
+.sb2-label-edit-color {
+    flex-shrink: 0;
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    cursor: pointer;
+}
+.sb2-label-edit-name {
+    flex: 1;
+    min-width: 0;
+    padding: 5px 8px;
+    font-size: 12px;
+    border: 1px solid var(--primary-color);
+    border-radius: 6px;
+}
+.sb2-label-edit-save,
+.sb2-label-edit-cancel {
+    flex-shrink: 0;
+    padding: 4px 7px;
+    font-size: 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+.sb2-label-edit-save { background: #2ecc71; color: #fff; }
+.sb2-label-edit-save:hover { background: #27ae60; }
+.sb2-label-edit-cancel { background: none; color: #aaa; }
+.sb2-label-edit-cancel:hover { color: #fff; background: #c0392b; }
 .sb2-no-labels {
     font-size: 12px;
     color: #aaa;

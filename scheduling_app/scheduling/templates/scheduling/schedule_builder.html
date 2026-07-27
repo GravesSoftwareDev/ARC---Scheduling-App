@@ -277,6 +277,7 @@ const LEAD_IN_SLOT_KEY     = '{{ grid.0.slot_key|default:"" }}';
 const SCHEDULE_PK          = '{{ active_schedule_pk }}';
 const LABELS_URL_TPL       = '{% url "scheduling:schedule_labels" schedule_pk=0 %}';
 const LABEL_DELETE_URL_TPL = '{% url "scheduling:delete_shift_label" label_pk=0 %}';
+const LABEL_EDIT_URL_TPL   = '{% url "scheduling:edit_shift_label" label_pk=0 %}';
 const SAVE_DAY_URL         = '{% url "scheduling:save_schedule_day" %}';
 const SAVE_AS_DEFAULT_URL  = '{% url "scheduling:save_week_as_default" %}';
 const WEEK_START_ISO       = '{{ week_start|date:"Y-m-d" }}';
@@ -288,6 +289,7 @@ const PARTTIME_MAX = 19.5;
 
 let activeEmpPks   = new Set();
 let activeLabelNames = new Set();
+let editingLabelPk = null;
 let activeSchedulePk = '{{ active_schedule_pk }}';
 let drawMode  = 'draw';
 let viewMode = 'week';
@@ -952,6 +954,43 @@ function rebuildLabelPicker() {
     const row = document.createElement('div');
     row.className = 'sb2-label-pill-row';
 
+    if (editingLabelPk === lbl.pk) {
+      row.classList.add('sb2-label-pill-row-editing');
+
+      const colorInp = document.createElement('input');
+      colorInp.type = 'color';
+      colorInp.className = 'sb2-label-edit-color';
+      colorInp.value = lbl.color;
+
+      const nameInp = document.createElement('input');
+      nameInp.type = 'text';
+      nameInp.className = 'sb2-label-edit-name';
+      nameInp.value = lbl.name;
+      nameInp.addEventListener('keydown', e => {
+        if (e.key === 'Enter') { e.preventDefault(); saveEditLabel(lbl.pk, nameInp.value, colorInp.value); }
+        if (e.key === 'Escape') { e.preventDefault(); cancelEditLabel(); }
+      });
+
+      const save = document.createElement('button');
+      save.type = 'button';
+      save.className = 'sb2-label-edit-save';
+      save.title = 'Save';
+      save.textContent = '✓';
+      save.addEventListener('click', () => saveEditLabel(lbl.pk, nameInp.value, colorInp.value));
+
+      const cancel = document.createElement('button');
+      cancel.type = 'button';
+      cancel.className = 'sb2-label-edit-cancel';
+      cancel.title = 'Cancel';
+      cancel.textContent = '✕';
+      cancel.addEventListener('click', () => cancelEditLabel());
+
+      row.append(colorInp, nameInp, save, cancel);
+      list.appendChild(row);
+      requestAnimationFrame(() => { nameInp.focus(); nameInp.select(); });
+      return;
+    }
+
     const pill = document.createElement('button');
     pill.type = 'button';
     pill.className = 'sb2-label-pill';
@@ -966,6 +1005,14 @@ function rebuildLabelPicker() {
     pill.append(swatch, name);
     pill.addEventListener('click', (e) => toggleActiveLabel(lbl.name, e));
     row.appendChild(pill);
+
+    const edit = document.createElement('button');
+    edit.type = 'button';
+    edit.className = 'sb2-label-pill-edit';
+    edit.title = 'Edit this label';
+    edit.textContent = '✎';
+    edit.addEventListener('click', () => { editingLabelPk = lbl.pk; rebuildLabelPicker(); });
+    row.appendChild(edit);
 
     const del = document.createElement('button');
     del.type = 'button';
@@ -1045,6 +1092,54 @@ async function deleteLabel(pk, name) {
         const nc = getNextCell(cell); if (nc) renderCell(nc);
       }
     });
+  } catch (e) { alert('Network error'); }
+}
+
+function cancelEditLabel() {
+  editingLabelPk = null;
+  rebuildLabelPicker();
+}
+
+async function saveEditLabel(pk, name, color) {
+  name = name.trim();
+  if (!name) { alert('Name required'); return; }
+  try {
+    const resp = await fetch(LABEL_EDIT_URL_TPL.replace('/0/', `/${pk}/`), {
+      method: 'PATCH',
+      headers: {'Content-Type': 'application/json', 'X-CSRFToken': getCsrf()},
+      body: JSON.stringify({name, color}),
+    });
+    const data = await resp.json();
+    if (!resp.ok) { alert(data.error || 'Failed to update label'); return; }
+
+    const oldName = data.old_name;
+    const lbl = scheduleLabels.find(l => l.pk === pk);
+    if (lbl) { lbl.name = data.name; lbl.color = data.color; }
+    scheduleLabels.sort((a, b) => a.name.localeCompare(b.name));
+
+    if (activeLabelNames.has(oldName)) {
+      activeLabelNames.delete(oldName);
+      activeLabelNames.add(data.name);
+    }
+
+    // Cells store labels as name strings, not pks, so a rename has to be
+    // propagated to every cell carrying the old name. A pure color change
+    // needs no cell update — getLabelColor() looks the color up by name at
+    // render time — but the cells still need repainting to show it.
+    document.querySelectorAll('.sb2-cell').forEach(cell => {
+      if (!cell._labels) return;
+      let changed = false;
+      for (const names of cell._labels.values()) {
+        if (names.has(oldName)) {
+          if (oldName !== data.name) { names.delete(oldName); names.add(data.name); }
+          changed = true;
+        }
+      }
+      if (changed) renderCell(cell);
+    });
+
+    editingLabelPk = null;
+    rebuildLabelPicker();
   } catch (e) { alert('Network error'); }
 }
 

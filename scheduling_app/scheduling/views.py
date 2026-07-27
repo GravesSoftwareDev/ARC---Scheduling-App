@@ -995,6 +995,28 @@ def delete_shift_label(request, label_pk):
 
 @login_required
 @user_passes_test(_is_scheduler_or_admin)
+@require_http_methods(['PATCH'])
+def edit_shift_label(request, label_pk):
+    """PATCH: rename a position label and/or change its color."""
+    label = get_object_or_404(ShiftLabel, pk=label_pk)
+    data = json.loads(request.body)
+    name = data.get('name', '').strip()
+    color = data.get('color', '').strip()
+    if not name:
+        return JsonResponse({'error': 'Name required'}, status=400)
+    if ShiftLabel.objects.filter(schedule=label.schedule, name=name).exclude(pk=label.pk).exists():
+        return JsonResponse({'error': 'A label with that name already exists'}, status=409)
+
+    old_name = label.name
+    label.name = name
+    if color:
+        label.color = color
+    label.save()
+    return JsonResponse({'pk': label.pk, 'name': label.name, 'color': label.color, 'old_name': old_name})
+
+
+@login_required
+@user_passes_test(_is_scheduler_or_admin)
 @require_http_methods(['POST'])
 def save_schedule_day(request):
     """Save/rebuild schedule entries for a single day. Called via AJAX."""
