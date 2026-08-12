@@ -1136,9 +1136,10 @@ def export_teams_shifts(request):
         # Part-time employees are no longer blocked from being over-scheduled
         # while drawing (their sidebar pill just flags fuchsia instead) — the
         # weekly cap is enforced here instead, at the point the schedule
-        # actually leaves the building. Checked per calendar week across ALL
-        # of the employee's schedules, not just the ones being exported,
-        # since the cap is a total-hours-per-week limit, not a per-schedule one.
+        # actually leaves the building. Checked per calendar week, scoped to
+        # the schedule(s) actually being exported — a scheduler exporting one
+        # subject shouldn't be blocked by an overage on a schedule they don't
+        # even manage.
         from account.models import Employee
         parttime_pks = set(
             Employee.objects.filter(part_time=True, is_active=True).values_list('pk', flat=True)
@@ -1152,6 +1153,7 @@ def export_teams_shifts(request):
                 hours_by_emp = {}
                 week_entries = ScheduleEntry.objects.filter(
                     date__gte=week_cursor, date__lte=week_end, user_id__in=parttime_pks,
+                    schedule_id__in=schedule_pks,
                 ).select_related('user')
                 for entry in week_entries:
                     dur_minutes = (
