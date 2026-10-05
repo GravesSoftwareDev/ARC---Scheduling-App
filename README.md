@@ -121,7 +121,7 @@ Custom user model (`AUTH_USER_MODEL`), extends Django's `AbstractUser` (so it ha
 | `is_admin` | **Custom, app-level admin flag.** Not the same as `is_superuser`/`is_staff`. Gates all admin-only screens in this app. See §7 — this is not set by `createsuperuser`. |
 | `part_time` | Whether the employee is subject to the 19.5 hr/week part-time cap enforced by the schedule builder. |
 | `desired_weekly_hours`, `wants_lunch_break` | Preferences the employee sets themselves; shown to schedulers while building the schedule. |
-| `birthdate` | Stored, currently informational only (no age-based logic uses it). |
+| `birth_month`, `birth_day` | Birthday as month + day only — the year is intentionally not stored. Informational only. `birthday_display` formats it (e.g. "February 6"). |
 | `availability_override_until` | If set to a future date, this employee can edit their availability even while the global window is closed (see `AvailabilityWindow` below). |
 
 ### SecuritySettings (`account.SecuritySettings`)

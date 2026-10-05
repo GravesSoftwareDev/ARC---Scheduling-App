@@ -10,14 +10,14 @@ class EmployeeAdmin(UserAdmin):
     # it are the app's own Employee List → Edit screen, or the Django shell
     # (see README.md "Bootstrapping the first admin user").
     fieldsets = UserAdmin.fieldsets + (
-        ('Employee Details', {'fields': ('role', 'birthdate', 'part_time', 'desired_weekly_hours', 'wants_lunch_break')}),
+        ('Employee Details', {'fields': ('role', 'birth_month', 'birth_day', 'part_time', 'desired_weekly_hours', 'wants_lunch_break')}),
     )
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
-            'fields': ('username', 'password1', 'password2', 'first_name', 'last_name', 'email', 'role', 'birthdate', 'part_time'),
+            'fields': ('username', 'password1', 'password2', 'first_name', 'last_name', 'email', 'role', 'birth_month', 'birth_day', 'part_time'),
         }),
     )
-    list_display = ['id', 'username', 'first_name', 'last_name', 'role', 'birthdate', 'part_time']
+    list_display = ['id', 'username', 'first_name', 'last_name', 'role', 'birthday_display', 'part_time']
     list_filter = ['role', 'part_time']
     search_fields = ['username', 'first_name', 'last_name', 'email']

@@ -36,10 +36,17 @@
       {% if form.email.errors %}<p class="reg-error">{{ form.email.errors|join:" " }}</p>{% endif %}
     </div>
 
-    <div class="reg-field">
-      <label class="reg-label" for="{{ form.birthdate.id_for_label }}">Birthdate</label>
-      {{ form.birthdate }}
-      {% if form.birthdate.errors %}<p class="reg-error">{{ form.birthdate.errors|join:" " }}</p>{% endif %}
+    <div class="reg-row">
+      <div class="reg-field">
+        <label class="reg-label" for="{{ form.birth_month.id_for_label }}">Birthday month</label>
+        {{ form.birth_month }}
+        {% if form.birth_month.errors %}<p class="reg-error">{{ form.birth_month.errors|join:" " }}</p>{% endif %}
+      </div>
+      <div class="reg-field">
+        <label class="reg-label" for="{{ form.birth_day.id_for_label }}">Birthday day</label>
+        {{ form.birth_day }}
+        {% if form.birth_day.errors %}<p class="reg-error">{{ form.birth_day.errors|join:" " }}</p>{% endif %}
+      </div>
     </div>
 
     <div class="reg-field">

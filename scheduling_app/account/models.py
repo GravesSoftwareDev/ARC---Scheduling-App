@@ -1,6 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
-from django.core.validators import MinValueValidator
+from django.core.exceptions import ValidationError
+from django.core.validators import MinValueValidator, MaxValueValidator
+import calendar
 import datetime
 
 class Employee(AbstractUser):
@@ -10,7 +12,16 @@ class Employee(AbstractUser):
         TUTOR = 'TUTOR', 'Tutor'
         LIBRARY = 'LIBRARY','Library Staff'
 
-    birthdate = models.DateField(null=True, blank=True)
+    # Birthday is stored as month + day only — we deliberately don't keep
+    # the year. Both are null when no birthday is on file.
+    birth_month = models.PositiveSmallIntegerField(
+        null=True, blank=True,
+        choices=[(m, calendar.month_name[m]) for m in range(1, 13)],
+    )
+    birth_day = models.PositiveSmallIntegerField(
+        null=True, blank=True,
+        validators=[MinValueValidator(1), MaxValueValidator(31)],
+    )
     part_time = models.BooleanField(default=True)
     role = models.CharField(
         max_length=20,
@@ -29,6 +40,26 @@ class Employee(AbstractUser):
     # If set to a future date, this employee can edit their own availability
     # even while the global AvailabilityWindow is closed to everyone else.
     availability_override_until = models.DateField(null=True, blank=True)
+
+    def clean(self):
+        super().clean()
+        if (self.birth_month is None) != (self.birth_day is None):
+            missing = 'birth_month' if self.birth_month is None else 'birth_day'
+            raise ValidationError({missing: 'Enter both a birth month and day, or neither.'})
+        if self.birth_month and self.birth_day:
+            # 2000 is a leap year, so Feb 29 is accepted.
+            max_day = calendar.monthrange(2000, self.birth_month)[1]
+            if self.birth_day > max_day:
+                raise ValidationError({
+                    'birth_day': f'{calendar.month_name[self.birth_month]} only has {max_day} days.'
+                })
+
+    @property
+    def birthday_display(self):
+        """e.g. 'February 6', or '' if no birthday is on file."""
+        if not (self.birth_month and self.birth_day):
+            return ''
+        return f'{calendar.month_name[self.birth_month]} {self.birth_day}'
 
     def has_availability_override(self):
         return bool(

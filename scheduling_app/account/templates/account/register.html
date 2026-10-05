@@ -36,11 +36,18 @@
       </div>
     </div>
 
-    <!-- Birthdate -->
-    <div class="reg-field">
-      <label class="reg-label" for="{{ user_form.birthdate.id_for_label }}">Birthdate</label>
-      {{ user_form.birthdate }}
-      {% if user_form.birthdate.errors %}<p class="reg-error">{{ user_form.birthdate.errors|join:" " }}</p>{% endif %}
+    <!-- Birthday (month / day only, no year) -->
+    <div class="reg-row">
+      <div class="reg-field">
+        <label class="reg-label" for="{{ user_form.birth_month.id_for_label }}">Birthday month</label>
+        {{ user_form.birth_month }}
+        {% if user_form.birth_month.errors %}<p class="reg-error">{{ user_form.birth_month.errors|join:" " }}</p>{% endif %}
+      </div>
+      <div class="reg-field">
+        <label class="reg-label" for="{{ user_form.birth_day.id_for_label }}">Birthday day</label>
+        {{ user_form.birth_day }}
+        {% if user_form.birth_day.errors %}<p class="reg-error">{{ user_form.birth_day.errors|join:" " }}</p>{% endif %}
+      </div>
     </div>
 
     <!-- Part Time -->
