@@ -10,7 +10,8 @@ import json
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 
-from .models import WeeklyAvailability, OperatingHours, DayOfWeek, ScheduleEntry, DateOperatingHours, Schedule, ShiftLabel, LABEL_PALETTE, WeeklySchedule, AvailabilityWindow
+from .models import WeeklyAvailability, OperatingHours, DayOfWeek, ScheduleEntry, DateOperatingHours, Schedule, ShiftLabel, LABEL_PALETTE, WeeklySchedule, AvailabilityWindow, EmployeeColor, hex_color_validator
+from django.core.exceptions import ValidationError
 from .forms import WeeklyHoursForm, DateOperatingHoursForm, EmployeePreferencesForm, AvailabilityWindowForm
 from . import hours
 
@@ -37,6 +38,20 @@ EMPLOYEE_PALETTE = [
 
 
 # ── helpers ──────────────────────────────────────────────────────────────────
+
+def _employee_colors(schedule, employees):
+    """({emp_pk: color}, {pks with a saved color}) for `employees` (in name
+    order) on `schedule`. Saved EmployeeColor rows win; everyone else gets
+    EMPLOYEE_PALETTE by position, as before colors were editable."""
+    saved = dict(
+        EmployeeColor.objects.filter(schedule=schedule, user__in=employees)
+        .values_list('user_id', 'color')
+    ) if schedule else {}
+    colors = {
+        e.pk: saved.get(e.pk, EMPLOYEE_PALETTE[i % len(EMPLOYEE_PALETTE)])
+        for i, e in enumerate(employees)
+    }
+    return colors, set(saved)
 
 def _slot_key(t):
     return f"{t.hour:02d}_{t.minute:02d}"
@@ -411,11 +426,7 @@ def schedule_builder(request):
     else:
         visible_employees = []
 
-    # Assign unique colors within this schedule (by name order)
-    employee_colors = {
-        e.pk: EMPLOYEE_PALETTE[i % len(EMPLOYEE_PALETTE)]
-        for i, e in enumerate(visible_employees)
-    }
+    employee_colors, custom_color_pks = _employee_colors(active_schedule, visible_employees)
 
     # Desired weekly hours + lunch break preference, set by each employee on their availability page
     employee_desired_hours = {
@@ -715,6 +726,7 @@ def schedule_builder(request):
         'visible_employees': visible_employees,
         'employee_colors': employee_colors,
         'employee_colors_json': json.dumps(employee_colors),
+        'custom_color_pks_json': json.dumps([str(pk) for pk in custom_color_pks]),
         'active_schedule': active_schedule,
         'active_schedule_pk': schedule_pk_param,
         'employee_availability_json': json.dumps(avail_data),
@@ -784,10 +796,7 @@ def default_schedule_builder(request):
     else:
         visible_employees = []
 
-    employee_colors = {
-        e.pk: EMPLOYEE_PALETTE[i % len(EMPLOYEE_PALETTE)]
-        for i, e in enumerate(visible_employees)
-    }
+    employee_colors, custom_color_pks = _employee_colors(active_schedule, visible_employees)
 
     employee_desired_hours = {
         str(e.pk): e.desired_weekly_hours for e in visible_employees
@@ -1019,6 +1028,7 @@ def default_schedule_builder(request):
         'visible_employees': visible_employees,
         'employee_colors': employee_colors,
         'employee_colors_json': json.dumps(employee_colors),
+        'custom_color_pks_json': json.dumps([str(pk) for pk in custom_color_pks]),
         'active_schedule': active_schedule,
         'active_schedule_pk': schedule_pk_param,
         'employee_availability_json': json.dumps(avail_data),
@@ -1075,6 +1085,42 @@ def delete_shift_label(request, label_pk):
     label = get_object_or_404(ShiftLabel, pk=label_pk)
     label.delete()
     return JsonResponse({'ok': True})
+
+
+@login_required
+@user_passes_test(_is_scheduler_or_admin)
+@require_http_methods(['POST'])
+def employee_color(request, schedule_pk):
+    """POST {emp_pk, color}: remember a scheduler-chosen color for one employee
+    on this schedule. An empty color goes back to the default palette color.
+    Returns the employee's resulting color."""
+    schedule = get_object_or_404(Schedule, pk=schedule_pk)
+    if not (request.user.is_admin or request.user.scheduler_of.filter(pk=schedule.pk).exists()):
+        return JsonResponse({'error': 'Forbidden'}, status=403)
+
+    try:
+        data = json.loads(request.body)
+    except ValueError:
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+    employee = schedule.members.filter(pk=data.get('emp_pk')).first()
+    if not employee:
+        return JsonResponse({'error': 'Not a member of this schedule'}, status=400)
+
+    color = (data.get('color') or '').strip()
+    if color:
+        try:
+            hex_color_validator(color)
+        except ValidationError:
+            return JsonResponse({'error': 'Invalid color'}, status=400)
+        EmployeeColor.objects.update_or_create(
+            schedule=schedule, user=employee, defaults={'color': color.upper()},
+        )
+    else:
+        EmployeeColor.objects.filter(schedule=schedule, user=employee).delete()
+
+    members = list(schedule.members.distinct().order_by('last_name', 'first_name'))
+    colors, custom = _employee_colors(schedule, members)
+    return JsonResponse({'color': colors[employee.pk], 'custom': employee.pk in custom})
 
 
 @login_required

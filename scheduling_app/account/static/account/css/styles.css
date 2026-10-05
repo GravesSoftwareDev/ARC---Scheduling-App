@@ -1798,33 +1798,62 @@ a:hover {
     border-color: #c62828;
 }
 
-/* Color key */
-.sb2-key-section { background: var(--light-color); }
-.sb2-key-list { display: flex; flex-direction: column; gap: 5px; }
-.sb2-key-item {
+/* Color button (above Draw/Erase): a full-width button with a small square
+   swatch; an invisible native color picker covers it so a click opens the
+   picker. Enabled once exactly one employee is selected. */
+.sb2-color-row {
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: 12px;
-    color: var(--text-color);
-    padding: 3px 4px;
-    border-radius: 4px;
-    transition: background 0.12s;
+    margin-bottom: 6px;
 }
-.sb2-key-item.sb2-key-active { background: white; font-weight: 700; }
-.sb2-key-item.sb2-key-item-warning {
-    background: #C0392B;
-    border-radius: 4px;
+.sb2-color-btn {
+    position: relative;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 8px;
+    padding: 6px 10px;
 }
-.sb2-key-item.sb2-key-item-warning .sb2-key-name { color: #fff; font-weight: 700; }
-.sb2-key-item.sb2-key-item-warning .sb2-key-swatch { box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.7); }
-.sb2-key-swatch {
-    width: 12px;
-    height: 12px;
+.sb2-color-btn:hover:not(.sb2-color-btn-disabled),
+.sb2-color-btn:focus-within {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+.sb2-color-btn-disabled { opacity: 0.5; cursor: not-allowed; }
+.sb2-color-btn-swatch {
+    width: 14px;
+    height: 14px;
     border-radius: 3px;
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.2);
+    background: repeating-linear-gradient(45deg, #ddd 0 3px, #f5f5f5 3px 6px);
     flex-shrink: 0;
 }
-.sb2-key-name { font-size: 12px; }
+.sb2-color-input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+    border: 0;
+    padding: 0;
+    margin: 0;
+}
+.sb2-color-input:disabled { cursor: not-allowed; }
+.sb2-color-reset-link {
+    border: 0;
+    background: none;
+    padding: 0;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--primary-color);
+    text-decoration: underline;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+.sb2-color-reset-link[hidden] { display: none; }
 
 /* Grid wrap */
 .sb2-grid-wrap { flex: 1; min-width: 0; overflow: hidden; }

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import WeeklyAvailability, OperatingHours, WeeklySchedule, ScheduleEntry, DateOperatingHours, Schedule
+from .models import WeeklyAvailability, OperatingHours, WeeklySchedule, ScheduleEntry, DateOperatingHours, Schedule, EmployeeColor
 
 
 @admin.register(WeeklyAvailability)
@@ -43,3 +43,8 @@ class ScheduleAdmin(admin.ModelAdmin):
     list_display = ['name']
     search_fields = ['name']
     filter_horizontal = ['schedulers', 'members']
+
+@admin.register(EmployeeColor)
+class EmployeeColorAdmin(admin.ModelAdmin):
+    list_display = ['schedule', 'user', 'color']
+    list_filter = ['schedule']

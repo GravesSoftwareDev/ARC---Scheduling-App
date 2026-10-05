@@ -141,6 +141,21 @@
       <!-- Draw / Erase -->
       <div class="sb2-sidebar-section">
         <div class="sb2-sidebar-label">Mode</div>
+        <!-- Color: edits the selected employee's color on this schedule (saved immediately) -->
+        <div class="sb2-color-row">
+          <label id="emp-color-btn" class="sb2-mode-btn sb2-color-btn sb2-color-btn-disabled"
+                 title="Select one employee to change their color">
+            <span id="emp-color-swatch" class="sb2-color-btn-swatch"></span>
+            Change color
+            <input type="color" id="emp-color-input" class="sb2-color-input" disabled
+                   aria-label="Selected employee's color"
+                   oninput="previewSelectedColor(this.value)"
+                   onchange="saveSelectedColor(this.value)">
+          </label>
+          <button type="button" id="emp-color-reset" class="sb2-color-reset-link" hidden
+                  title="Reset to default color" aria-label="Reset to default color"
+                  onclick="resetSelectedColor()">Reset</button>
+        </div>
         <div class="sb2-mode-btns">
           <button type="button" id="mode-draw"  class="sb2-mode-btn sb2-mode-active" onclick="setMode('draw')">✏ Draw</button>
           <button type="button" id="mode-erase" class="sb2-mode-btn"                 onclick="setMode('erase')">✕ Erase</button>
@@ -157,26 +172,6 @@
         <button type="button" class="sb2-override-btn sb2-clear-all-btn" onclick="clearAll()" style="margin-top:6px;background:#c0392b;color:#fff;border-color:#c0392b;">
           ✕ Clear All
         </button>
-      </div>
-
-      <!-- Label key -->
-      <div class="sb2-sidebar-section sb2-key-section" id="label-key-section" style="display:none;">
-        <div class="sb2-sidebar-label">Label Key</div>
-        <div class="sb2-key-list" id="label-key-list"></div>
-      </div>
-
-      <!-- Color key -->
-      <div class="sb2-sidebar-section sb2-key-section">
-        <div class="sb2-sidebar-label">Color Key</div>
-        <div class="sb2-key-list">
-          {% for emp in visible_employees %}
-          <div class="sb2-key-item {% if low_availability_flags|dict_lookup:emp.pk %}sb2-key-item-warning{% endif %}" data-emp-key="{{ emp.pk }}"
-               {% if low_availability_flags|dict_lookup:emp.pk %}title="Has not marked the minimum {{ min_availability_hours }} hours of availability"{% endif %}>
-            <span class="sb2-key-swatch" style="background:{{ employee_colors|dict_lookup:emp.pk }};"></span>
-            <span class="sb2-key-name">{{ emp.first_name }} {{ emp.last_name }}</span>
-          </div>
-          {% endfor %}
-        </div>
       </div>
 
     </div>
@@ -396,9 +391,6 @@ function refreshEmployeeSelectionUI() {
   document.querySelectorAll('.sb2-emp-pill').forEach(p => {
     p.classList.toggle('sb2-emp-active', activeEmpPks.has(p.dataset.emp));
   });
-  document.querySelectorAll('.sb2-key-item').forEach(k => {
-    k.classList.toggle('sb2-key-active', activeEmpPks.has(k.dataset.empKey));
-  });
 
   const label = document.getElementById('active-emp-label');
   if (activeEmpPks.size === 0) {
@@ -415,6 +407,7 @@ function refreshEmployeeSelectionUI() {
   applyAvailabilityHighlight();
   updateHoursCounter();
   updateEmpPreferences();
+  refreshColorButton();
 }
 
 function clearEmployee() {
@@ -935,6 +928,87 @@ function paintCell(cell) {
 
 // ── Position label system (server-backed, shared across all employees) ────────
 
+// ── Editable employee colors (remembered per schedule, server-side) ────────
+// The Color button next to Draw/Erase edits the one selected employee.
+const EMP_COLOR_URL_TPL = '{% url "scheduling:employee_color" schedule_pk=0 %}';
+const customColorPks = new Set(JSON.parse('{{ custom_color_pks_json|escapejs }}'));
+
+function selectedColorEmp() {
+  return activeEmpPks.size === 1 ? Array.from(activeEmpPks)[0] : null;
+}
+
+function refreshColorButton() {
+  const pk = selectedColorEmp();
+  const btn = document.getElementById('emp-color-btn');
+  const input = document.getElementById('emp-color-input');
+  input.disabled = !pk;
+  btn.classList.toggle('sb2-color-btn-disabled', !pk);
+  document.getElementById('emp-color-swatch').style.background = pk ? employeeColors[pk] : '';
+  if (pk) {
+    input.value = employeeColors[pk].toLowerCase();
+    const pill = document.querySelector(`.sb2-emp-pill[data-emp="${pk}"]`);
+    btn.title = `Change ${pill ? pill.textContent.trim() : 'this employee'}'s color on this schedule`;
+  } else {
+    btn.title = 'Select one employee to change their color';
+  }
+  document.getElementById('emp-color-reset').hidden = !(pk && customColorPks.has(pk));
+}
+
+// Recolor an employee everywhere on the page (sidebar pill + painted cells).
+function applyEmployeeColor(empPk, color) {
+  empPk = String(empPk);
+  employeeColors[empPk] = color;
+  document.querySelectorAll(`.sb2-emp-pill[data-emp="${empPk}"]`).forEach(pill => {
+    pill.style.setProperty('--emp-color', color);
+    const swatch = pill.querySelector('.sb2-emp-swatch');
+    if (swatch) swatch.style.background = color;
+  });
+  document.querySelectorAll('.sb2-cell').forEach(cell => {
+    if (cell._emps && cell._emps.has(empPk)) {
+      cell._emps.set(empPk, color);
+      renderCell(cell);
+    }
+  });
+  if (selectedColorEmp() === empPk) {
+    document.getElementById('emp-color-swatch').style.background = color;
+  }
+  updateHoursCounter();
+}
+
+// Save (or, with an empty color, reset to the default palette color).
+// Saved immediately — independent of the schedule's own Save button.
+async function saveEmployeeColor(empPk, color) {
+  try {
+    const resp = await fetch(EMP_COLOR_URL_TPL.replace('/0/', `/${SCHEDULE_PK}/`), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrf() },
+      body: JSON.stringify({ emp_pk: empPk, color }),
+    });
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.error || 'Save failed');
+    if (data.custom) customColorPks.add(String(empPk)); else customColorPks.delete(String(empPk));
+    applyEmployeeColor(empPk, data.color);
+    refreshColorButton();
+  } catch (err) {
+    alert(`Couldn't save the color: ${err.message}`);
+  }
+}
+
+function previewSelectedColor(color) {
+  const pk = selectedColorEmp();
+  if (pk) applyEmployeeColor(pk, color);
+}
+
+function saveSelectedColor(color) {
+  const pk = selectedColorEmp();
+  if (pk) saveEmployeeColor(pk, color);
+}
+
+function resetSelectedColor() {
+  const pk = selectedColorEmp();
+  if (pk) saveEmployeeColor(pk, '');
+}
+
 function getCsrf() {
   return document.querySelector('[name=csrfmiddlewaretoken]').value;
 }
@@ -942,27 +1016,6 @@ function getCsrf() {
 function getLabelColor(labelName) {
   const found = scheduleLabels.find(l => l.name === labelName);
   return found ? found.color : '#aaaaaa';
-}
-
-function renderLabelKey() {
-  const section = document.getElementById('label-key-section');
-  const list = document.getElementById('label-key-list');
-  list.innerHTML = '';
-  if (!scheduleLabels.length) { section.style.display = 'none'; return; }
-  section.style.display = 'block';
-  scheduleLabels.forEach(lbl => {
-    const item = document.createElement('div');
-    item.className = 'sb2-key-item';
-    const swatch = document.createElement('span');
-    swatch.className = 'sb2-key-swatch';
-    swatch.style.cssText = 'border-radius:2px;border:1px solid rgba(0,0,0,0.15);';
-    swatch.style.background = lbl.color;
-    const name = document.createElement('span');
-    name.className = 'sb2-key-name';
-    name.textContent = lbl.name;
-    item.append(swatch, name);
-    list.appendChild(item);
-  });
 }
 
 // Click a pill to toggle that label in/out of the active multi-select set —
@@ -1047,7 +1100,6 @@ async function confirmNewLabel() {
     document.getElementById('new-label-wrap').style.display = 'none';
     activeLabelNames.add(data.name);
     rebuildLabelPicker();
-    renderLabelKey();
   } catch (e) { alert('Network error'); }
 }
 
@@ -1068,7 +1120,6 @@ async function deleteLabel(pk, name) {
     if (idx !== -1) scheduleLabels.splice(idx, 1);
     activeLabelNames.delete(name);
     rebuildLabelPicker();
-    renderLabelKey();
     // Strip the deleted label from every cell (leaving any other labels that
     // employee carries in that slot intact) and re-render.
     document.querySelectorAll('.sb2-cell').forEach(cell => {
@@ -1096,7 +1147,6 @@ document.addEventListener('DOMContentLoaded', () => {
     p.classList.toggle('sb2-day-pill-active', p.dataset.date === activeDayIso);
   });
   rebuildLabelPicker();
-  renderLabelKey();
   document.getElementById('new-label-input').addEventListener('keydown', function(e) {
     if (e.key === 'Enter') { e.preventDefault(); confirmNewLabel(); }
     if (e.key === 'Escape') cancelNewLabel();

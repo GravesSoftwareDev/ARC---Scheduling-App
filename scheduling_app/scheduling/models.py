@@ -2,6 +2,7 @@ from django.db import models
 from django.db.models import Case, IntegerField, Value, When
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.core.validators import RegexValidator
 import datetime
 
 from account.models import Employee
@@ -280,6 +281,32 @@ LABEL_PALETTE = [
     '#FF453A',  # vermillion
     '#A0522D',  # sienna
 ]
+
+
+hex_color_validator = RegexValidator(r'^#[0-9A-Fa-f]{6}$', 'Enter a color like #1A2B3C.')
+
+
+class EmployeeColor(models.Model):
+    """A scheduler-chosen color for one employee on one schedule, shared by
+    everyone who builds that schedule. Employees without a row fall back to
+    EMPLOYEE_PALETTE (views.py) by name order."""
+    schedule = models.ForeignKey(
+        'Schedule',
+        on_delete=models.CASCADE,
+        related_name='employee_colors',
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='schedule_colors',
+    )
+    color = models.CharField(max_length=7, validators=[hex_color_validator])
+
+    class Meta:
+        unique_together = ['schedule', 'user']
+
+    def __str__(self):
+        return f"{self.schedule} – {self.user}: {self.color}"
 
 
 class ShiftLabel(models.Model):

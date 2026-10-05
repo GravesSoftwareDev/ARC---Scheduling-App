@@ -165,6 +165,9 @@ An **actual dated shift**: one employee, one schedule, one specific date, start/
 ### ShiftLabel (`scheduling.ShiftLabel`)
 A named position/role tag (e.g. "Front Desk", "WC") scoped to one `Schedule`, with a color, applied to individual painted cells in the builder. Shared across everyone using that schedule — created/deleted inline from the builder sidebar.
 
+### EmployeeColor (`scheduling.EmployeeColor`)
+A scheduler-chosen color for one employee on one schedule, shared by everyone who builds that schedule (live and default-week builders). Set by selecting one employee and clicking **Color** (next to Draw/Erase); saved immediately via `scheduling:employee_color`, and **Reset to default color** deletes it. Employees without one fall back to `EMPLOYEE_PALETTE` (`scheduling/views.py`) by name order.
+
 ### Availability / part-time cap constants (not DB fields, worth knowing)
 - `scheduling/views.py`: `MIN_AVAILABILITY_HOURS = 10` — employees marking fewer than 10 hrs/week of availability are flagged red in the builder sidebar as "not schedulable."
 - Builder JS: `PARTTIME_MAX = 19.5` hrs/week is the hard cap the builder enforces for anyone with `part_time=True`.
