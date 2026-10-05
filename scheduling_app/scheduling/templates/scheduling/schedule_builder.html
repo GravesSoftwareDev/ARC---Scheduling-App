@@ -287,11 +287,16 @@ const employeeDesiredHours = JSON.parse('{{ employee_desired_hours_json|escapejs
 const employeeWantsLunch   = JSON.parse('{{ employee_wants_lunch_json|escapejs }}');
 const scheduleLabels       = JSON.parse('{{ schedule_labels_json|escapejs }}');
 const employeeInitials     = JSON.parse('{{ employee_initials_json|escapejs }}');
-const LEAD_IN_SLOT_KEY     = '{{ grid.0.slot_key|default:"" }}';
+// empPk → date → [openMin, closeMin] for that employee's role, or null if closed
+const employeeRoleHours    = JSON.parse('{{ employee_role_hours_json|escapejs }}');
+// [[slotKey, minutes], ...] in row order. Rows are 30 min, except short
+// 15-min rows next to a quarter-hour open/close time.
+const GRID_SLOTS           = JSON.parse('{{ grid_slots_json|escapejs }}');
+const SLOT_INDEX           = Object.fromEntries(GRID_SLOTS.map(([key], i) => [key, i]));
 const SCHEDULE_PK          = '{{ active_schedule_pk }}';
 const LABELS_URL_TPL       = '{% url "scheduling:schedule_labels" schedule_pk=0 %}';
 const LABEL_DELETE_URL_TPL = '{% url "scheduling:delete_shift_label" label_pk=0 %}';
-const SAVE_DAY_URL         = '{% url "scheduling:save_schedule_day" %}';
+const SAVE_DAY_URL        = '{% url "scheduling:save_schedule_day" %}';
 const SAVE_AS_DEFAULT_URL  = '{% url "scheduling:save_week_as_default" %}';
 const WEEK_START_ISO       = '{{ week_start|date:"Y-m-d" }}';
 const TODAY_ISO            = '{{ today|date:"Y-m-d" }}';
@@ -434,11 +439,27 @@ function updateEmpPreferences() {
   panel.style.display = 'block';
 }
 
+// ── Role operating hours ──────────────────────────────────────────────────
+// The grid spans every member role's hours; each employee can only be
+// scheduled inside their own role's hours (enforced server-side too).
+function empInRoleHours(empPk, cell) {
+  const span = (employeeRoleHours[String(empPk)] || {})[cell.dataset.date];
+  if (span === undefined) return true;
+  if (span === null) return false;
+  const [h, m] = cell.dataset.slot.split('_').map(Number);
+  const slotMin = h * 60 + m;
+  return slotMin >= span[0] && slotMin < span[1];
+}
+
 // ── Availability + conflict status for one employee at one cell ────────────
 function empCellStatus(empPk, cell) {
   const dateStr = cell.dataset.date;
   const [h, m] = cell.dataset.slot.split('_').map(Number);
   const slotMin = h * 60 + m;
+
+  if (!empInRoleHours(empPk, cell)) {
+    return { roleClosed: true, conflict: false, conflictNames: [], available: false, preferred: false };
+  }
 
   const conflicts = employeeConflicts[String(empPk)] || [];
   const conflictMatches = conflicts.filter(c => {
@@ -473,11 +494,12 @@ function empCellStatus(empPk, cell) {
   return { conflict: false, conflictNames: [], available: inAvail, preferred: isPreferred };
 }
 
-// A schedule conflict always blocks painting; plain unavailability only
-// blocks when the "Override Availability" toggle is off.
+// A schedule conflict or being outside the role's operating hours always
+// blocks painting; plain unavailability only blocks when the "Override
+// Availability" toggle is off.
 function isEmpBlockedForCell(empPk, cell) {
   const status = empCellStatus(empPk, cell);
-  if (status.conflict) return true;
+  if (status.roleClosed || status.conflict) return true;
   if (overrideAvailability) return false;
   return !status.available;
 }
@@ -490,6 +512,12 @@ function applyAvailabilityHighlight() {
 
   document.querySelectorAll('.sb2-cell.sb2-in-hours').forEach(cell => {
     const statuses = pks.map(pk => ({ pk, ...empCellStatus(pk, cell) }));
+
+    if (statuses.every(s => s.roleClosed)) {
+      cell.classList.add('sb2-role-closed');
+      cell.title = 'Outside role operating hours';
+      return;
+    }
 
     const conflicted = statuses.filter(s => s.conflict);
     if (conflicted.length === statuses.length) {
@@ -524,9 +552,9 @@ function applyAvailabilityHighlight() {
 
 function clearAvailabilityHighlight() {
   document.querySelectorAll(
-    '.sb2-avail-ok, .sb2-avail-blocked, .sb2-avail-preferred, .sb2-sched-conflict, .sb2-avail-override, .sb2-avail-partial'
+    '.sb2-avail-ok, .sb2-avail-blocked, .sb2-avail-preferred, .sb2-sched-conflict, .sb2-avail-override, .sb2-avail-partial, .sb2-role-closed'
   ).forEach(c => {
-    c.classList.remove('sb2-avail-ok', 'sb2-avail-blocked', 'sb2-avail-preferred', 'sb2-sched-conflict', 'sb2-avail-override', 'sb2-avail-partial');
+    c.classList.remove('sb2-avail-ok', 'sb2-avail-blocked', 'sb2-avail-preferred', 'sb2-sched-conflict', 'sb2-avail-override', 'sb2-avail-partial', 'sb2-role-closed');
     c.style.removeProperty('--conflict-bg');
     c.style.removeProperty('--conflict-border');
     c.title = '';
@@ -582,7 +610,8 @@ function applyViewMode() {
 
 // ── Hours counter ──────────────────────────────────────────────────────────
 function _slotHours(slotKey) {
-  return slotKey === LEAD_IN_SLOT_KEY ? 0.25 : 0.5;
+  const i = SLOT_INDEX[slotKey];
+  return i === undefined ? 0 : GRID_SLOTS[i][1] / 60;
 }
 
 function calcScheduledHours(empPk) {
@@ -695,19 +724,22 @@ function showHoursLimitWarning() {
 }
 
 // ── Out-of-availability warning (always-on red outline on painted cells) ──
+// Also flags time outside an employee's role hours (e.g. shifts saved before
+// role hours changed) — that time is dropped on save.
 function updateAvailabilityWarnings() {
   document.querySelectorAll('.sb2-cell.sb2-in-hours').forEach(cell => {
     cell.classList.remove('sb2-out-of-avail');
   });
-  if (overrideAvailability || !Object.keys(employeeAvailability).length) return;
+  const checkAvail = !overrideAvailability && Object.keys(employeeAvailability).length > 0;
 
-  const [h0, m0] = [0, 0]; // unused but kept for clarity
   document.querySelectorAll('.sb2-cell.sb2-in-hours').forEach(cell => {
     if (!cell._emps || cell._emps.size === 0) return;
     const [h, m] = cell.dataset.slot.split('_').map(Number);
     const slotMin = h * 60 + m;
     const day = dateDayMap[cell.dataset.date];
     for (const empPk of cell._emps.keys()) {
+      if (!empInRoleHours(empPk, cell)) { cell.classList.add('sb2-out-of-avail'); break; }
+      if (!checkAvail) continue;
       const avail = employeeAvailability[empPk];
       const blocks = (avail && avail[day]) ? avail[day] : [];
       const inAvail = blocks.some(b => {
@@ -721,18 +753,18 @@ function updateAvailabilityWarnings() {
 }
 
 // ── Adjacent-cell helpers ─────────────────────────────────────────────────
-function _adjCell(cell, deltaMin) {
-  const [h, m] = cell.dataset.slot.split('_').map(Number);
-  const next = h * 60 + m + deltaMin;
-  if (next < 0) return null;
-  const nk = `${String(Math.floor(next / 60)).padStart(2, '0')}_${String(next % 60).padStart(2, '0')}`;
+// Neighbouring row (deltaRows = -1 / +1) in the same day/location column.
+function _adjCell(cell, deltaRows) {
+  const i = SLOT_INDEX[cell.dataset.slot] + deltaRows;
+  if (Number.isNaN(i) || i < 0 || i >= GRID_SLOTS.length) return null;
+  const nk = GRID_SLOTS[i][0];
   const loc = cell.dataset.loc;
   const oldSuffix = loc ? `_${cell.dataset.slot}_${loc}__cell` : `_${cell.dataset.slot}__cell`;
   const newSuffix = loc ? `_${nk}_${loc}__cell` : `_${nk}__cell`;
   return document.getElementById(cell.id.replace(oldSuffix, newSuffix));
 }
-const getPrevCell = cell => _adjCell(cell, -30);
-const getNextCell = cell => _adjCell(cell, +30);
+const getPrevCell = cell => _adjCell(cell, -1);
+const getNextCell = cell => _adjCell(cell, +1);
 
 // ── Cell rendering ─────────────────────────────────────────────────────────
 const LABEL_SEP = ', ';

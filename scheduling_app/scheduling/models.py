@@ -4,6 +4,8 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 import datetime
 
+from account.models import Employee
+
 
 DAY_ORDER = Case(
     When(day_of_week='MON', then=Value(0)),
@@ -120,18 +122,32 @@ class AvailabilityWindow(models.Model):
         verbose_name_plural = 'Availability Window'
     
     
-class OperatingHours(models.Model):
-    """Weekly default open/close hours, one row per weekday. A date that has
-    a matching DateOperatingHours row uses that instead (holidays, one-off
-    closures) — see DateOperatingHours below."""
+def validate_quarter_hour(t):
+    """Operating hours open/close on the quarter hour (:00, :15, :30, :45)."""
+    if t is not None and (t.minute % 15 or t.second or t.microsecond):
+        raise ValidationError("Times must be in 15-minute increments (:00, :15, :30, :45).")
 
+
+class OperatingHours(models.Model):
+    """Weekly open/close hours, one row per weekday per role. Rows with a
+    blank `role` are the defaults for every role; a role only has its own
+    rows once its hours have been changed from the defaults. A date that has
+    a DateOperatingHours row uses that instead, for every role (holidays,
+    one-off closures). Resolution order lives in scheduling/hours.py."""
+
+    role = models.CharField(
+        max_length=20,
+        choices=Employee.Role.choices,
+        blank=True,
+        default='',
+        help_text='Blank = default hours for every role.',
+    )
     day_of_week = models.CharField(
         max_length=3,
         choices=DayOfWeek.choices,
-        unique=True
     )
-    start_time = models.TimeField()
-    end_time = models.TimeField()
+    start_time = models.TimeField(validators=[validate_quarter_hour])
+    end_time = models.TimeField(validators=[validate_quarter_hour])
 
     def clean(self):
         if self.start_time and self.end_time:
@@ -139,10 +155,12 @@ class OperatingHours(models.Model):
                 raise ValidationError("Start time must be before end time.")
 
     def __str__(self):
-        return f"{self.get_day_of_week_display()}: {self.start_time.strftime('%I:%M %p')} - {self.end_time.strftime('%I:%M %p')}"
+        who = self.get_role_display() if self.role else 'Default'
+        return f"{who} – {self.get_day_of_week_display()}: {self.start_time.strftime('%I:%M %p')} - {self.end_time.strftime('%I:%M %p')}"
 
     class Meta:
-        ordering = [DAY_ORDER]
+        ordering = ['role', DAY_ORDER]
+        unique_together = ['role', 'day_of_week']
         verbose_name_plural = 'Operating Hours'
 
 class WeeklySchedule(models.Model):
@@ -283,11 +301,12 @@ class ShiftLabel(models.Model):
 
 
 class DateOperatingHours(models.Model):
-    """Date-specific operating hours override. Falls back to OperatingHours weekly defaults."""
+    """Date-specific operating hours override for every role (holidays,
+    one-off closures). Falls back to OperatingHours weekly hours."""
     date = models.DateField(unique=True)
     is_closed = models.BooleanField(default=False)
-    start_time = models.TimeField(null=True, blank=True)
-    end_time = models.TimeField(null=True, blank=True)
+    start_time = models.TimeField(null=True, blank=True, validators=[validate_quarter_hour])
+    end_time = models.TimeField(null=True, blank=True, validators=[validate_quarter_hour])
     note = models.CharField(max_length=200, blank=True)
 
     def clean(self):

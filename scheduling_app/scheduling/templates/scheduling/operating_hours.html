@@ -7,54 +7,72 @@
   <div class="oh-page-header">
     <div>
       <h1 class="oh-title">Operating Hours</h1>
-      <p class="oh-subtitle">Set default weekly hours and add date-specific overrides.</p>
+      <p class="oh-subtitle">Set weekly hours (per role if needed) and add date-specific overrides.</p>
     </div>
     <a href="{% url 'dashboard:dashboard' %}" class="btn btn-secondary">← Back to Dashboard</a>
   </div>
 
   <div class="oh-layout">
 
-    <!-- LEFT: Weekly defaults -->
+    <!-- LEFT: Weekly hours, for Default or one role -->
     <div class="oh-card">
-      <h2 class="oh-card-title">Default Weekly Hours</h2>
-      <p class="oh-card-desc">These apply to any date that doesn't have a special override.</p>
+      <h2 class="oh-card-title">Weekly Hours</h2>
+
+      <!-- Role picker: reloads the card with that role's hours -->
+      <form method="get" class="oh-role-picker">
+        <label class="form-label" for="oh-role-select">Hours for</label>
+        <select id="oh-role-select" name="role" class="form-control" onchange="this.form.submit()">
+          {% for opt in role_options %}
+          <option value="{{ opt.code }}"{% if opt.code == active_role %} selected{% endif %}>{{ opt.label }}</option>
+          {% endfor %}
+        </select>
+        <noscript><button type="submit" class="btn btn-secondary">Show</button></noscript>
+      </form>
+
+      {% if not active_role %}
+      <p class="oh-card-desc">Used by every role that doesn't have its own hours, on any date without a special override.</p>
+      {% elif role_customized %}
+      <p class="oh-card-desc">{{ active_role_label }} employees use these hours instead of the defaults.</p>
+      {% else %}
+      <p class="oh-card-desc">{{ active_role_label }} currently uses the default hours shown below. Change any day and save to give {{ active_role_label }} its own hours.</p>
+      {% endif %}
 
       <form method="post" class="oh-form">
         {% csrf_token %}
-        {{ formset.management_form }}
+        <input type="hidden" name="role" value="{{ active_role }}">
 
         <div class="oh-days">
-          {% for form in formset %}
-          {{ form.id }}
-          <div class="oh-day-row{% if form.errors %} oh-day-row--error{% endif %}">
-            <div class="oh-day-label">{{ form.instance.get_day_of_week_display }}</div>
+          {% for label, start, end in hours_form.days %}
+          <div class="oh-day-row{% if start.errors or end.errors %} oh-day-row--error{% endif %}">
+            <div class="oh-day-label">{{ label }}</div>
             <div class="oh-times">
               <div class="oh-time-group">
-                <label class="oh-time-label">Open</label>
-                {{ form.start_time }}
+                <label class="oh-time-label" for="{{ start.id_for_label }}">Open</label>
+                {{ start }}
               </div>
               <span class="oh-time-sep">–</span>
               <div class="oh-time-group">
-                <label class="oh-time-label">Close</label>
-                {{ form.end_time }}
+                <label class="oh-time-label" for="{{ end.id_for_label }}">Close</label>
+                {{ end }}
               </div>
             </div>
-            {% if form.errors %}
-            <div class="oh-error">
-              {% for error in form.non_field_errors %}{{ error }}{% endfor %}
-              {% for field in form %}{% for error in field.errors %}{{ error }}{% endfor %}{% endfor %}
-            </div>
+            {% if start.errors or end.errors %}
+            <div class="oh-error">{{ start.errors|join:" " }} {{ end.errors|join:" " }}</div>
             {% endif %}
           </div>
           {% endfor %}
         </div>
-
-        {% if formset.non_form_errors %}
-        <div class="oh-error oh-error--global">{{ formset.non_form_errors }}</div>
-        {% endif %}
+        <p class="oh-card-desc oh-increment-note">Times are set in 15-minute increments.</p>
 
         <div class="oh-actions">
-          <button type="submit" name="save_defaults" class="btn btn-primary">Save Default Hours</button>
+          {% if role_customized %}
+          <button type="submit" name="reset_role" class="btn btn-secondary"
+                  formnovalidate
+                  onclick="return confirm('Remove {{ active_role_label|escapejs }}\'s own hours and use the defaults?');">
+            Use Default Hours
+          </button>
+          {% endif %}
+          <button type="submit" name="save_hours" class="btn btn-primary">Save {{ active_role_label }} Hours</button>
         </div>
       </form>
     </div>
@@ -67,6 +85,7 @@
       <!-- Add special date form -->
       <form method="post" class="oh-special-form">
         {% csrf_token %}
+        <input type="hidden" name="role" value="{{ active_role }}">
 
         <div class="oh-special-fields">
           <div class="form-group">
@@ -74,6 +93,7 @@
             {{ date_form.date }}
             {% if date_form.date.errors %}<span class="form-error">{{ date_form.date.errors.0 }}</span>{% endif %}
           </div>
+
 
           <div class="form-group oh-closed-group">
             <label class="oh-closed-label">
@@ -126,7 +146,8 @@
           <form method="post" action="{% url 'scheduling:delete_special_hours' entry.pk %}"
                 onsubmit="return confirm('Remove this override?');" style="display:inline;">
             {% csrf_token %}
-            <button type="submit" class="sb-btn-delete">✕</button>
+            <input type="hidden" name="role" value="{{ active_role }}">
+            <button type="submit" class="sb-btn-delete" aria-label="Remove override">✕</button>
           </form>
         </div>
         {% endfor %}

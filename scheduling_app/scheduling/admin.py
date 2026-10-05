@@ -11,8 +11,9 @@ class WeeklyAvailabilityAdmin(admin.ModelAdmin):
 
 @admin.register(OperatingHours)
 class OperatingHoursAdmin(admin.ModelAdmin):
-    list_display = ['day_of_week', 'start_time', 'end_time']
-    ordering = ['day_of_week']
+    list_display = ['role', 'day_of_week', 'start_time', 'end_time']
+    list_filter = ['role']
+    ordering = ['role', 'day_of_week']
 
 
 @admin.register(WeeklySchedule)

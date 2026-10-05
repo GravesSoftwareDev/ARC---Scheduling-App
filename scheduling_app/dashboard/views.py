@@ -1,36 +1,14 @@
 from django.shortcuts import render
 from django.http import HttpResponse
-from scheduling.models import WeeklyAvailability, OperatingHours, ScheduleEntry, DateOperatingHours
+from scheduling.models import WeeklyAvailability, ScheduleEntry
 from scheduling.views import MIN_AVAILABILITY_HOURS
+from scheduling import hours
 from datetime import time, date, timedelta, datetime, timezone as dt_timezone
 from django.contrib.auth.decorators import login_required
 from django.utils.dateparse import parse_date
 
 
 _DOW_CODE = {0: 'MON', 1: 'TUE', 2: 'WED', 3: 'THU', 4: 'FRI', 5: 'SAT', 6: 'SUN'}
-
-SLOT_MINUTES = 30
-LEAD_IN_MINUTES = 15  # the opening supervisor's 15-min window before the normal start
-
-
-def _shift_earlier(t, minutes):
-    total = max(t.hour * 60 + t.minute - minutes, 0)
-    return time(total // 60, total % 60)
-
-
-def _build_time_slots(start_time, end_time):
-    """Build slot boundaries for a day. The first slot is LEAD_IN_MINUTES wide
-    (the opening supervisor's window); every slot after that is SLOT_MINUTES wide."""
-    slots = []
-    current = start_time
-    step = LEAD_IN_MINUTES
-    while current < end_time:
-        slots.append(current)
-        total = current.hour * 60 + current.minute + step
-        current = time(total // 60, total % 60)
-        step = SLOT_MINUTES
-    return slots
-
 
 def _slot_display(t):
     h, m = t.hour, t.minute
@@ -48,27 +26,6 @@ def _week_start(d):
     return d - timedelta(days=d.weekday())
 
 
-def _get_operating_hours_for_date(d):
-    """Return (start_time, end_time, is_closed) for a date, with weekly fallback.
-    start_time is shifted LEAD_IN_MINUTES earlier than the configured open time to
-    include the opening supervisor's lead-in window."""
-    try:
-        doh = DateOperatingHours.objects.get(date=d)
-        if doh.is_closed:
-            return None, None, True
-        return _shift_earlier(doh.start_time, LEAD_IN_MINUTES), doh.end_time, False
-    except DateOperatingHours.DoesNotExist:
-        pass
-
-    dow = _DOW_CODE.get(d.weekday())
-    if dow:
-        try:
-            oh = OperatingHours.objects.get(day_of_week=dow)
-            return _shift_earlier(oh.start_time, LEAD_IN_MINUTES), oh.end_time, False
-        except OperatingHours.DoesNotExist:
-            pass
-
-    return _shift_earlier(time(8, 0), LEAD_IN_MINUTES), time(17, 0), False
 
 
 @login_required
@@ -108,7 +65,7 @@ def dashboard(request):
     # Operating hours per day
     day_hours = {}
     for d in week_dates:
-        start, end, closed = _get_operating_hours_for_date(d)
+        start, end, closed = hours.hours_for_date(d, request.user.role)
         day_hours[d] = {'start': start, 'end': end, 'closed': closed}
 
     # Grid bounds: span the earliest open to latest close across open days
@@ -120,7 +77,10 @@ def dashboard(request):
         grid_start = time(8, 0)
         grid_end = time(17, 0)
 
-    slots = _build_time_slots(grid_start, grid_end)
+    slots = hours.build_slots(
+        grid_start, grid_end,
+        hours.span_edges((h['start'], h['end'], h['closed']) for h in day_hours.values()),
+    )
 
     # Weekly availability (still day-of-week based)
     avail_list = list(WeeklyAvailability.objects.filter(user=request.user))
@@ -136,7 +96,7 @@ def dashboard(request):
         row = {
             'time': slot,
             'display': _slot_display(slot),
-            'show_label': slot.minute == 0 or idx == 0,
+            'show_label': slot.minute == 0 or idx == 0 or slot.minute % 30 != 0,
             'schedule': {},
             'avail': {},
         }
@@ -171,24 +131,22 @@ def dashboard(request):
         ('MON', 'Monday'), ('TUE', 'Tuesday'), ('WED', 'Wednesday'),
         ('THU', 'Thursday'), ('FRI', 'Friday'),
     ]
-    avail_operating_hours = {}
-    for day_code, _ in avail_days:
-        oh, _ = OperatingHours.objects.get_or_create(
-            day_of_week=day_code,
-            defaults={'start_time': time(8, 0), 'end_time': time(17, 0)},
-        )
-        avail_operating_hours[day_code] = {
-            'start': _shift_earlier(oh.start_time, LEAD_IN_MINUTES),
-            'end': oh.end_time,
-        }
+    role_weekly = hours.weekly_hours(request.user.role)
+    avail_operating_hours = {
+        day_code: {'start': role_weekly[day_code][0], 'end': role_weekly[day_code][1]}
+        for day_code, _ in avail_days
+    }
 
     avail_grid_start = min(v['start'] for v in avail_operating_hours.values())
     avail_grid_end = max(v['end'] for v in avail_operating_hours.values())
-    avail_slots = _build_time_slots(avail_grid_start, avail_grid_end)
+    avail_slots = hours.build_slots(
+        avail_grid_start, avail_grid_end,
+        {t for v in avail_operating_hours.values() for t in (v['start'], v['end'])},
+    )
 
     avail_grid = []
     for idx, slot in enumerate(avail_slots):
-        row = {'time': slot, 'display': _slot_display(slot), 'show_label': slot.minute == 0 or idx == 0, 'days': {}}
+        row = {'time': slot, 'display': _slot_display(slot), 'show_label': slot.minute == 0 or idx == 0 or slot.minute % 30 != 0, 'days': {}}
         for day_code, _ in avail_days:
             oh = avail_operating_hours[day_code]
             in_hours = oh['start'] <= slot < oh['end']

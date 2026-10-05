@@ -1863,6 +1863,11 @@ a:hover {
 .sb2-cell.sb2-out-of-avail {
     box-shadow: inset 0 0 0 2px rgba(210, 30, 30, 0.75);
 }
+/* Outside the selected employee's role operating hours — never paintable */
+.sb2-cell.sb2-role-closed {
+    cursor: not-allowed !important;
+    background-color: #e0e0e0 !important;
+}
 .sb2-cell.sb2-avail-ok {
     box-shadow: inset 0 0 0 1px rgba(30, 140, 60, 0.20);
 }
@@ -2107,6 +2112,17 @@ select.form-control { cursor: pointer; }
     font-size: 13px;
     color: #666;
 }
+
+/* Role dropdown on the Weekly Hours card (Default + one per role) */
+.oh-role-picker {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 4px 0 12px;
+}
+.oh-role-picker .form-label { margin: 0; white-space: nowrap; }
+.oh-role-picker select { max-width: 260px; }
+.oh-increment-note { margin: 12px 0 16px; }
 
 /* Availability window (admin) */
 .aw-card {

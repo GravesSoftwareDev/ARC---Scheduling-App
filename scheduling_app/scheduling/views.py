@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
-from django.forms import modelformset_factory
 from django.utils.dateparse import parse_date
 from datetime import time, date, timedelta
 from collections import namedtuple
@@ -11,12 +11,11 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 
 from .models import WeeklyAvailability, OperatingHours, DayOfWeek, ScheduleEntry, DateOperatingHours, Schedule, ShiftLabel, LABEL_PALETTE, WeeklySchedule, AvailabilityWindow
-from .forms import OpenHoursForm, DateOperatingHoursForm, EmployeePreferencesForm, AvailabilityWindowForm
+from .forms import WeeklyHoursForm, DateOperatingHoursForm, EmployeePreferencesForm, AvailabilityWindowForm
+from . import hours
 
 
 PARTTIME_WEEKLY_MAX = 19.5  # hours — applies to all part-time employees
-SLOT_MINUTES = 30  # granularity of the availability / schedule builder grids
-LEAD_IN_MINUTES = 15  # the opening supervisor's window before the normal start
 MIN_AVAILABILITY_HOURS = 10  # employees must mark at least this many hours to be schedulable
 
 
@@ -39,22 +38,8 @@ EMPLOYEE_PALETTE = [
 
 # ── helpers ──────────────────────────────────────────────────────────────────
 
-def _shift_earlier(t, minutes):
-    total = max(t.hour * 60 + t.minute - minutes, 0)
-    return time(total // 60, total % 60)
-
-def _build_time_slots(start_time, end_time):
-    """Build slot boundaries for a day. The first slot is LEAD_IN_MINUTES wide
-    (the opening supervisor's window); every slot after that is SLOT_MINUTES wide."""
-    slots = []
-    current = start_time
-    step = LEAD_IN_MINUTES
-    while current < end_time:
-        slots.append(current)
-        total_minutes = current.hour * 60 + current.minute + step
-        current = time(total_minutes // 60, total_minutes % 60)
-        step = SLOT_MINUTES
-    return slots
+def _slot_key(t):
+    return f"{t.hour:02d}_{t.minute:02d}"
 
 def _slot_display(t):
     h, m = t.hour, t.minute
@@ -67,31 +52,84 @@ def _slot_display(t):
     else:
         return f"{h - 12}:{m:02d} PM"
 
-_DOW_CODE = {0: 'MON', 1: 'TUE', 2: 'WED', 3: 'THU', 4: 'FRI', 5: 'SAT', 6: 'SUN'}
+_DOW_CODE = hours.DOW_CODE
 
-def _get_operating_hours_for_date(d):
-    """Return (start_time, end_time, is_closed) for a specific date.
-    Checks DateOperatingHours first, falls back to weekly OperatingHours defaults.
-    start_time is shifted LEAD_IN_MINUTES earlier to include the opening
-    supervisor's lead-in window."""
-    try:
-        doh = DateOperatingHours.objects.get(date=d)
-        if doh.is_closed:
-            return None, None, True
-        return _shift_earlier(doh.start_time, LEAD_IN_MINUTES), doh.end_time, False
-    except DateOperatingHours.DoesNotExist:
-        pass
+def _roles_of(employees):
+    """Distinct roles among `employees` — or just the default ('') if there
+    are none, so an empty schedule still shows the default hours."""
+    return sorted({e.role or '' for e in employees}) or ['']
 
-    dow = _DOW_CODE.get(d.weekday())
-    if dow:
-        try:
-            oh = OperatingHours.objects.get(day_of_week=dow)
-            return _shift_earlier(oh.start_time, LEAD_IN_MINUTES), oh.end_time, False
-        except OperatingHours.DoesNotExist:
-            pass
+def _minutes(t):
+    return t.hour * 60 + t.minute
 
-    # System default if nothing configured
-    return _shift_earlier(time(8, 0), LEAD_IN_MINUTES), time(17, 0), False
+# Row layout for a builder grid — see _RoleHours.grid().
+#   day_hours: {day_key: (start, end, is_closed)} spanning every member role
+#   slots:     row start times; end: when the last row ends
+#   slot_ends: {row start: row end} (rows are 30 min, or 15 at quarter-hour edges)
+_Grid = namedtuple('_Grid', ['day_hours', 'slots', 'end', 'slot_ends'])
+
+class _RoleHours:
+    """Memoized (role, day) → (start, end, is_closed) lookups for the schedule
+    builders, where the grid spans every member role's hours but each
+    employee may only be scheduled inside their own role's hours. `resolve`
+    is called as resolve(role, day_key); day_key is a date (live builder) or
+    a day code (default-week builder)."""
+
+    def __init__(self, resolve):
+        self._resolve = resolve
+        self._cache = {}
+
+    def span(self, role, day_key):
+        key = (role or '', day_key)
+        if key not in self._cache:
+            self._cache[key] = self._resolve(role or '', day_key)
+        return self._cache[key]
+
+    def combined(self, roles, day_key):
+        return hours.combine_spans([self.span(r, day_key) for r in roles])
+
+    def covers(self, role, day_key, slot):
+        start, end, closed = self.span(role, day_key)
+        return not closed and start <= slot < end
+
+    def grid(self, roles, day_keys):
+        """The row layout for a grid over `day_keys`: it spans every role's
+        hours, with short rows at each role's quarter-hour open/close times.
+        The page and every save path call this with the same roles and days
+        so posted slot keys always match the rendered rows."""
+        day_hours = {k: self.combined(roles, k) for k in day_keys}
+        open_days = [(s, e) for s, e, closed in day_hours.values() if not closed]
+        if open_days:
+            start, end = min(s for s, _ in open_days), max(e for _, e in open_days)
+        else:
+            start, end = hours.DEFAULT_OPEN, hours.DEFAULT_CLOSE
+        edges = hours.span_edges(self.span(r, k) for r in roles for k in day_keys)
+        slots = hours.build_slots(start, end, edges)
+        return _Grid(day_hours, slots, end, hours.slot_ends(slots, end))
+
+    def as_json(self, employees, day_keys, key_str=str):
+        """{emp_pk: {day: [open_min, close_min] or None if closed}} for the builder JS."""
+        out = {}
+        for e in employees:
+            per_day = {}
+            for k in day_keys:
+                start, end, closed = self.span(e.role, k)
+                per_day[key_str(k)] = None if closed else [_minutes(start), _minutes(end)]
+            out[str(e.pk)] = per_day
+        return json.dumps(out)
+
+
+def _live_role_hours():
+    """_RoleHours keyed by date, for the live (dated) schedule builder."""
+    return _RoleHours(lambda role, d: hours.hours_for_date(d, role))
+
+
+def _grid_slots_json(grid):
+    """[[slot_key, minutes], ...] in row order — the builder JS uses it to find
+    neighbouring rows and to count hours, since rows aren't all 30 minutes."""
+    return json.dumps([
+        [_slot_key(s), _minutes(grid.slot_ends[s]) - _minutes(s)] for s in grid.slots
+    ])
 
 def _week_start(d):
     """Return Monday of the week containing date d."""
@@ -130,22 +168,17 @@ def manage_availability(request):
         ('THU', 'Thursday'), ('FRI', 'Friday'),
     ]
     can_edit = _can_edit_availability(request.user)
-    operating_hours = {}
-    for day_code, _ in days:
-        oh, _ = OperatingHours.objects.get_or_create(
-            day_of_week=day_code,
-            defaults={'start_time': time(8, 0), 'end_time': time(18, 0)},
-        )
-        operating_hours[day_code] = {
-            'start': _shift_earlier(oh.start_time, LEAD_IN_MINUTES),
-            'end': oh.end_time,
-        }
+    # The grid covers this employee's own role's weekly hours.
+    role_weekly = hours.weekly_hours(request.user.role)
+    operating_hours = {
+        day_code: {'start': role_weekly[day_code][0], 'end': role_weekly[day_code][1]}
+        for day_code, _ in days
+    }
 
-    all_starts = [operating_hours[day]['start'] for day, _ in days]
-    all_ends = [operating_hours[day]['end'] for day, _ in days]
-    grid_start = min(all_starts)
-    grid_end = max(all_ends)
-    slots = _build_time_slots(grid_start, grid_end)
+    grid_start = min(oh['start'] for oh in operating_hours.values())
+    grid_end = max(oh['end'] for oh in operating_hours.values())
+    edges = {t for oh in operating_hours.values() for t in (oh['start'], oh['end'])}
+    slots = hours.build_slots(grid_start, grid_end, edges)
 
     if request.method == 'POST':
         if not can_edit:
@@ -194,12 +227,9 @@ def manage_availability(request):
                         block_type = None
 
             if block_start is not None:
-                last_slot = slots[-1]
-                end_total = last_slot.hour * 60 + last_slot.minute + SLOT_MINUTES
-                end_time = time(end_total // 60, end_total % 60)
                 WeeklyAvailability.objects.create(
                     user=request.user, day_of_week=day_code,
-                    start_time=block_start, end_time=end_time,
+                    start_time=block_start, end_time=grid_end,
                     availability_type=block_type,
                 )
 
@@ -259,43 +289,77 @@ def availability_window(request):
 @login_required
 @user_passes_test(_is_admin)
 def operating_hours(request):
-    days = [d[0] for d in DayOfWeek.choices]
+    """Weekly hours, edited for one role at a time via the role dropdown
+    ('' = Default, which every role uses until its own hours are saved).
+    A role's form starts from whatever hours it currently resolves to."""
+    from account.models import Employee
 
-    for day in days:
+    role_labels = dict(Employee.Role.choices)
+    role = request.POST.get('role', request.GET.get('role', ''))
+    if role not in role_labels:
+        role = ''
+    role_url = f"{request.path}?role={role}" if role else request.path
+
+    for day_code, _label in DayOfWeek.choices:
         OperatingHours.objects.get_or_create(
-            day_of_week=day,
-            defaults={'start_time': time(8, 0), 'end_time': time(17, 0)}
+            role='', day_of_week=day_code,
+            defaults={'start_time': hours.DEFAULT_OPEN, 'end_time': hours.DEFAULT_CLOSE}
         )
 
-    OperatingHoursFormSet = modelformset_factory(OperatingHours, form=OpenHoursForm, extra=0)
-    queryset = OperatingHours.objects.all()
+    if request.method == 'POST' and role and 'reset_role' in request.POST:
+        OperatingHours.objects.filter(role=role).delete()
+        messages.success(request, f"{role_labels[role]} now uses the default hours.")
+        return redirect(role_url)
 
-    if request.method == 'POST' and 'save_defaults' in request.POST:
-        formset = OperatingHoursFormSet(request.POST, queryset=queryset)
-        if formset.is_valid():
-            formset.save()
-            messages.success(request, "Default operating hours updated.")
-            return redirect('scheduling:operating_hours')
-        date_form = DateOperatingHoursForm()
+    current = hours.weekly_hours(role)
+    hours_form = WeeklyHoursForm(initial_hours=current)
+    date_form = DateOperatingHoursForm()
+
+    if request.method == 'POST' and 'save_hours' in request.POST:
+        hours_form = WeeklyHoursForm(request.POST, initial_hours=current)
+        if hours_form.is_valid():
+            new_hours = hours_form.hours()
+            if role and new_hours == hours.weekly_hours(''):
+                # Identical to the defaults — keep following them instead of
+                # pinning a copy that would go stale when the defaults change.
+                OperatingHours.objects.filter(role=role).delete()
+                messages.success(request, f"{role_labels[role]} hours match the defaults, so it now uses the default hours.")
+            else:
+                for day_code, (start, end) in new_hours.items():
+                    OperatingHours.objects.update_or_create(
+                        role=role, day_of_week=day_code,
+                        defaults={'start_time': start, 'end_time': end},
+                    )
+                who = role_labels[role] if role else "Default"
+                messages.success(request, f"{who} operating hours updated.")
+            return redirect(role_url)
     elif request.method == 'POST' and 'add_special' in request.POST:
         date_form = DateOperatingHoursForm(request.POST)
         if date_form.is_valid():
             date_form.save()
             messages.success(request, "Special date hours added.")
-            return redirect('scheduling:operating_hours')
-        formset = OperatingHoursFormSet(queryset=queryset)
-    else:
-        formset = OperatingHoursFormSet(queryset=queryset)
-        date_form = DateOperatingHoursForm()
+            return redirect(role_url)
 
-    # Upcoming special date overrides (next 90 days)
+    customized_roles = set(
+        OperatingHours.objects.exclude(role='').values_list('role', flat=True)
+    )
+    role_options = [{'code': '', 'label': 'Default'}] + [
+        {'code': code, 'label': label + (' (custom hours)' if code in customized_roles else '')}
+        for code, label in Employee.Role.choices
+    ]
+
+    # Upcoming special date overrides
     today = date.today()
     special_hours = DateOperatingHours.objects.filter(date__gte=today).order_by('date')[:30]
 
     return render(request, 'scheduling/operating_hours.html', {
-        'formset': formset,
+        'hours_form': hours_form,
         'date_form': date_form,
         'special_hours': special_hours,
+        'role_options': role_options,
+        'active_role': role,
+        'active_role_label': role_labels.get(role, 'Default'),
+        'role_customized': role in customized_roles,
     })
 
 @login_required
@@ -305,7 +369,9 @@ def delete_special_hours(request, pk):
     if request.method == 'POST':
         entry.delete()
         messages.success(request, "Special date removed.")
-    return redirect('scheduling:operating_hours')
+    role = request.POST.get('role', '')
+    url = reverse('scheduling:operating_hours')
+    return redirect(f"{url}?role={role}" if role else url)
 
 # ── schedule builder (schedulers + admins, drag-to-paint grid) ───────────────
 
@@ -417,18 +483,16 @@ def schedule_builder(request):
             else:
                 other_hours_map[emp.pk] = 0
 
-    # Operating hours per day
-    day_hours = {}
-    for d in week_dates:
-        start, end, closed = _get_operating_hours_for_date(d)
-        day_hours[d] = {'start': start, 'end': end, 'closed': closed}
-
-    open_days = [(h['start'], h['end']) for h in day_hours.values() if not h['closed'] and h['start']]
-    grid_start, grid_end = (
-        min(h[0] for h in open_days), max(h[1] for h in open_days)
-    ) if open_days else (time(8, 0), time(17, 0))
-    slots = _build_time_slots(grid_start, grid_end)
-    lead_in_slot_key = f"{slots[0].hour:02d}_{slots[0].minute:02d}" if slots else None
+    # Operating hours per day: the grid spans every member role's hours, and
+    # each employee is limited to their own role's hours (role_hours.covers).
+    role_hours = _live_role_hours()
+    week_grid = role_hours.grid(_roles_of(visible_employees), week_dates)
+    day_hours = {
+        d: {'start': start, 'end': end, 'closed': closed}
+        for d, (start, end, closed) in week_grid.day_hours.items()
+    }
+    slots = week_grid.slots
+    slot_minutes = hours.slot_minutes(slots, week_grid.end)
 
     # ── POST: rebuild schedule for this schedule/week ────────────────────────
     if request.method == 'POST':
@@ -440,28 +504,23 @@ def schedule_builder(request):
         emp_lookup = {str(e.pk): e for e in post_emps}
 
         # ── Part-time hour-limit check (before any DB changes) ────────────────
-        new_slots = {}   # emp_pk_str → set of (date_iso, slot_key)
+        new_slots = {}   # emp_pk_str → set of (date, slot)
         for d in week_dates:
             dh = day_hours[d]
             if dh['closed'] or not dh['start']:
                 continue
             for slot in slots:
-                key = f"slot_{d.isoformat()}_{slot.hour:02d}_{slot.minute:02d}"
+                key = f"slot_{d.isoformat()}_{_slot_key(slot)}"
                 for epk in request.POST.getlist(key):
-                    if epk in emp_lookup:
-                        new_slots.setdefault(epk, set()).add(
-                            (d.isoformat(), f"{slot.hour:02d}_{slot.minute:02d}")
-                        )
+                    if epk in emp_lookup and role_hours.covers(emp_lookup[epk].role, d, slot):
+                        new_slots.setdefault(epk, set()).add((d, slot))
 
         violations = []
         for epk, slot_set in new_slots.items():
             emp = emp_lookup[epk]
             if not emp.part_time:
                 continue
-            new_mins = sum(
-                LEAD_IN_MINUTES if sk == lead_in_slot_key else SLOT_MINUTES
-                for _, sk in slot_set
-            )
+            new_mins = sum(slot_minutes[slot] for _, slot in slot_set)
             other_qs = ScheduleEntry.objects.filter(
                 user=emp, date__in=week_dates
             ).exclude(schedule=post_schedule)
@@ -486,6 +545,7 @@ def schedule_builder(request):
         # Delete existing entries for this schedule this week, then rebuild
         ScheduleEntry.objects.filter(date__in=week_dates, schedule=post_schedule).delete()
 
+        outside_role_hours = set()  # names of employees with slots dropped below
         for d in week_dates:
             dh = day_hours[d]
             if dh['closed'] or not dh['start']:
@@ -496,14 +556,24 @@ def schedule_builder(request):
                 sk = f"{slot.hour:02d}_{slot.minute:02d}"
                 key = f"slot_{d.isoformat()}_{sk}"
                 for epk in request.POST.getlist(key):
-                    if epk in emp_lookup:
-                        per_emp.setdefault(epk, {})[slot] = epk
-                        label = request.POST.get(f"{key}__label__{epk}", '')
-                        per_emp_labels.setdefault(epk, {})[slot] = label
+                    if epk not in emp_lookup:
+                        continue
+                    if not role_hours.covers(emp_lookup[epk].role, d, slot):
+                        outside_role_hours.add(emp_lookup[epk].get_full_name())
+                        continue
+                    per_emp.setdefault(epk, {})[slot] = epk
+                    label = request.POST.get(f"{key}__label__{epk}", '')
+                    per_emp_labels.setdefault(epk, {})[slot] = label
             for epk, emp_slots in per_emp.items():
-                _slots_to_entries(emp_slots, slots, post_schedule, d, emp_lookup, request.user,
+                _slots_to_entries(emp_slots, week_grid.slot_ends, post_schedule, d, emp_lookup, request.user,
                                   slot_labels=per_emp_labels.get(epk, {}))
 
+        if outside_role_hours:
+            messages.warning(
+                request,
+                "Some time was not saved because it falls outside the employee's role hours: "
+                + ", ".join(sorted(outside_role_hours)),
+            )
         messages.success(request, f"Schedule saved for {post_schedule}.")
         after_save = request.POST.get('redirect_after_save', '')
         redirect_url = after_save if after_save.startswith('?') else f"?week={week_start.isoformat()}&schedule={post_schedule_pk}"
@@ -613,7 +683,8 @@ def schedule_builder(request):
         grid.append({
             'time': slot, 'slot_key': sk,
             'display': _slot_display(slot),
-            'show_label': slot.minute == 0 or idx == 0,
+            # Label every hour, the first row, and any short quarter-hour row
+            'show_label': slot.minute == 0 or idx == 0 or slot.minute % 30 != 0,
             'cells': cells,
         })
 
@@ -630,6 +701,7 @@ def schedule_builder(request):
     }
 
     return render(request, 'scheduling/schedule_builder.html', {
+        'grid_slots_json': _grid_slots_json(week_grid),
         'week_start': week_start,
         'week_label': f"{week_start.strftime('%b')} {week_start.day} – {week_dates[-1].strftime('%b')} {week_dates[-1].day}, {week_dates[-1].year}",
         'prev_week': prev_week, 'next_week': next_week,
@@ -656,6 +728,9 @@ def schedule_builder(request):
         'min_availability_hours': MIN_AVAILABILITY_HOURS,
         'schedule_labels_json': json.dumps(schedule_labels_data),
         'employee_initials_json': json.dumps(employee_initials),
+        'employee_role_hours_json': role_hours.as_json(
+            visible_employees, week_dates, key_str=lambda d: d.isoformat()
+        ),
         'is_admin': is_admin, 'today': today,
         'load_default': load_default,
     })
@@ -664,16 +739,18 @@ def schedule_builder(request):
 DEFAULT_BUILDER_DAYS = [d for d in DayOfWeek.choices]  # [('MON', 'Monday'), ...]
 
 
-def _default_day_hours():
-    """Weekly operating-hours span for each weekday, falling back to 8–5 if unconfigured.
-    Start times are shifted LEAD_IN_MINUTES earlier for the opening supervisor's window."""
-    oh_by_day = {oh.day_of_week: oh for oh in OperatingHours.objects.all()}
-    day_hours = {}
-    for day_code, _label in DEFAULT_BUILDER_DAYS:
-        oh = oh_by_day.get(day_code)
-        start, end = (oh.start_time, oh.end_time) if oh else (time(8, 0), time(17, 0))
-        day_hours[day_code] = (_shift_earlier(start, LEAD_IN_MINUTES), end)
-    return day_hours
+def _default_week_role_hours():
+    """_RoleHours keyed by day code, from each role's weekly hours (no date
+    overrides — the default week is dateless)."""
+    weekly_by_role = {}
+
+    def resolve(role, day_code):
+        if role not in weekly_by_role:
+            weekly_by_role[role] = hours.weekly_hours(role)
+        start, end = weekly_by_role[role][day_code]
+        return start, end, False
+
+    return _RoleHours(resolve)
 
 
 @login_required
@@ -772,11 +849,15 @@ def default_schedule_builder(request):
         else:
             other_hours_map[emp.pk] = 0
 
-    day_hours = _default_day_hours()
-    grid_start = min(h[0] for h in day_hours.values())
-    grid_end = max(h[1] for h in day_hours.values())
-    slots = _build_time_slots(grid_start, grid_end)
-    lead_in_slot_key = f"{slots[0].hour:02d}_{slots[0].minute:02d}" if slots else None
+    # Grid spans every member role's weekly hours; each employee is limited
+    # to their own role's hours (role_hours.covers).
+    role_hours = _default_week_role_hours()
+    week_grid = role_hours.grid(
+        _roles_of(visible_employees), [code for code, _label in DEFAULT_BUILDER_DAYS]
+    )
+    day_hours = {code: span[:2] for code, span in week_grid.day_hours.items()}
+    slots = week_grid.slots
+    slot_minutes = hours.slot_minutes(slots, week_grid.end)
 
     # date→day map, keyed by day code onto itself, so the shared JS's
     # `dateDayMap[dateStr]` lookup works unmodified against day codes.
@@ -800,20 +881,17 @@ def default_schedule_builder(request):
             for slot in slots:
                 if not (dh_start <= slot < dh_end):
                     continue
-                key = f"slot_{day_code}_{slot.hour:02d}_{slot.minute:02d}"
+                key = f"slot_{day_code}_{_slot_key(slot)}"
                 for epk in request.POST.getlist(key):
-                    if epk in emp_lookup:
-                        new_slots.setdefault(epk, set()).add((day_code, f"{slot.hour:02d}_{slot.minute:02d}"))
+                    if epk in emp_lookup and role_hours.covers(emp_lookup[epk].role, day_code, slot):
+                        new_slots.setdefault(epk, set()).add((day_code, slot))
 
         violations = []
         for epk, slot_set in new_slots.items():
             emp = emp_lookup[epk]
             if not emp.part_time:
                 continue
-            new_mins = sum(
-                LEAD_IN_MINUTES if sk == lead_in_slot_key else SLOT_MINUTES
-                for _, sk in slot_set
-            )
+            new_mins = sum(slot_minutes[slot] for _, slot in slot_set)
             other_mins = sum(
                 (blk.end_time.hour * 60 + blk.end_time.minute)
                 - (blk.start_time.hour * 60 + blk.start_time.minute)
@@ -833,6 +911,7 @@ def default_schedule_builder(request):
 
         WeeklySchedule.objects.filter(schedule=post_schedule).delete()
 
+        outside_role_hours = set()  # names of employees with slots dropped below
         for day_code, _label in DEFAULT_BUILDER_DAYS:
             dh_start, dh_end = day_hours[day_code]
             per_emp = {}
@@ -843,14 +922,24 @@ def default_schedule_builder(request):
                 sk = f"{slot.hour:02d}_{slot.minute:02d}"
                 key = f"slot_{day_code}_{sk}"
                 for epk in request.POST.getlist(key):
-                    if epk in emp_lookup:
-                        per_emp.setdefault(epk, {})[slot] = epk
-                        label = request.POST.get(f"{key}__label__{epk}", '')
-                        per_emp_labels.setdefault(epk, {})[slot] = label
+                    if epk not in emp_lookup:
+                        continue
+                    if not role_hours.covers(emp_lookup[epk].role, day_code, slot):
+                        outside_role_hours.add(emp_lookup[epk].get_full_name())
+                        continue
+                    per_emp.setdefault(epk, {})[slot] = epk
+                    label = request.POST.get(f"{key}__label__{epk}", '')
+                    per_emp_labels.setdefault(epk, {})[slot] = label
             for epk, emp_slots in per_emp.items():
-                _slots_to_weekly_blocks(emp_slots, post_schedule, day_code, emp_lookup,
-                                         slot_labels=per_emp_labels.get(epk, {}), all_slots=slots)
+                _slots_to_weekly_blocks(emp_slots, week_grid.slot_ends, post_schedule, day_code, emp_lookup,
+                                         slot_labels=per_emp_labels.get(epk, {}))
 
+        if outside_role_hours:
+            messages.warning(
+                request,
+                "Some time was not saved because it falls outside the employee's role hours: "
+                + ", ".join(sorted(outside_role_hours)),
+            )
         messages.success(request, f"Default weekly schedule saved for {post_schedule}.")
         return redirect(f"{request.path}?schedule={post_schedule_pk}")
 
@@ -905,7 +994,8 @@ def default_schedule_builder(request):
         grid.append({
             'time': slot, 'slot_key': sk,
             'display': _slot_display(slot),
-            'show_label': slot.minute == 0 or idx == 0,
+            # Label every hour, the first row, and any short quarter-hour row
+            'show_label': slot.minute == 0 or idx == 0 or slot.minute % 30 != 0,
             'cells': cells,
         })
 
@@ -921,6 +1011,7 @@ def default_schedule_builder(request):
     }
 
     return render(request, 'scheduling/default_schedule_builder.html', {
+        'grid_slots_json': _grid_slots_json(week_grid),
         'col_template': col_template,
         'day_header_cols': day_header_cols,
         'grid': grid,
@@ -941,6 +1032,9 @@ def default_schedule_builder(request):
         'min_availability_hours': MIN_AVAILABILITY_HOURS,
         'schedule_labels_json': json.dumps(schedule_labels_data),
         'employee_initials_json': json.dumps(employee_initials),
+        'employee_role_hours_json': role_hours.as_json(
+            visible_employees, [code for code, _label in DEFAULT_BUILDER_DAYS]
+        ),
         'is_admin': is_admin,
     })
 
@@ -1002,29 +1096,35 @@ def save_schedule_day(request):
     if not (request.user.is_admin or schedule in request.user.scheduler_of.all()):
         return JsonResponse({'error': 'Forbidden'}, status=403)
 
-    dh_start, dh_end, closed = _get_operating_hours_for_date(target_date)
-    if closed or not dh_start:
+    emp_lookup = {str(e.pk): e for e in Employee.objects.filter(member_of=schedule)}
+    role_hours = _live_role_hours()
+    # Rebuild the same rows the builder rendered for this whole week, so the
+    # posted slot keys (including short quarter-hour rows) line up.
+    week_start = _week_start(target_date)
+    grid = role_hours.grid(
+        _roles_of(emp_lookup.values()), [week_start + timedelta(days=i) for i in range(5)]
+    )
+    if target_date not in grid.day_hours:  # a weekend date isn't on the builder
+        return JsonResponse({'error': 'Invalid date'}, status=400)
+    if grid.day_hours[target_date][2]:
         ScheduleEntry.objects.filter(date=target_date, schedule=schedule).delete()
         return JsonResponse({'ok': True})
-
-    slots = _build_time_slots(dh_start, dh_end)
-    emp_lookup = {str(e.pk): e for e in Employee.objects.filter(member_of=schedule)}
 
     ScheduleEntry.objects.filter(date=target_date, schedule=schedule).delete()
 
     per_emp = {}
     per_emp_labels = {}
-    for slot in slots:
+    for slot in grid.slots:
         sk = f"{slot.hour:02d}_{slot.minute:02d}"
         key = f"slot_{date_iso}_{sk}"
         for epk in request.POST.getlist(key):
-            if epk in emp_lookup:
+            if epk in emp_lookup and role_hours.covers(emp_lookup[epk].role, target_date, slot):
                 per_emp.setdefault(epk, {})[slot] = epk
                 label = request.POST.get(f"{key}__label__{epk}", '')
                 per_emp_labels.setdefault(epk, {})[slot] = label
 
     for epk, emp_slots in per_emp.items():
-        _slots_to_entries(emp_slots, slots, schedule, target_date, emp_lookup, request.user,
+        _slots_to_entries(emp_slots, grid.slot_ends, schedule, target_date, emp_lookup, request.user,
                           slot_labels=per_emp_labels.get(epk, {}))
 
     return JsonResponse({'ok': True})
@@ -1049,30 +1149,28 @@ def save_week_as_default(request):
 
     week_dates = [week_start + timedelta(days=i) for i in range(5)]
     emp_lookup = {str(e.pk): e for e in Employee.objects.filter(member_of=schedule).distinct()}
+    role_hours = _live_role_hours()
+    grid = role_hours.grid(_roles_of(emp_lookup.values()), week_dates)
 
     WeeklySchedule.objects.filter(schedule=schedule).delete()
 
     for d in week_dates:
         day_code = _DOW_CODE.get(d.weekday())
-        if not day_code:
+        if not day_code or grid.day_hours[d][2]:
             continue
-        dh_start, dh_end, closed = _get_operating_hours_for_date(d)
-        if closed or not dh_start:
-            continue
-        day_slots = _build_time_slots(dh_start, dh_end)
         per_emp = {}
         per_emp_labels = {}
-        for slot in day_slots:
+        for slot in grid.slots:
             sk = f"{slot.hour:02d}_{slot.minute:02d}"
             key = f"slot_{d.isoformat()}_{sk}"
             for epk in request.POST.getlist(key):
-                if epk in emp_lookup:
+                if epk in emp_lookup and role_hours.covers(emp_lookup[epk].role, d, slot):
                     per_emp.setdefault(epk, {})[slot] = epk
                     label = request.POST.get(f"{key}__label__{epk}", '')
                     per_emp_labels.setdefault(epk, {})[slot] = label
         for epk, emp_slots in per_emp.items():
-            _slots_to_weekly_blocks(emp_slots, schedule, day_code, emp_lookup,
-                                     slot_labels=per_emp_labels.get(epk, {}), all_slots=day_slots)
+            _slots_to_weekly_blocks(emp_slots, grid.slot_ends, schedule, day_code, emp_lookup,
+                                     slot_labels=per_emp_labels.get(epk, {}))
 
     messages.success(request, f"This week's schedule is now the default for {schedule}.")
     return JsonResponse({'ok': True})
@@ -1113,15 +1211,10 @@ def export_teams_shifts(request):
     return render(request, 'scheduling/export_teams_shifts.html', {'schedules': schedules})
 
 
-def _slot_width(slot_time, lead_in_time):
-    """A slot is LEAD_IN_MINUTES wide if it's the day's opening-supervisor lead-in
-    slot, otherwise SLOT_MINUTES wide."""
-    return LEAD_IN_MINUTES if lead_in_time is not None and slot_time == lead_in_time else SLOT_MINUTES
-
-
-def _slots_to_blocks(emp_slots, slot_labels=None, lead_in_time=None):
+def _slots_to_blocks(emp_slots, slot_ends, slot_labels=None):
     """Convert a {slot: emp_pk_str} mapping into per-employee contiguous
-    (start_time, end_time, label) blocks, splitting on gaps or label changes."""
+    (start_time, end_time, label) blocks, splitting on gaps or label changes.
+    `slot_ends` is the grid's {row start: row end} (rows vary in length)."""
     by_emp = {}
     for slot, epk in emp_slots.items():
         by_emp.setdefault(epk, []).append(slot)
@@ -1138,11 +1231,7 @@ def _slots_to_blocks(emp_slots, slot_labels=None, lead_in_time=None):
                 block_start = slot
                 block_label = (slot_labels or {}).get(slot, '')
             elif prev_slot is not None:
-                width = _slot_width(prev_slot, lead_in_time)
-                expected = time(
-                    (prev_slot.hour * 60 + prev_slot.minute + width) // 60,
-                    (prev_slot.hour * 60 + prev_slot.minute + width) % 60,
-                )
+                expected = slot_ends[prev_slot]
                 current_label = (slot_labels or {}).get(slot, '')
                 if slot != expected or current_label != block_label:
                     blocks.append((block_start, expected, block_label))
@@ -1151,21 +1240,16 @@ def _slots_to_blocks(emp_slots, slot_labels=None, lead_in_time=None):
             prev_slot = slot
 
         if block_start is not None and prev_slot is not None:
-            width = _slot_width(prev_slot, lead_in_time)
-            end_t = time(
-                (prev_slot.hour * 60 + prev_slot.minute + width) // 60,
-                (prev_slot.hour * 60 + prev_slot.minute + width) % 60,
-            )
+            end_t = slot_ends[prev_slot]
             if block_start < end_t:
                 blocks.append((block_start, end_t, block_label))
         result[epk] = blocks
     return result
 
 
-def _slots_to_entries(emp_slots, all_slots, schedule, d, emp_lookup, created_by, slot_labels=None):
+def _slots_to_entries(emp_slots, slot_ends, schedule, d, emp_lookup, created_by, slot_labels=None):
     """Convert a {slot: emp_pk_str} mapping into contiguous ScheduleEntry objects."""
-    lead_in_time = all_slots[0] if all_slots else None
-    for epk, blocks in _slots_to_blocks(emp_slots, slot_labels, lead_in_time).items():
+    for epk, blocks in _slots_to_blocks(emp_slots, slot_ends, slot_labels).items():
         emp = emp_lookup[epk]
         for start_t, end_t, label in blocks:
             ScheduleEntry.objects.create(
@@ -1176,10 +1260,9 @@ def _slots_to_entries(emp_slots, all_slots, schedule, d, emp_lookup, created_by,
             )
 
 
-def _slots_to_weekly_blocks(emp_slots, schedule, day_code, emp_lookup, slot_labels=None, all_slots=None):
+def _slots_to_weekly_blocks(emp_slots, slot_ends, schedule, day_code, emp_lookup, slot_labels=None):
     """Convert a {slot: emp_pk_str} mapping into contiguous WeeklySchedule objects for one day-of-week."""
-    lead_in_time = all_slots[0] if all_slots else None
-    for epk, blocks in _slots_to_blocks(emp_slots, slot_labels, lead_in_time).items():
+    for epk, blocks in _slots_to_blocks(emp_slots, slot_ends, slot_labels).items():
         emp = emp_lookup[epk]
         for start_t, end_t, label in blocks:
             WeeklySchedule.objects.create(

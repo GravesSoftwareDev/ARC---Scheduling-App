@@ -36,7 +36,7 @@ Student employees ("Employees" in the code) log in and:
 Schedulers/admins additionally:
 - Use the **Schedule Builder** to paint shifts onto a weekly grid for each employee, per "Schedule" (department/team), respecting each employee's marked availability and existing shifts on other schedules (conflict detection).
 - Maintain a **default weekly template** per schedule that can be loaded into any week as a starting point, or saved back from the current week.
-- Manage **operating hours** (weekly defaults, plus one-off date overrides for holidays/closures).
+- Manage **operating hours** (weekly defaults, optional per-role weekly hours, in 15-minute increments, plus one-off date overrides for holidays/closures).
 - Control a global **availability editing window** (when employees are allowed to change their availability), with per-employee exceptions.
 - Export a schedule's shifts to an **.xlsx file formatted for Microsoft Teams Shifts import**.
 - Manage the **roster**: which schedules exist, and which employees belong to / can schedule for each one.
@@ -142,7 +142,19 @@ A **singleton** (`pk=1`, admin-editable at **Availability Window**) controlling 
 **Current logic (`is_currently_open()`): the toggle and the date range are independent — editing is open if *either* the toggle is on, *or* today falls within the date range.** You don't need both. Individual employees can still be exempted from a closed window via their `availability_override_until` field.
 
 ### OperatingHours / DateOperatingHours (`scheduling.OperatingHours` / `DateOperatingHours`)
-`OperatingHours` is the weekly default (one row per weekday, e.g. Mon 8am–5pm). `DateOperatingHours` is a one-off override for a specific date (holiday closures, special hours) and always wins over the weekly default when both exist for a date. Both are editable at **Edit Operating Hours**.
+`OperatingHours` holds weekly hours (one row per weekday, e.g. Mon 8am–5pm), per role. Rows with a blank `role` are the **Default** hours. On **Edit Operating Hours**, the **Hours for** dropdown on the Weekly Hours card switches between Default and each role; a role that hasn't been changed shows the default times, and saving different times gives it its own rows (saving times identical to the defaults, or clicking **Use Default Hours**, removes them so it follows the defaults again). `DateOperatingHours` is a one-off override for a specific date (holiday closures, special hours) and applies to every role.
+
+All open/close times are in 15-minute increments (`validate_quarter_hour`). There is no hidden lead-in: the times entered are exactly the schedulable window.
+
+For a given employee and date, the first match wins (see `scheduling/hours.py`):
+1. a date override for that date
+2. their role's weekly hours
+3. the default weekly hours
+4. 8am–5pm
+
+The availability page and dashboard use the employee's own role. Both schedule builders span every member role's hours, but each employee can only be painted inside their own role's hours; anything outside is greyed out for them, outlined red if already painted, and dropped (with a warning) on save.
+
+**Grid rows** are 30 minutes on :00/:30, plus a short 15-minute row wherever an open/close time falls on :15/:45 (`hours.build_slots`). The builder page and every save path (`schedule_builder` POST, `save_schedule_day`, `save_week_as_default`, `default_schedule_builder` POST) rebuild the rows from the same week/roles via `_RoleHours.grid()` so posted slot keys always line up; the builder JS gets each row's length from `grid_slots_json`.
 
 ### WeeklySchedule (`scheduling.WeeklySchedule`)
 The **default weekly template** for a `Schedule` — a recurring, dateless shift pattern (day of week + times) used as a starting point when building a real week. Edited at **Default Weekly Schedule**, and can be pushed into the currently-viewed week ("Load Default Week") or captured back from it ("Save Week as Default") from inside the Schedule Builder.
@@ -153,9 +165,9 @@ An **actual dated shift**: one employee, one schedule, one specific date, start/
 ### ShiftLabel (`scheduling.ShiftLabel`)
 A named position/role tag (e.g. "Front Desk", "WC") scoped to one `Schedule`, with a color, applied to individual painted cells in the builder. Shared across everyone using that schedule — created/deleted inline from the builder sidebar.
 
-### LEAD_IN / part-time cap constants (not DB fields, worth knowing)
+### Availability / part-time cap constants (not DB fields, worth knowing)
 - `scheduling/views.py`: `MIN_AVAILABILITY_HOURS = 10` — employees marking fewer than 10 hrs/week of availability are flagged red in the builder sidebar as "not schedulable."
-- `dashboard/views.py` and the builder JS: `LEAD_IN_MINUTES = 15` — the first schedulable slot of each day is a 15-minute "lead-in" block (for an opening supervisor), and `PARTTIME_MAX = 19.5` hrs/week is the hard cap the builder enforces for anyone with `part_time=True`.
+- Builder JS: `PARTTIME_MAX = 19.5` hrs/week is the hard cap the builder enforces for anyone with `part_time=True`.
 
 ---
 
@@ -324,7 +336,8 @@ All of these require an `is_admin=True` account (see §5/§7), and are reachable
 | Reset an employee's password back to the org default | **Employee List** → Reset Password |
 | Change what the "default password" for new/reset accounts actually is | **Employee List** → set Default Password (must pass Django's normal password validators) |
 | Remove an employee entirely | **Employee List** → Remove (this is an immediate hard delete, not a soft-deactivate — see §14) |
-| Set weekly operating hours | **Edit Operating Hours** |
+| Set weekly operating hours | **Edit Operating Hours** → Weekly Hours, **Hours for: Default** |
+| Give one role different hours | **Edit Operating Hours** → Weekly Hours → pick the role in **Hours for** → change times → Save |
 | Close for a holiday / set special one-off hours for a specific date | **Edit Operating Hours** → date override section |
 | Open or close the window during which employees may edit their own availability | **Availability Window** |
 | Grant one specific employee an exception to edit availability while the window is closed | **Employee List** → Edit → "Availability override until" |
