@@ -18,7 +18,8 @@ class OperatingHoursAdmin(admin.ModelAdmin):
 
 @admin.register(WeeklySchedule)
 class WeeklyScheduleAdmin(admin.ModelAdmin):
-    list_display = ['user', 'day_of_week', 'start_time', 'end_time', 'schedule']
+    list_display = ['user', 'day_of_week', 'start_time', 'end_time', 'schedule', 'term', 'year']
+    list_filter = ['schedule', 'term', 'year']
     ordering = ['day_of_week', 'start_time']
 
 

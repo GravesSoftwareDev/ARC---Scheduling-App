@@ -39,10 +39,19 @@
           </div>
         </div>
       </div>
-      <a href="{% url 'scheduling:default_schedule_builder' %}?schedule={{ active_schedule_pk }}" class="btn btn-secondary" id="nav-manage-default">Manage Default Week</a>
+      <a href="{% url 'scheduling:default_schedule_builder' %}?schedule={{ active_schedule_pk }}&term={{ selected_term }}&year={{ selected_year }}" class="btn btn-secondary" id="nav-manage-default">Manage Default Week</a>
       {% if active_schedule %}
-      <button type="button" class="btn btn-secondary" id="save-as-default-btn" onclick="saveWeekAsDefault()">Save Week as Default</button>
-      <a href="?week={{ week_start|date:'Y-m-d' }}&schedule={{ active_schedule_pk }}&load_default=1"class="btn btn-secondary" id="nav-load-default">Load Default Week</a>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <!-- Semester for both Save Week as Default and Load Default Week -->
+        <select id="default-term" class="sb2-select" style="width:auto;" aria-label="Default week semester">
+          {% for t in term_options %}
+          <option data-term="{{ t.term }}" data-year="{{ t.year }}" data-label="{{ t.label }}"
+                  {% if t.selected %}selected{% endif %}>{{ t.label }}</option>
+          {% endfor %}
+        </select>
+        <button type="button" class="btn btn-secondary" id="save-as-default-btn" onclick="saveWeekAsDefault()">Save Week as Default</button>
+        <button type="button" class="btn btn-secondary" id="nav-load-default">Load Default Week</button>
+      </div>
       {% endif %}
       <a href="{% url 'scheduling:export_teams_shifts' %}" class="btn btn-secondary">Export</a>
       <a href="{% url 'dashboard:dashboard' %}" class="btn btn-secondary" id="nav-dashboard">← Dashboard</a>
@@ -1239,9 +1248,29 @@ async function saveSchedule(afterUrl) {
   window.location.href = window.location.pathname + (base.startsWith('?') ? base : '?' + base);
 }
 
+// ── Default-week semester dropdown ({term, year, label}) ───────────────────
+function selectedDefaultTerm() {
+  const termSelect = document.getElementById('default-term');
+  return termSelect.options[termSelect.selectedIndex].dataset;
+}
+
+// Keep "Manage Default Week" pointed at the semester picked in the dropdown.
+const defaultTermSelect = document.getElementById('default-term');
+if (defaultTermSelect) {
+  defaultTermSelect.addEventListener('change', () => {
+    const term = selectedDefaultTerm();
+    const link = document.getElementById('nav-manage-default');
+    const url = new URL(link.href);
+    url.searchParams.set('term', term.term);
+    url.searchParams.set('year', term.year);
+    link.href = url.toString();
+  });
+}
+
 // ── Save the currently-displayed week as the schedule's default template ──
 async function saveWeekAsDefault() {
-  if (!confirm('Save this week exactly as shown as the new default weekly schedule? This replaces the current default template entirely.')) {
+  const term = selectedDefaultTerm();
+  if (!confirm(`Save this week exactly as shown as the new ${term.label} default weekly schedule? This replaces the current ${term.label} default template entirely.`)) {
     return;
   }
 
@@ -1249,6 +1278,8 @@ async function saveWeekAsDefault() {
   const fd = new FormData(form);
   const schedulePk = fd.get('active_schedule_pk') || SCHEDULE_PK;
   fd.append('week_start', WEEK_START_ISO);
+  fd.append('term', term.term);
+  fd.append('year', term.year);
 
   const btn = document.getElementById('save-as-default-btn');
   const origText = btn.textContent;
@@ -1275,7 +1306,7 @@ async function saveWeekAsDefault() {
     return;
   }
 
-  window.location.href = `${window.location.pathname}?week=${WEEK_START_ISO}&schedule=${schedulePk}`;
+  window.location.href = `${window.location.pathname}?week=${WEEK_START_ISO}&schedule=${schedulePk}&term=${term.term}&year=${term.year}`;
 }
 
 document.getElementById('schedule-form').addEventListener('submit', e => {
@@ -1413,12 +1444,14 @@ function saveAndNavigate() {
   });
 });
 
-// ── Load Default Week: confirm before replacing the on-screen grid ────────
+// ── Load Default Week: load the semester picked in the dropdown, after a
+// confirm since it replaces the on-screen grid ─────────────────────────────
 const loadDefaultBtn = document.getElementById('nav-load-default');
 if (loadDefaultBtn) {
-  loadDefaultBtn.addEventListener('click', e => {
-    if (!confirm('Load the default weekly schedule into this week? This replaces what\'s shown below — nothing is saved until you click Save Schedule.')) {
-      e.preventDefault();
+  loadDefaultBtn.addEventListener('click', () => {
+    const term = selectedDefaultTerm();
+    if (confirm(`Load the ${term.label} default weekly schedule into this week? This replaces what's shown below — nothing is saved until you click Save Schedule.`)) {
+      window.location = `?week=${WEEK_START_ISO}&schedule=${activeSchedulePk}&load_default=1&term=${term.term}&year=${term.year}`;
     }
   });
 }

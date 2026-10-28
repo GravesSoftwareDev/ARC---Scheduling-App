@@ -10,7 +10,7 @@
     <div class="sb2-topbar-left">
       <h1 class="sb2-title">Default Weekly Schedule</h1>
       <p class="sb2-subtitle">
-        {% if active_schedule %}{{ active_schedule }}{% else %}Select a schedule{% endif %}
+        {% if active_schedule %}{{ active_schedule }} &middot; {{ term_label }}{% else %}Select a schedule{% endif %}
         {% if is_admin %}&mdash; All schedules visible{% endif %}
       </p>
     </div>
@@ -32,12 +32,35 @@
         <select id="schedule-select" class="sb2-select">
           {% for sched in allowed_schedules %}
           <option value="{{ sched.pk }}"
-                  data-url="?schedule={{ sched.pk }}"
+                  data-url="?schedule={{ sched.pk }}&term={{ term }}&year={{ year }}"
                   {% if sched.pk|stringformat:'s' == active_schedule_pk %}selected{% endif %}>
             {{ sched.name }}
           </option>
           {% endfor %}
         </select>
+      </div>
+
+      <!-- Semester selector: each semester has its own default week -->
+      <div class="sb2-sidebar-section">
+        <label class="sb2-sidebar-label" for="term-select">Semester</label>
+        <div style="display:flex;gap:6px;">
+          <select id="term-select" class="sb2-select" style="flex:1;">
+            {% for code, label in term_choices %}
+            <option value="{{ code }}" {% if code == term %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+          <input type="number" id="term-year" class="sb2-select" style="width:80px;cursor:text;"
+                 min="2000" max="2100" step="1" value="{{ year }}" aria-label="Year">
+        </div>
+        {% if saved_terms %}
+        <p class="sb2-mode-hint" style="margin:8px 0 0;">
+          Saved defaults:
+          {% for t in saved_terms %}
+          <a href="?schedule={{ active_schedule_pk }}&term={{ t.term }}&year={{ t.year }}"
+             class="term-saved-link"{% if t.term == term and t.year == year %} style="font-weight:700;"{% endif %}>{{ t.label }}</a>{% if not forloop.last %}, {% endif %}
+          {% endfor %}
+        </p>
+        {% endif %}
       </div>
 
       <!-- Employee selector -->
@@ -156,6 +179,8 @@
       <form method="post" id="schedule-form">
         {% csrf_token %}
         <input type="hidden" name="active_schedule_pk" value="{{ active_schedule_pk }}">
+        <input type="hidden" name="term" value="{{ term }}">
+        <input type="hidden" name="year" value="{{ year }}">
 
         <div class="sb2-calendar-scroll">
         <div class="sb2-calendar hourly-calendar">
@@ -201,7 +226,7 @@
 
         <div class="sb2-form-actions">
           <span id="unsaved-badge" class="sb2-unsaved" style="display:none;">Unsaved changes</span>
-          <button type="submit" class="btn btn-primary sb2-save-btn">Save Default Schedule</button>
+          <button type="submit" class="btn btn-primary sb2-save-btn">Save {{ term_label }} Default Schedule</button>
         </div>
       </form>
     </div>
@@ -217,7 +242,7 @@
     </div>
     <div style="padding:20px;">
       <p style="margin:0 0 18px;font-size:14px;">
-        You have unsaved changes to the <strong>{{ active_schedule }}</strong> default schedule.
+        You have unsaved changes to the <strong>{{ active_schedule }} {{ term_label }}</strong> default schedule.
         Save before switching?
       </p>
       <div style="display:flex;gap:10px;justify-content:flex-end;">
@@ -246,7 +271,9 @@ const employeeRoleHours    = JSON.parse('{{ employee_role_hours_json|escapejs }}
 const GRID_SLOTS           = JSON.parse('{{ grid_slots_json|escapejs }}');
 const SLOT_INDEX           = Object.fromEntries(GRID_SLOTS.map(([key], i) => [key, i]));
 const SCHEDULE_PK          = '{{ active_schedule_pk }}';
-const LABELS_URL_TPL       = '{% url "scheduling:schedule_labels" schedule_pk=0 %}';
+const TERM                 = '{{ term }}';
+const YEAR                 = {{ year }};
+const LABELS_URL_TPL      = '{% url "scheduling:schedule_labels" schedule_pk=0 %}';
 const LABEL_DELETE_URL_TPL = '{% url "scheduling:delete_shift_label" label_pk=0 %}';
 const PARTTIME_MAX = 19.5;
 
@@ -955,7 +982,7 @@ async function saveDefaultSchedule(afterUrl) {
   }
 
   hasUnsaved = false;
-  window.location.href = afterUrl || (window.location.pathname + '?schedule=' + schedulePk);
+  window.location.href = afterUrl || `${window.location.pathname}?schedule=${schedulePk}&term=${TERM}&year=${YEAR}`;
 }
 
 document.getElementById('schedule-form').addEventListener('submit', e => {
@@ -976,6 +1003,25 @@ document.getElementById('schedule-select').addEventListener('change', function()
   }
 });
 
+// ── Semester change: load that semester's default week ────────────────────
+function changeTerm() {
+  const termSelect = document.getElementById('term-select');
+  const yearInput = document.getElementById('term-year');
+  const year = parseInt(yearInput.value, 10);
+  if (!(year >= 2000 && year <= 2100)) { yearInput.value = YEAR; return; }
+  const targetUrl = `?schedule=${activeSchedulePk}&term=${termSelect.value}&year=${year}`;
+  if (hasUnsaved) {
+    pendingNavUrl = targetUrl;
+    document.getElementById('unsaved-dialog').style.display = 'flex';
+    termSelect.value = TERM;
+    yearInput.value = YEAR;
+  } else {
+    window.location = targetUrl;
+  }
+}
+document.getElementById('term-select').addEventListener('change', changeTerm);
+document.getElementById('term-year').addEventListener('change', changeTerm);
+
 function discardAndNavigate() {
   hasUnsaved = false;
   document.getElementById('unsaved-dialog').style.display = 'none';
@@ -988,8 +1034,10 @@ function saveAndNavigate() {
 }
 
 // ── Nav links: warn on unsaved ──────────────────────────────────────────────
-['nav-builder','nav-dashboard'].forEach(id => {
-  const el = document.getElementById(id);
+[
+  ...['nav-builder','nav-dashboard'].map(id => document.getElementById(id)),
+  ...document.querySelectorAll('.term-saved-link'),
+].forEach(el => {
   if (!el) return;
   el.addEventListener('click', e => {
     if (hasUnsaved) {

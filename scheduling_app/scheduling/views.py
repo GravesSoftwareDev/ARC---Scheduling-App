@@ -10,7 +10,7 @@ import json
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 
-from .models import WeeklyAvailability, OperatingHours, DayOfWeek, ScheduleEntry, DateOperatingHours, Schedule, ShiftLabel, LABEL_PALETTE, WeeklySchedule, AvailabilityWindow, EmployeeColor, hex_color_validator
+from .models import WeeklyAvailability, OperatingHours, DayOfWeek, ScheduleEntry, DateOperatingHours, Schedule, ShiftLabel, LABEL_PALETTE, WeeklySchedule, AvailabilityWindow, EmployeeColor, hex_color_validator, Term, TERM_ORDER, term_for_date, term_label
 from django.core.exceptions import ValidationError
 from .forms import WeeklyHoursForm, DateOperatingHoursForm, EmployeePreferencesForm, AvailabilityWindowForm
 from . import hours
@@ -165,6 +165,32 @@ def _is_scheduler_or_admin(user):
 
 def _is_admin(user):
     return user.is_authenticated and user.is_admin
+
+def _requested_term(params, today):
+    """(term, year) from a request's `term`/`year` params, falling back to the
+    semester `today` is in for anything missing or invalid."""
+    term = params.get('term', '')
+    if term not in Term.values:
+        term = term_for_date(today)
+    try:
+        year = int(params.get('year', ''))
+    except ValueError:
+        year = today.year
+    if not 2000 <= year <= 2100:
+        year = today.year
+    return term, year
+
+def _newest_terms_first(pairs):
+    """Sort (term, year) pairs newest semester first."""
+    return sorted(pairs, key=lambda p: (p[1], TERM_ORDER[p[0]]), reverse=True)
+
+def _saved_terms(schedule):
+    """[(term, year), ...] that have a saved default week on `schedule`, newest first."""
+    if not schedule:
+        return []
+    return _newest_terms_first(set(
+        WeeklySchedule.objects.filter(schedule=schedule).values_list('term', 'year')
+    ))
 
 # Used only for "Load Default Week": WeeklySchedule template blocks are
 # dateless, but the grid-rendering code below expects ScheduleEntry-shaped
@@ -592,11 +618,23 @@ def schedule_builder(request):
 
     # ── GET: load existing entries (or the default template) into cell state ─
     load_default = request.GET.get('load_default') == '1'
+    # The Default Week dropdown picks the semester that both "Load Default
+    # Week" and "Save Week as Default" use. It offers every saved default plus
+    # the current semester (even before it has one), and preselects the
+    # semester in the URL (just loaded or saved), else the current semester.
+    current_term = (term_for_date(today), today.year)
+    selected_term = _requested_term(request.GET, today)
+    term_options = _newest_terms_first(
+        set(_saved_terms(active_schedule)) | {current_term, selected_term}
+    )
 
     if load_default and active_schedule:
+        load_term = selected_term
+        load_label = term_label(*load_term)
         dow_to_date = {_DOW_CODE.get(d.weekday()): d for d in week_dates}
         weekly_blocks = WeeklySchedule.objects.filter(
             schedule=active_schedule, user__in=visible_employees,
+            term=load_term[0], year=load_term[1],
         ).select_related('user')
         entries = [
             _VirtualEntry(
@@ -607,9 +645,9 @@ def schedule_builder(request):
             for blk in weekly_blocks if blk.day_of_week in dow_to_date
         ]
         if not entries:
-            messages.info(request, f"No default weekly schedule is set for {active_schedule}.")
+            messages.info(request, f"No {load_label} default weekly schedule is set for {active_schedule}.")
         else:
-            messages.info(request, "Default weekly schedule loaded — review and click Save to apply.")
+            messages.info(request, f"{load_label} default weekly schedule loaded — review and click Save to apply.")
     else:
         entries_qs = ScheduleEntry.objects.filter(
             date__in=week_dates, schedule=active_schedule,
@@ -745,6 +783,11 @@ def schedule_builder(request):
         ),
         'is_admin': is_admin, 'today': today,
         'load_default': load_default,
+        'term_options': [
+            {'term': t, 'year': y, 'label': term_label(t, y), 'selected': (t, y) == selected_term}
+            for t, y in term_options
+        ],
+        'selected_term': selected_term[0], 'selected_year': selected_term[1],
     })
 
 
@@ -768,9 +811,14 @@ def _default_week_role_hours():
 @login_required
 @user_passes_test(_is_scheduler_or_admin)
 def default_schedule_builder(request):
-    """Schedulers define a recurring default week (day-of-week based) per Schedule.
-    Saved as WeeklySchedule rows; the live schedule_builder can load these to prefill a real week."""
+    """Schedulers define a recurring default week (day-of-week based) per
+    Schedule per semester. Saved as WeeklySchedule rows; the live
+    schedule_builder can load these to prefill a real week."""
     from account.models import Employee
+
+    today = date.today()
+    term, year = _requested_term(request.POST if request.method == 'POST' else request.GET, today)
+    term_qs = f"&term={term}&year={year}"
 
     is_admin = request.user.is_admin
     if is_admin:
@@ -825,13 +873,14 @@ def default_schedule_builder(request):
         for e in visible_employees
     }
 
-    # Conflicts = this employee's default hours on OTHER schedules (keyed by day code,
-    # reusing the 'date' key so the existing conflict-matching JS works unmodified).
+    # Conflicts = this employee's default hours on OTHER schedules in the same
+    # semester (keyed by day code, reusing the 'date' key so the existing
+    # conflict-matching JS works unmodified).
     conflict_data = {}
     other_default_qs = WeeklySchedule.objects.none()
     if visible_employees:
         other_default_qs = WeeklySchedule.objects.filter(
-            user__in=visible_employees,
+            user__in=visible_employees, term=term, year=year,
         ).exclude(schedule=active_schedule)
         for blk in other_default_qs.select_related('user', 'schedule'):
             conflict_data.setdefault(str(blk.user_id), []).append({
@@ -904,7 +953,9 @@ def default_schedule_builder(request):
             other_mins = sum(
                 (blk.end_time.hour * 60 + blk.end_time.minute)
                 - (blk.start_time.hour * 60 + blk.start_time.minute)
-                for blk in WeeklySchedule.objects.filter(user=emp).exclude(schedule=post_schedule)
+                for blk in WeeklySchedule.objects.filter(
+                    user=emp, term=term, year=year,
+                ).exclude(schedule=post_schedule)
             )
             total_hrs = (new_mins + other_mins) / 60
             if total_hrs > PARTTIME_WEEKLY_MAX:
@@ -916,9 +967,9 @@ def default_schedule_builder(request):
         if violations:
             for v in violations:
                 messages.error(request, f"Over weekly limit — {v}")
-            return redirect(f"{request.path}?schedule={post_schedule_pk}")
+            return redirect(f"{request.path}?schedule={post_schedule_pk}{term_qs}")
 
-        WeeklySchedule.objects.filter(schedule=post_schedule).delete()
+        WeeklySchedule.objects.filter(schedule=post_schedule, term=term, year=year).delete()
 
         outside_role_hours = set()  # names of employees with slots dropped below
         for day_code, _label in DEFAULT_BUILDER_DAYS:
@@ -940,8 +991,8 @@ def default_schedule_builder(request):
                     label = request.POST.get(f"{key}__label__{epk}", '')
                     per_emp_labels.setdefault(epk, {})[slot] = label
             for epk, emp_slots in per_emp.items():
-                _slots_to_weekly_blocks(emp_slots, week_grid.slot_ends, post_schedule, day_code, emp_lookup,
-                                         slot_labels=per_emp_labels.get(epk, {}))
+                _slots_to_weekly_blocks(emp_slots, week_grid.slot_ends, post_schedule, term, year, day_code,
+                                         emp_lookup, slot_labels=per_emp_labels.get(epk, {}))
 
         if outside_role_hours:
             messages.warning(
@@ -949,12 +1000,14 @@ def default_schedule_builder(request):
                 "Some time was not saved because it falls outside the employee's role hours: "
                 + ", ".join(sorted(outside_role_hours)),
             )
-        messages.success(request, f"Default weekly schedule saved for {post_schedule}.")
-        return redirect(f"{request.path}?schedule={post_schedule_pk}")
+        messages.success(request, f"{term_label(term, year)} default weekly schedule saved for {post_schedule}.")
+        return redirect(f"{request.path}?schedule={post_schedule_pk}{term_qs}")
 
     # ── GET: load existing WeeklySchedule blocks into cell state ─────────────
     blocks = list(
-        WeeklySchedule.objects.filter(schedule=active_schedule).select_related('user')
+        WeeklySchedule.objects.filter(
+            schedule=active_schedule, term=term, year=year,
+        ).select_related('user')
     ) if active_schedule else []
 
     cell_state = {}
@@ -1046,6 +1099,13 @@ def default_schedule_builder(request):
             visible_employees, [code for code, _label in DEFAULT_BUILDER_DAYS]
         ),
         'is_admin': is_admin,
+        'term': term, 'year': year,
+        'term_label': term_label(term, year),
+        'term_choices': Term.choices,
+        'saved_terms': [
+            {'term': t, 'year': y, 'label': term_label(t, y)}
+            for t, y in _saved_terms(active_schedule)
+        ],
     })
 
 
@@ -1181,7 +1241,9 @@ def save_schedule_day(request):
 @require_http_methods(['POST'])
 def save_week_as_default(request):
     """Persist the schedule builder's currently-displayed week as the schedule's
-    new default weekly template, replacing whatever default previously existed."""
+    new default weekly template for the posted semester (the builder's
+    dropdown; the current semester if missing), replacing whatever default
+    that semester previously had."""
     from account.models import Employee
 
     schedule_pk = request.POST.get('active_schedule_pk', '')
@@ -1197,8 +1259,9 @@ def save_week_as_default(request):
     emp_lookup = {str(e.pk): e for e in Employee.objects.filter(member_of=schedule).distinct()}
     role_hours = _live_role_hours()
     grid = role_hours.grid(_roles_of(emp_lookup.values()), week_dates)
+    term, year = _requested_term(request.POST, date.today())
 
-    WeeklySchedule.objects.filter(schedule=schedule).delete()
+    WeeklySchedule.objects.filter(schedule=schedule, term=term, year=year).delete()
 
     for d in week_dates:
         day_code = _DOW_CODE.get(d.weekday())
@@ -1215,10 +1278,10 @@ def save_week_as_default(request):
                     label = request.POST.get(f"{key}__label__{epk}", '')
                     per_emp_labels.setdefault(epk, {})[slot] = label
         for epk, emp_slots in per_emp.items():
-            _slots_to_weekly_blocks(emp_slots, grid.slot_ends, schedule, day_code, emp_lookup,
-                                     slot_labels=per_emp_labels.get(epk, {}))
+            _slots_to_weekly_blocks(emp_slots, grid.slot_ends, schedule, term, year, day_code,
+                                     emp_lookup, slot_labels=per_emp_labels.get(epk, {}))
 
-    messages.success(request, f"This week's schedule is now the default for {schedule}.")
+    messages.success(request, f"This week's schedule is now the {term_label(term, year)} default for {schedule}.")
     return JsonResponse({'ok': True})
 
 
@@ -1306,13 +1369,14 @@ def _slots_to_entries(emp_slots, slot_ends, schedule, d, emp_lookup, created_by,
             )
 
 
-def _slots_to_weekly_blocks(emp_slots, slot_ends, schedule, day_code, emp_lookup, slot_labels=None):
-    """Convert a {slot: emp_pk_str} mapping into contiguous WeeklySchedule objects for one day-of-week."""
+def _slots_to_weekly_blocks(emp_slots, slot_ends, schedule, term, year, day_code, emp_lookup, slot_labels=None):
+    """Convert a {slot: emp_pk_str} mapping into contiguous WeeklySchedule objects
+    for one day-of-week of one semester's default week."""
     for epk, blocks in _slots_to_blocks(emp_slots, slot_ends, slot_labels).items():
         emp = emp_lookup[epk]
         for start_t, end_t, label in blocks:
             WeeklySchedule.objects.create(
-                user=emp, schedule=schedule, day_of_week=day_code,
+                user=emp, schedule=schedule, term=term, year=year, day_of_week=day_code,
                 start_time=start_t, end_time=end_t,
                 custom_label=label,
             )

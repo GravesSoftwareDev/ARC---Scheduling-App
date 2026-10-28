@@ -164,10 +164,35 @@ class OperatingHours(models.Model):
         unique_together = ['role', 'day_of_week']
         verbose_name_plural = 'Operating Hours'
 
+class Term(models.TextChoices):
+    """Academic semester. Codes are ordered chronologically within a year by
+    TERM_ORDER; labels like "FA26" come from term_label()."""
+    SPRING = 'SP', 'Spring'
+    SUMMER = 'SU', 'Summer'
+    FALL = 'FA', 'Fall'
+
+TERM_ORDER = {Term.SPRING: 0, Term.SUMMER: 1, Term.FALL: 2}
+
+
+def term_for_date(d):
+    """The semester a date falls in: Jan–May Spring, Jun–Jul Summer, Aug–Dec Fall."""
+    if d.month <= 5:
+        return Term.SPRING
+    if d.month <= 7:
+        return Term.SUMMER
+    return Term.FALL
+
+
+def term_label(term, year):
+    """Short semester label, e.g. ('FA', 2027) → "FA27"."""
+    return f"{term}{year % 100:02d}"
+
+
 class WeeklySchedule(models.Model):
     """The recurring, dateless default-week template for a Schedule (day of
     week + times, no specific date) — the starting point "Load Default Week"
-    copies into a real week. Not to be confused with ScheduleEntry, which is
+    copies into a real week. Each Schedule keeps a separate default week per
+    semester (term + year). Not to be confused with ScheduleEntry, which is
     an actual dated shift copied *from* this template (or painted directly)."""
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -179,6 +204,8 @@ class WeeklySchedule(models.Model):
         on_delete=models.PROTECT,
         related_name = 'scheduled_blocks',
     )
+    term = models.CharField(max_length=2, choices=Term.choices)
+    year = models.PositiveSmallIntegerField()
     day_of_week = models.CharField(
         max_length=3,
         choices=DayOfWeek.choices
@@ -196,6 +223,8 @@ class WeeklySchedule(models.Model):
 
             overlaps = WeeklySchedule.objects.filter(
                 user=self.user,
+                term=self.term,
+                year=self.year,
                 day_of_week = self.day_of_week,
                 start_time__lt = self.end_time,
                 end_time__gt = self.start_time,
@@ -204,7 +233,7 @@ class WeeklySchedule(models.Model):
                 raise ValidationError("This block overlaps with an existing scheduled block.")
 
     def __str__(self):
-        return f'{self.user} – {self.schedule} - {self.day_of_week} - {self.start_time} - {self.end_time}'
+        return f'{self.user} – {self.schedule} ({term_label(self.term, self.year)}) - {self.day_of_week} - {self.start_time} - {self.end_time}'
 
     class Meta:
         ordering = [DAY_ORDER, 'start_time']
