@@ -1254,17 +1254,22 @@ function selectedDefaultTerm() {
   return termSelect.options[termSelect.selectedIndex].dataset;
 }
 
-// Keep "Manage Default Week" pointed at the semester picked in the dropdown.
+// Remember the pick in a cookie (read server-side, so the dropdown keeps it
+// across refreshes and week/schedule changes) and keep "Manage Default Week"
+// pointed at it.
+function rememberDefaultTerm() {
+  const term = selectedDefaultTerm();
+  document.cookie = `{{ default_term_cookie }}=${term.term}-${term.year}; path=/; max-age=31536000; SameSite=Lax`;
+  const link = document.getElementById('nav-manage-default');
+  const url = new URL(link.href);
+  url.searchParams.set('term', term.term);
+  url.searchParams.set('year', term.year);
+  link.href = url.toString();
+}
 const defaultTermSelect = document.getElementById('default-term');
 if (defaultTermSelect) {
-  defaultTermSelect.addEventListener('change', () => {
-    const term = selectedDefaultTerm();
-    const link = document.getElementById('nav-manage-default');
-    const url = new URL(link.href);
-    url.searchParams.set('term', term.term);
-    url.searchParams.set('year', term.year);
-    link.href = url.toString();
-  });
+  defaultTermSelect.addEventListener('change', rememberDefaultTerm);
+  rememberDefaultTerm();  // also covers a semester picked via the URL (after Load/Save)
 }
 
 // ── Save the currently-displayed week as the schedule's default template ──

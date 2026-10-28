@@ -17,6 +17,7 @@ from . import hours
 
 
 PARTTIME_WEEKLY_MAX = 19.5  # hours — applies to all part-time employees
+DEFAULT_TERM_COOKIE = 'default_term'  # schedule builder's last-picked default-week semester, e.g. "SP-2027"
 MIN_AVAILABILITY_HOURS = 10  # employees must mark at least this many hours to be schedulable
 
 
@@ -621,9 +622,16 @@ def schedule_builder(request):
     # The Default Week dropdown picks the semester that both "Load Default
     # Week" and "Save Week as Default" use. It offers every saved default plus
     # the current semester (even before it has one), and preselects the
-    # semester in the URL (just loaded or saved), else the current semester.
+    # semester in the URL (just loaded or saved), else the scheduler's last
+    # pick (the DEFAULT_TERM_COOKIE the page's JS sets on every change, so it
+    # survives week/schedule navigation), else the current semester.
     current_term = (term_for_date(today), today.year)
-    selected_term = _requested_term(request.GET, today)
+    if 'term' in request.GET:
+        term_params = request.GET
+    else:
+        cookie_term, _, cookie_year = request.COOKIES.get(DEFAULT_TERM_COOKIE, '').partition('-')
+        term_params = {'term': cookie_term, 'year': cookie_year}
+    selected_term = _requested_term(term_params, today)
     term_options = _newest_terms_first(
         set(_saved_terms(active_schedule)) | {current_term, selected_term}
     )
@@ -788,6 +796,7 @@ def schedule_builder(request):
             for t, y in term_options
         ],
         'selected_term': selected_term[0], 'selected_year': selected_term[1],
+        'default_term_cookie': DEFAULT_TERM_COOKIE,
     })
 
 
