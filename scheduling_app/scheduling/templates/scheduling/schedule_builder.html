@@ -82,6 +82,7 @@
       <div class="sb2-sidebar-section">
         <div class="sb2-sidebar-label">Select Employee(s) to Schedule</div>
         <p class="sb2-mode-hint" style="margin-top:0;">Click to select one &nbsp;·&nbsp; Shift+click to add/remove</p>
+        <p class="sb2-mode-hint" style="margin-top:0;">Showing {{ avail_term_label }} availability</p>
         <div id="emp-list" class="sb2-emp-list">
           {% for emp in visible_employees %}
           <button type="button"
@@ -1254,22 +1255,25 @@ function selectedDefaultTerm() {
   return termSelect.options[termSelect.selectedIndex].dataset;
 }
 
-// Remember the pick in a cookie (read server-side, so the dropdown keeps it
-// across refreshes and week/schedule changes) and keep "Manage Default Week"
-// pointed at it.
-function rememberDefaultTerm() {
-  const term = selectedDefaultTerm();
-  document.cookie = `{{ default_term_cookie }}=${term.term}-${term.year}; path=/; max-age=31536000; SameSite=Lax`;
-  const link = document.getElementById('nav-manage-default');
-  const url = new URL(link.href);
-  url.searchParams.set('term', term.term);
-  url.searchParams.set('year', term.year);
-  link.href = url.toString();
-}
+// Remember the shown semester in a cookie (read server-side, so the dropdown
+// keeps it across refreshes and week/schedule changes).
 const defaultTermSelect = document.getElementById('default-term');
 if (defaultTermSelect) {
-  defaultTermSelect.addEventListener('change', rememberDefaultTerm);
-  rememberDefaultTerm();  // also covers a semester picked via the URL (after Load/Save)
+  const shown = selectedDefaultTerm();
+  document.cookie = `{{ default_term_cookie }}=${shown.term}-${shown.year}; path=/; max-age=31536000; SameSite=Lax`;
+
+  // A new pick reloads the page so the availability shown matches it.
+  defaultTermSelect.addEventListener('change', function() {
+    const term = selectedDefaultTerm();
+    const targetUrl = `?week=${WEEK_START_ISO}&schedule=${activeSchedulePk}&term=${term.term}&year=${term.year}`;
+    if (hasUnsaved) {
+      pendingNavUrl = targetUrl;
+      document.getElementById('unsaved-dialog').style.display = 'flex';
+      [...this.options].forEach(o => { o.selected = o.dataset.term === shown.term && o.dataset.year === shown.year; });
+    } else {
+      window.location = targetUrl;
+    }
+  });
 }
 
 // ── Save the currently-displayed week as the schedule's default template ──

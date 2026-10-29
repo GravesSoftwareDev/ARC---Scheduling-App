@@ -4,8 +4,8 @@ from .models import WeeklyAvailability, OperatingHours, WeeklySchedule, Schedule
 
 @admin.register(WeeklyAvailability)
 class WeeklyAvailabilityAdmin(admin.ModelAdmin):
-    list_display = ['user', 'day_of_week', 'start_time', 'end_time', 'availability_type']
-    list_filter = ['availability_type', 'day_of_week']
+    list_display = ['user', 'day_of_week', 'start_time', 'end_time', 'availability_type', 'term', 'year']
+    list_filter = ['availability_type', 'day_of_week', 'term', 'year']
     search_fields = ['user__username', 'user__first_name', 'user__last_name']
 
 

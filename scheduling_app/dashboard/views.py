@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from django.http import HttpResponse
-from scheduling.models import WeeklyAvailability, ScheduleEntry
+from scheduling.models import WeeklyAvailability, ScheduleEntry, term_for_date, term_label
 from scheduling.views import MIN_AVAILABILITY_HOURS
 from scheduling import hours
 from datetime import time, date, timedelta, datetime, timezone as dt_timezone
@@ -82,8 +82,12 @@ def dashboard(request):
         hours.span_edges((h['start'], h['end'], h['closed']) for h in day_hours.values()),
     )
 
-    # Weekly availability (still day-of-week based)
-    avail_list = list(WeeklyAvailability.objects.filter(user=request.user))
+    # Weekly availability (still day-of-week based), from the semester the
+    # viewed week falls in
+    avail_term, avail_year = term_for_date(week_start), week_start.year
+    avail_list = list(WeeklyAvailability.objects.filter(
+        user=request.user, term=avail_term, year=avail_year,
+    ))
 
     total_availability_hours = sum(
         (a.end_time.hour * 60 + a.end_time.minute) - (a.start_time.hour * 60 + a.start_time.minute)
@@ -182,6 +186,8 @@ def dashboard(request):
         'avail_grid': avail_grid,
         'avail_days': avail_days,
         'total_availability_hours': total_availability_hours,
+        'avail_term': avail_term, 'avail_year': avail_year,
+        'avail_term_label': term_label(avail_term, avail_year),
         'min_availability_hours': MIN_AVAILABILITY_HOURS,
         'below_min_availability': total_availability_hours < MIN_AVAILABILITY_HOURS,
         'has_schedule': bool(schedule_entries),

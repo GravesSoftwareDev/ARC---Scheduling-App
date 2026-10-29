@@ -115,8 +115,8 @@
     <!-- Main: Weekly Availability (stands in for the schedule while it's hidden) -->
     <div class="calendar-section">
       <div class="schedule-header">
-        <h2>My Availability</h2>
-        <a href="{% url 'scheduling:manage_availability' %}" class="btn-export-ics">Edit Availability</a>
+        <h2>My {{ avail_term_label }} Availability</h2>
+        <a href="{% url 'scheduling:manage_availability' %}?term={{ avail_term }}&year={{ avail_year }}" class="btn-export-ics">Edit Availability</a>
         <div class="mini-avail-legend">
           <span class="mini-legend-item">
             <span class="mini-swatch" style="background:linear-gradient(135deg,#1976D2,#1565C0);"></span>Available

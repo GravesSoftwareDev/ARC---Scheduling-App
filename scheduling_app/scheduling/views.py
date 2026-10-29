@@ -193,6 +193,12 @@ def _saved_terms(schedule):
         WeeklySchedule.objects.filter(schedule=schedule).values_list('term', 'year')
     ))
 
+def _availability_terms(user):
+    """[(term, year), ...] that `user` has saved availability for, newest first."""
+    return _newest_terms_first(set(
+        WeeklyAvailability.objects.filter(user=user).values_list('term', 'year')
+    ))
+
 # Used only for "Load Default Week": WeeklySchedule template blocks are
 # dateless, but the grid-rendering code below expects ScheduleEntry-shaped
 # objects with a concrete date. This wraps a template block with a real date
@@ -205,6 +211,11 @@ _VirtualEntry = namedtuple(
 
 @login_required
 def manage_availability(request):
+    """An employee's weekly availability for one semester (the `term`/`year`
+    params; the current semester by default). `copy_from=SP-2027` prefills
+    the grid from another saved semester, unsaved until they click Save."""
+    today = date.today()
+    term, year = _requested_term(request.POST if request.method == 'POST' else request.GET, today)
     days = [
         ('MON', 'Monday'), ('TUE', 'Tuesday'), ('WED', 'Wednesday'),
         ('THU', 'Thursday'), ('FRI', 'Friday'),
@@ -225,16 +236,17 @@ def manage_availability(request):
     if request.method == 'POST':
         if not can_edit:
             messages.error(request, "Availability editing is currently closed.")
-            return redirect('scheduling:manage_availability')
+            return redirect(f"{reverse('scheduling:manage_availability')}?term={term}&year={year}")
         preferences_form = EmployeePreferencesForm(request.POST, instance=request.user)
         if preferences_form.is_valid():
             preferences_form.save()
 
         # The submitted form has one AVAILABLE/PREFERRED/empty value per slot
         # checkbox, not per block, so the simplest correct update is to wipe
-        # this employee's availability and rebuild it by run-length-encoding
-        # contiguous same-type slots back into WeeklyAvailability blocks.
-        WeeklyAvailability.objects.filter(user=request.user).delete()
+        # this employee's availability for the semester and rebuild it by
+        # run-length-encoding contiguous same-type slots back into
+        # WeeklyAvailability blocks.
+        WeeklyAvailability.objects.filter(user=request.user, term=term, year=year).delete()
 
         for day_code, _ in days:
             block_start = None
@@ -252,7 +264,7 @@ def manage_availability(request):
                         block_type = slot_type
                     elif slot_type != block_type:
                         WeeklyAvailability.objects.create(
-                            user=request.user, day_of_week=day_code,
+                            user=request.user, term=term, year=year, day_of_week=day_code,
                             start_time=block_start, end_time=slot,
                             availability_type=block_type,
                         )
@@ -261,7 +273,7 @@ def manage_availability(request):
                 else:
                     if block_start is not None:
                         WeeklyAvailability.objects.create(
-                            user=request.user, day_of_week=day_code,
+                            user=request.user, term=term, year=year, day_of_week=day_code,
                             start_time=block_start, end_time=slot,
                             availability_type=block_type,
                         )
@@ -270,16 +282,33 @@ def manage_availability(request):
 
             if block_start is not None:
                 WeeklyAvailability.objects.create(
-                    user=request.user, day_of_week=day_code,
+                    user=request.user, term=term, year=year, day_of_week=day_code,
                     start_time=block_start, end_time=grid_end,
                     availability_type=block_type,
                 )
 
+        messages.success(request, f"{term_label(term, year)} availability saved.")
         return redirect('dashboard:dashboard')
 
     preferences_form = EmployeePreferencesForm(instance=request.user)
 
-    existing = list(WeeklyAvailability.objects.filter(user=request.user))
+    saved_terms = _availability_terms(request.user)
+    copy_term, _, copy_year = request.GET.get('copy_from', '').partition('-')
+    copy_from = next(
+        ((t, y) for t, y in saved_terms if (t, str(y)) == (copy_term, copy_year)), None
+    )
+    if copy_from and can_edit:
+        existing = list(WeeklyAvailability.objects.filter(
+            user=request.user, term=copy_from[0], year=copy_from[1],
+        ))
+        messages.info(
+            request,
+            f"Copied your {term_label(*copy_from)} availability into {term_label(term, year)} "
+            "— review it and click Save Availability to keep it.",
+        )
+    else:
+        copy_from = None
+        existing = list(WeeklyAvailability.objects.filter(user=request.user, term=term, year=year))
     grid = []
     for slot in slots:
         row = {'time': slot, 'display': _slot_display(slot), 'days': {}}
@@ -309,6 +338,15 @@ def manage_availability(request):
         'below_min_availability': total_availability_hours < MIN_AVAILABILITY_HOURS,
         'can_edit': can_edit,
         'availability_window': window,
+        'term': term, 'year': year,
+        'term_label': term_label(term, year),
+        'term_choices': Term.choices,
+        'copied': bool(copy_from),
+        # Other semesters this employee can copy availability from
+        'copy_terms': [
+            {'value': f"{t}-{y}", 'label': term_label(t, y)}
+            for t, y in saved_terms if (t, y) != (term, year)
+        ],
         'has_override': request.user.has_availability_override(),
     }
     return render(request, 'scheduling/availability.html', context)
@@ -463,10 +501,27 @@ def schedule_builder(request):
         str(e.pk): e.wants_lunch_break for e in visible_employees
     }
 
-    # Availability data for visible employees (keyed by emp pk → day → list of blocks)
+    # The semester dropdown at the top picks the semester for "Load Default
+    # Week", "Save Week as Default" and the availability shown. It preselects
+    # the semester in the URL (a dropdown change, Load or Save), else the
+    # scheduler's last pick (the DEFAULT_TERM_COOKIE the page's JS sets on
+    # every change, so it survives week/schedule navigation), else the
+    # current semester.
+    if 'term' in request.GET:
+        term_params = request.GET
+    else:
+        cookie_term, _, cookie_year = request.COOKIES.get(DEFAULT_TERM_COOKIE, '').partition('-')
+        term_params = {'term': cookie_term, 'year': cookie_year}
+    selected_term = _requested_term(term_params, today)
+
+    # Availability data for visible employees (keyed by emp pk → day → list of
+    # blocks), from the semester selected in the dropdown
+    avail_term, avail_year = selected_term
     avail_data = {}
     avail_minutes_by_user = {}
-    all_avail = WeeklyAvailability.objects.filter(user__in=visible_employees).order_by('start_time')
+    all_avail = WeeklyAvailability.objects.filter(
+        user__in=visible_employees, term=avail_term, year=avail_year,
+    ).order_by('start_time')
     for a in all_avail:
         avail_data.setdefault(str(a.user_id), {}).setdefault(a.day_of_week, []).append({
             'start': a.start_time.strftime('%H:%M'),
@@ -619,19 +674,9 @@ def schedule_builder(request):
 
     # ── GET: load existing entries (or the default template) into cell state ─
     load_default = request.GET.get('load_default') == '1'
-    # The Default Week dropdown picks the semester that both "Load Default
-    # Week" and "Save Week as Default" use. It offers every saved default plus
-    # the current semester (even before it has one), and preselects the
-    # semester in the URL (just loaded or saved), else the scheduler's last
-    # pick (the DEFAULT_TERM_COOKIE the page's JS sets on every change, so it
-    # survives week/schedule navigation), else the current semester.
+    # The dropdown offers every saved default plus the current semester (even
+    # before it has one); selected_term is worked out above.
     current_term = (term_for_date(today), today.year)
-    if 'term' in request.GET:
-        term_params = request.GET
-    else:
-        cookie_term, _, cookie_year = request.COOKIES.get(DEFAULT_TERM_COOKIE, '').partition('-')
-        term_params = {'term': cookie_term, 'year': cookie_year}
-    selected_term = _requested_term(term_params, today)
     term_options = _newest_terms_first(
         set(_saved_terms(active_schedule)) | {current_term, selected_term}
     )
@@ -796,6 +841,7 @@ def schedule_builder(request):
             for t, y in term_options
         ],
         'selected_term': selected_term[0], 'selected_year': selected_term[1],
+        'avail_term_label': term_label(avail_term, avail_year),
         'default_term_cookie': DEFAULT_TERM_COOKIE,
     })
 
@@ -862,11 +908,14 @@ def default_schedule_builder(request):
         str(e.pk): e.wants_lunch_break for e in visible_employees
     }
 
-    # Availability is already day-of-week based — same shape as the live builder uses.
+    # Availability is already day-of-week based — same shape as the live builder
+    # uses — from the semester this default week is for.
     avail_data = {}
     avail_minutes_by_user = {}
     if visible_employees:
-        all_avail = WeeklyAvailability.objects.filter(user__in=visible_employees).order_by('start_time')
+        all_avail = WeeklyAvailability.objects.filter(
+            user__in=visible_employees, term=term, year=year,
+        ).order_by('start_time')
         for a in all_avail:
             avail_data.setdefault(str(a.user_id), {}).setdefault(a.day_of_week, []).append({
                 'start': a.start_time.strftime('%H:%M'),

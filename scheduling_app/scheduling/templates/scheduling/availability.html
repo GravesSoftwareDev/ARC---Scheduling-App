@@ -5,7 +5,7 @@
 {% block content %}
 <div class="avail-page-container">
     <div class="avail-page-header">
-        <h2>Manage Your Availability</h2>
+        <h2>Manage Your {{ term_label }} Availability</h2>
        <p class="avail-page-subtitle">
             Click or click and drag to mark cells. Once for <strong>Available</strong>, 
             again for <strong>Preferred</strong>, and a third time to clear. 
@@ -45,8 +45,39 @@
     </div>
     {% endif %}
 
+    <!-- Semester: each semester has its own availability -->
+    <div class="avail-preferences">
+        <div class="avail-preference-field">
+            <label for="term-select">Semester</label>
+            <div style="display:flex;gap:6px;">
+                <select id="term-select">
+                    {% for code, label in term_choices %}
+                    <option value="{{ code }}" {% if code == term %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+                <input type="number" id="term-year" style="width:80px;"
+                       min="2000" max="2100" step="1" value="{{ year }}" aria-label="Year">
+            </div>
+        </div>
+        {% if copy_terms and can_edit %}
+        <div class="avail-preference-field">
+            <label for="copy-from-select">Copy availability from</label>
+            <div style="display:flex;gap:6px;">
+                <select id="copy-from-select">
+                    {% for t in copy_terms %}
+                    <option value="{{ t.value }}" data-label="{{ t.label }}">{{ t.label }}</option>
+                    {% endfor %}
+                </select>
+                <button type="button" class="btn btn-secondary" id="copy-from-btn">Copy</button>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
     <form method="post" id="avail-form">
         {% csrf_token %}
+        <input type="hidden" name="term" value="{{ term }}">
+        <input type="hidden" name="year" value="{{ year }}">
 
         <div class="avail-preferences">
             <div class="avail-preference-field">
@@ -100,16 +131,65 @@
 
         <div class="avail-actions">
             <a href="{% url 'dashboard:dashboard' %}" class="btn btn-primary">Cancel</a>
-            <button type="submit" class="btn btn-primary" {% if not can_edit %}disabled title="Availability editing is currently closed"{% endif %}>Save Availability</button>
+            <button type="submit" class="btn btn-primary" {% if not can_edit %}disabled title="Availability editing is currently closed"{% endif %}>Save {{ term_label }} Availability</button>
         </div>
     </form>
 </div>
 
 <script>
+const TERM = '{{ term }}';
+const YEAR = {{ year }};
 let isDragging = false;
 let dragState = '';
+// Copied-in availability isn't saved yet, so it starts out unsaved.
+let hasUnsaved = {% if copied %}true{% else %}false{% endif %};
+
+function leavePage(url) {
+    if (hasUnsaved && !confirm('You have unsaved availability changes. Leave without saving?')) {
+        return false;
+    }
+    hasUnsaved = false;
+    window.location = url;
+    return true;
+}
+
+// ── Semester change: show that semester's availability ───────────────────
+function changeTerm() {
+    const termSelect = document.getElementById('term-select');
+    const yearInput = document.getElementById('term-year');
+    const year = parseInt(yearInput.value, 10);
+    if (!(year >= 2000 && year <= 2100)) { yearInput.value = YEAR; return; }
+    if (!leavePage(`?term=${termSelect.value}&year=${year}`)) {
+        termSelect.value = TERM;
+        yearInput.value = YEAR;
+    }
+}
+document.getElementById('term-select').addEventListener('change', changeTerm);
+document.getElementById('term-year').addEventListener('change', changeTerm);
+
+// ── Copy another semester's availability into this one (unsaved) ─────────
+const copyBtn = document.getElementById('copy-from-btn');
+if (copyBtn) {
+    copyBtn.addEventListener('click', function() {
+        const copySelect = document.getElementById('copy-from-select');
+        const opt = copySelect.options[copySelect.selectedIndex];
+        if (!confirm(`Copy your ${opt.dataset.label} availability into {{ term_label }}? This replaces what's shown below — nothing is saved until you click Save.`)) {
+            return;
+        }
+        hasUnsaved = false;  // the copy replaces the grid, so skip the unsaved prompt
+        window.location = `?term=${TERM}&year=${YEAR}&copy_from=${opt.value}`;
+    });
+}
+
+document.getElementById('avail-form').addEventListener('submit', function() {
+    hasUnsaved = false;
+});
+window.addEventListener('beforeunload', function(e) {
+    if (hasUnsaved) { e.preventDefault(); e.returnValue = ''; }
+});
 
 function applyState(cell, state) {
+    hasUnsaved = true;
     cell.dataset.state = state;
     cell.classList.remove('state-available', 'state-preferred');
     if (state === 'AVAILABLE') cell.classList.add('state-available');
