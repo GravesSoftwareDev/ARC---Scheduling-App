@@ -10,7 +10,7 @@ import json
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 
-from .models import WeeklyAvailability, OperatingHours, DayOfWeek, ScheduleEntry, DateOperatingHours, Schedule, ShiftLabel, LABEL_PALETTE, WeeklySchedule, AvailabilityWindow, EmployeeColor, hex_color_validator, Term, TERM_ORDER, term_for_date, term_label
+from .models import WeeklyAvailability, OperatingHours, DayOfWeek, ScheduleEntry, DateOperatingHours, Schedule, ShiftLabel, LABEL_PALETTE, WeeklySchedule, AvailabilityWindow, EmployeeColor, hex_color_validator, Term, TERM_ORDER, term_for_date, term_label, min_availability_hours
 from django.core.exceptions import ValidationError
 from .forms import WeeklyHoursForm, DateOperatingHoursForm, EmployeePreferencesForm, AvailabilityWindowForm
 from . import hours
@@ -18,7 +18,6 @@ from . import hours
 
 PARTTIME_WEEKLY_MAX = 19.5  # hours — applies to all part-time employees
 DEFAULT_TERM_COOKIE = 'default_term'  # schedule builder's last-picked default-week semester, e.g. "SP-2027"
-MIN_AVAILABILITY_HOURS = 10  # employees must mark at least this many hours to be schedulable
 
 
 def _loc_slug(loc):
@@ -334,8 +333,8 @@ def manage_availability(request):
         'end_hour': grid_end.hour,
         'preferences_form': preferences_form,
         'total_availability_hours': total_availability_hours,
-        'min_availability_hours': MIN_AVAILABILITY_HOURS,
-        'below_min_availability': total_availability_hours < MIN_AVAILABILITY_HOURS,
+        'min_availability_hours': min_availability_hours(term),
+        'below_min_availability': total_availability_hours < min_availability_hours(term),
         'can_edit': can_edit,
         'availability_window': window,
         'term': term, 'year': year,
@@ -548,7 +547,7 @@ def schedule_builder(request):
 
     # Employees who haven't marked the minimum required availability — flagged red in the sidebar
     low_availability_flags = {
-        e.pk: (avail_minutes_by_user.get(e.pk, 0) / 60) < MIN_AVAILABILITY_HOURS
+        e.pk: (avail_minutes_by_user.get(e.pk, 0) / 60) < min_availability_hours(avail_term)
         for e in visible_employees
     }
 
@@ -843,7 +842,7 @@ def schedule_builder(request):
         'employee_desired_hours_json': json.dumps(employee_desired_hours),
         'employee_wants_lunch_json': json.dumps(employee_wants_lunch),
         'low_availability_flags': low_availability_flags,
-        'min_availability_hours': MIN_AVAILABILITY_HOURS,
+        'min_availability_hours': min_availability_hours(avail_term),
         'schedule_labels_json': json.dumps(schedule_labels_data),
         'employee_initials_json': json.dumps(employee_initials),
         'employee_role_hours_json': role_hours.as_json(
@@ -942,7 +941,7 @@ def default_schedule_builder(request):
 
     # Employees who haven't marked the minimum required availability — flagged red in the sidebar
     low_availability_flags = {
-        e.pk: (avail_minutes_by_user.get(e.pk, 0) / 60) < MIN_AVAILABILITY_HOURS
+        e.pk: (avail_minutes_by_user.get(e.pk, 0) / 60) < min_availability_hours(term)
         for e in visible_employees
     }
 
@@ -1165,7 +1164,7 @@ def default_schedule_builder(request):
         'employee_desired_hours_json': json.dumps(employee_desired_hours),
         'employee_wants_lunch_json': json.dumps(employee_wants_lunch),
         'low_availability_flags': low_availability_flags,
-        'min_availability_hours': MIN_AVAILABILITY_HOURS,
+        'min_availability_hours': min_availability_hours(term),
         'schedule_labels_json': json.dumps(schedule_labels_data),
         'employee_initials_json': json.dumps(employee_initials),
         'employee_role_hours_json': role_hours.as_json(

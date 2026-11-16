@@ -44,6 +44,17 @@ TERM_ORDER = {
     Term.FALL_FINALS: 5,
 }
 
+FINALS_TERMS = {Term.SPRING_FINALS, Term.SUMMER_FINALS, Term.FALL_FINALS}
+
+# Employees must mark at least this many hours of availability in a regular
+# semester to be schedulable. Finals weeks have no minimum.
+MIN_AVAILABILITY_HOURS = 10
+
+
+def min_availability_hours(term):
+    """Required hours of availability for `term` (0 = no requirement)."""
+    return 0 if term in FINALS_TERMS else MIN_AVAILABILITY_HOURS
+
 
 def term_for_date(d):
     """The semester a date falls in: Jan–May Spring, Jun–Jul Summer, Aug–Dec

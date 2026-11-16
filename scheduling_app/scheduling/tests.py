@@ -4,7 +4,7 @@ from django.test import TestCase
 from django.urls import reverse
 
 from account.models import Employee
-from .models import AvailabilityWindow, Term, WeeklyAvailability, term_for_date, term_label
+from .models import AvailabilityWindow, Term, WeeklyAvailability, term_for_date, term_label, min_availability_hours
 from .views import _newest_terms_first
 
 
@@ -20,6 +20,19 @@ class FinalsTermTests(TestCase):
         self.assertEqual(term_label(Term.FALL_FINALS, 2026), 'FF26')
         self.assertEqual(term_label(Term.SPRING_FINALS, 2027), 'SF27')
         self.assertEqual(term_label(Term.SUMMER_FINALS, 2027), 'UF27')
+
+    def test_finals_have_no_minimum_hours(self):
+        for t in (Term.SPRING_FINALS, Term.SUMMER_FINALS, Term.FALL_FINALS):
+            self.assertEqual(min_availability_hours(t), 0)
+        for t in (Term.SPRING, Term.SUMMER, Term.FALL):
+            self.assertEqual(min_availability_hours(t), 10)
+
+    def test_availability_page_warns_only_for_regular_terms(self):
+        emp = Employee.objects.create_user('emp', password='pw')
+        self.client.force_login(emp)
+        url = reverse('scheduling:manage_availability')
+        self.assertTrue(self.client.get(url + '?term=FA&year=2026').context['below_min_availability'])
+        self.assertFalse(self.client.get(url + '?term=FF&year=2026').context['below_min_availability'])
 
     def test_dates_never_resolve_to_finals(self):
         self.assertEqual(term_for_date(datetime.date(2026, 12, 15)), Term.FALL)
