@@ -25,16 +25,30 @@ class DayOfWeek(models.TextChoices):
 
 class Term(models.TextChoices):
     """Academic semester. Codes are ordered chronologically within a year by
-    TERM_ORDER; labels like "FA26" come from term_label()."""
+    TERM_ORDER; labels like "FA26" come from term_label(). Finals weeks are
+    terms of their own (separate availability, default week and availability
+    window), placed right after the semester they end."""
     SPRING = 'SP', 'Spring'
+    SPRING_FINALS = 'SF', 'Spring Finals'
     SUMMER = 'SU', 'Summer'
+    SUMMER_FINALS = 'UF', 'Summer Finals'
     FALL = 'FA', 'Fall'
+    FALL_FINALS = 'FF', 'Fall Finals'
 
-TERM_ORDER = {Term.SPRING: 0, Term.SUMMER: 1, Term.FALL: 2}
+TERM_ORDER = {
+    Term.SPRING: 0,
+    Term.SPRING_FINALS: 1,
+    Term.SUMMER: 2,
+    Term.SUMMER_FINALS: 3,
+    Term.FALL: 4,
+    Term.FALL_FINALS: 5,
+}
 
 
 def term_for_date(d):
-    """The semester a date falls in: Jan–May Spring, Jun–Jul Summer, Aug–Dec Fall."""
+    """The semester a date falls in: Jan–May Spring, Jun–Jul Summer, Aug–Dec
+    Fall. Never returns a finals term — finals weeks have no fixed dates, so
+    they're only used when picked explicitly."""
     if d.month <= 5:
         return Term.SPRING
     if d.month <= 7:
@@ -115,15 +129,18 @@ class WeeklyAvailability(models.Model):
         verbose_name_plural = 'Weekly Availabilities'
 
 class AvailabilityWindow(models.Model):
-    """Global on/off switch (with optional date range) for editing availability."""
-    is_open = models.BooleanField(default=True)
+    """On/off switch (with optional date range) for editing availability in
+    one term (term + year). A term with no row is closed."""
+    term = models.CharField(max_length=2, choices=Term.choices)
+    year = models.PositiveSmallIntegerField()
+    is_open = models.BooleanField(default=False)
     opens_at = models.DateField(null=True, blank=True)
     closes_at = models.DateField(null=True, blank=True)
 
     def clean(self):
         if self.opens_at and self.closes_at and self.opens_at > self.closes_at:
             raise ValidationError("Opens date must be before closes date.")
-    
+
     def is_currently_open(self):
         """Open when the manual toggle is on, OR when today falls within the
         optional date range (the two are independent — either one is enough)."""
@@ -137,19 +154,25 @@ class AvailabilityWindow(models.Model):
                 return False
             return True
         return False
-    
+
     @classmethod
-    def current(cls):
-        obj, _ = cls.objects.get_or_create(pk=1)
-        return obj
-    
+    def for_term(cls, term, year):
+        """The window for (term, year) — an unsaved, closed one if none exists
+        yet, so merely viewing a term never creates a row."""
+        return cls.objects.filter(term=term, year=year).first() or cls(term=term, year=year)
+
+    @property
+    def label(self):
+        return term_label(self.term, self.year)
+
     def __str__(self):
-        return f"Availability editing {'open' if self.is_open else 'closed'}."
-    
+        return f"{self.label} availability editing {'open' if self.is_currently_open() else 'closed'}."
+
     class Meta:
-        verbose_name_plural = 'Availability Window'
-    
-    
+        unique_together = ['term', 'year']
+        verbose_name_plural = 'Availability Windows'
+
+
 def validate_quarter_hour(t):
     """Operating hours open/close on the quarter hour (:00, :15, :30, :45)."""
     if t is not None and (t.minute % 15 or t.second or t.microsecond):

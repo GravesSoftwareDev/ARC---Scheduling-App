@@ -220,7 +220,8 @@ def manage_availability(request):
         ('MON', 'Monday'), ('TUE', 'Tuesday'), ('WED', 'Wednesday'),
         ('THU', 'Thursday'), ('FRI', 'Friday'),
     ]
-    can_edit = _can_edit_availability(request.user)
+    window = AvailabilityWindow.for_term(term, year)
+    can_edit = _can_edit_availability(request.user, window)
     # The grid covers this employee's own role's weekly hours.
     role_weekly = hours.weekly_hours(request.user.role)
     operating_hours = {
@@ -235,7 +236,7 @@ def manage_availability(request):
 
     if request.method == 'POST':
         if not can_edit:
-            messages.error(request, "Availability editing is currently closed.")
+            messages.error(request, f"{term_label(term, year)} availability editing is currently closed.")
             return redirect(f"{reverse('scheduling:manage_availability')}?term={term}&year={year}")
         preferences_form = EmployeePreferencesForm(request.POST, instance=request.user)
         if preferences_form.is_valid():
@@ -325,7 +326,6 @@ def manage_availability(request):
         grid.append(row)
 
     total_availability_hours = _total_availability_hours(existing)
-    window = AvailabilityWindow.current()
 
     context = {
         'grid': grid,
@@ -347,7 +347,7 @@ def manage_availability(request):
             {'value': f"{t}-{y}", 'label': term_label(t, y)}
             for t, y in saved_terms if (t, y) != (term, year)
         ],
-        'has_override': request.user.has_availability_override(),
+        'has_override': request.user.has_availability_override(term, year),
     }
     return render(request, 'scheduling/availability.html', context)
 
@@ -355,16 +355,31 @@ def manage_availability(request):
 @login_required
 @user_passes_test(_is_admin)
 def availability_window(request):
-    window = AvailabilityWindow.current()
+    """Open/close availability editing for one term (the `term`/`year`
+    params; the current semester by default), plus an overview of every
+    term that has a window."""
+    today = date.today()
+    term, year = _requested_term(request.POST if request.method == 'POST' else request.GET, today)
+    window = AvailabilityWindow.for_term(term, year)
     if request.method == 'POST':
         form = AvailabilityWindowForm(request.POST, instance=window)
         if form.is_valid():
             form.save()
-            messages.success(request, "Availability window updated.")
-            return redirect('scheduling:availability_window')
+            messages.success(request, f"{window.label} availability window updated.")
+            return redirect(f"{reverse('scheduling:availability_window')}?term={term}&year={year}")
     else:
         form = AvailabilityWindowForm(instance=window)
-    return render(request, 'scheduling/availability_window.html', {'form': form, 'window': window})
+    windows = sorted(
+        AvailabilityWindow.objects.all(),
+        key=lambda w: (w.year, TERM_ORDER[w.term]), reverse=True,
+    )
+    return render(request, 'scheduling/availability_window.html', {
+        'form': form, 'window': window,
+        'term': term, 'year': year,
+        'term_label': term_label(term, year),
+        'term_choices': Term.choices,
+        'windows': windows,
+    })
 
 @login_required
 @user_passes_test(_is_admin)
@@ -1439,11 +1454,11 @@ def _slots_to_weekly_blocks(emp_slots, slot_ends, schedule, term, year, day_code
                 custom_label=label,
             )
 
-def _can_edit_availability(user):
-    """Admins and employees with an active per-user override bypass the
-    global AvailabilityWindow entirely; everyone else is subject to it."""
+def _can_edit_availability(user, window):
+    """Admins can always edit, and so can employees with an active exception
+    for the window's term; everyone else needs the term's `window` to be open."""
     if not user.is_authenticated:
         return False
-    if user.is_admin or user.has_availability_override():
+    if user.is_admin or user.has_availability_override(window.term, window.year):
         return True
-    return AvailabilityWindow.current().is_currently_open()
+    return window.is_currently_open()

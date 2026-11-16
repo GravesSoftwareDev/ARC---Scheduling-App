@@ -2193,6 +2193,25 @@ select.form-control { cursor: pointer; }
     color: #666;
 }
 
+.aw-card + .aw-card { margin-top: 20px; }
+.aw-term-picker { margin-bottom: 16px; }
+.aw-term-inputs { display: flex; gap: 6px; }
+.aw-term-inputs input { width: 90px; }
+
+.aw-term-list { list-style: none; margin: 0; padding: 0; }
+.aw-term-list li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border-color);
+}
+.aw-term-list li:last-child { border-bottom: none; }
+.aw-term-list a { font-weight: 600; min-width: 44px; }
+.aw-term-list a.aw-term-current { text-decoration: underline; }
+.aw-term-name { flex: 1; font-size: 13px; }
+
 /* Special date form */
 .oh-special-form { display: flex; flex-direction: column; gap: 14px; }
 .oh-special-fields { display: flex; flex-direction: column; gap: 12px; }
@@ -3140,3 +3159,23 @@ select.form-control { cursor: pointer; }
         max-width: none;
     }
 }
+
+/* Availability exception: compact term + year row (same layout as the
+   Availability Window term picker), then the "Until" date beneath it.
+   Overrides the full-width .registration-form inputs. */
+.reg-override-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.registration-form .reg-override-row select,
+.registration-form .reg-override-row input[type="date"] { width: auto; }
+.registration-form .reg-override-row select { min-width: 160px; }
+.reg-override-row input[type="number"] {
+    width: 100px;
+    padding: 8px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    font-size: 14px;
+    box-sizing: border-box;
+    color: var(--text-color);
+    background: #fff;
+}
+.reg-override-until { margin-top: 8px; }
+.reg-override-until-label { font-size: 14px; min-width: 40px; }

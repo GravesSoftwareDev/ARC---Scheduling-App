@@ -29,12 +29,12 @@
 
     {% if not can_edit %}
     <div class="avail-closed-banner">
-        Availability editing is currently closed.
-        {% if availability_window.opens_at %}It reopens {{ availability_window.opens_at|date:"D, M j, Y" }}.{% endif %}
+        {{ term_label }} availability editing is currently closed.
+        {% if availability_window.opens_at %}It opens {{ availability_window.opens_at|date:"D, M j, Y" }}.{% endif %}
     </div>
     {% elif has_override %}
     <div class="avail-override-banner">
-        You've been granted an exception to edit your availability until {{ user.availability_override_until|date:"D, M j, Y" }}.
+        You've been granted an exception to edit your {{ term_label }} availability until {{ user.availability_override_until|date:"D, M j, Y" }}.
     </div>
     {% endif %}
 
@@ -131,7 +131,7 @@
 
         <div class="avail-actions">
             <a href="{% url 'dashboard:dashboard' %}" class="btn btn-primary">Cancel</a>
-            <button type="submit" class="btn btn-primary" {% if not can_edit %}disabled title="Availability editing is currently closed"{% endif %}>Save {{ term_label }} Availability</button>
+            <button type="submit" class="btn btn-primary" {% if not can_edit %}disabled title="{{ term_label }} availability editing is currently closed"{% endif %}>Save {{ term_label }} Availability</button>
         </div>
     </form>
 </div>

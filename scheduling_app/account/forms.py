@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib.auth import get_user_model
-from scheduling.models import Schedule
+from scheduling.models import Schedule, Term
 from .models import SecuritySettings
 User = get_user_model()
 
@@ -20,6 +20,29 @@ def birth_day_field(required):
                                   empty_value=None, required=required)
 
 
+def override_term_field():
+    return forms.ChoiceField(choices=[('', 'Term')] + Term.choices, required=False)
+
+
+def override_year_field():
+    return forms.IntegerField(required=False, min_value=2000, max_value=2100,
+                              widget=forms.NumberInput(attrs={'placeholder': 'Year'}))
+
+
+def clean_availability_override(form, cleaned):
+    """An exception date needs the term it applies to; without a date, any
+    term/year is dropped so stale values don't linger."""
+    if cleaned.get('availability_override_until'):
+        if not cleaned.get('availability_override_term'):
+            form.add_error('availability_override_term', 'Choose the term this exception applies to.')
+        if not cleaned.get('availability_override_year'):
+            form.add_error('availability_override_year', 'Enter the year of the term this exception applies to.')
+    else:
+        cleaned['availability_override_term'] = ''
+        cleaned['availability_override_year'] = None
+    return cleaned
+
+
 class EditEmployeeForm(forms.ModelForm):
     birth_month = birth_month_field(required=False)
     birth_day = birth_day_field(required=False)
@@ -29,11 +52,17 @@ class EditEmployeeForm(forms.ModelForm):
     availability_override_until = forms.DateField(
         required=False, widget=forms.DateInput(attrs={'type': 'date'})
     )
+    availability_override_term = override_term_field()
+    availability_override_year = override_year_field()
 
     class Meta:
         model = User
         fields = ('username', 'email', 'first_name', 'last_name', 'birth_month', 'birth_day',
-                   'part_time', 'role', 'is_admin', 'availability_override_until')
+                   'part_time', 'role', 'is_admin', 'availability_override_until',
+                   'availability_override_term', 'availability_override_year')
+
+    def clean(self):
+        return clean_availability_override(self, super().clean())
 
 
 class RegistrationForm(forms.ModelForm):
@@ -51,6 +80,8 @@ class RegistrationForm(forms.ModelForm):
     availability_override_until = forms.DateField(
         required=False, widget=forms.DateInput(attrs={'type': 'date'})
     )
+    availability_override_term = override_term_field()
+    availability_override_year = override_year_field()
 
     class Meta:
         model = User
@@ -64,6 +95,9 @@ class RegistrationForm(forms.ModelForm):
             self.fields['schedules'].queryset = requester.scheduler_of.order_by('name')
             del self.fields['is_admin']
 
+    def clean(self):
+        return clean_availability_override(self, super().clean())
+
     def save(self, commit=True):
         user = super().save(commit=False)
         user.email = self.cleaned_data["email"]
@@ -73,6 +107,8 @@ class RegistrationForm(forms.ModelForm):
         user.part_time = self.cleaned_data["part_time"]
         user.is_admin = self.cleaned_data.get("is_admin", False)
         user.availability_override_until = self.cleaned_data.get("availability_override_until")
+        user.availability_override_term = self.cleaned_data.get("availability_override_term", '')
+        user.availability_override_year = self.cleaned_data.get("availability_override_year")
         # New employees always start on the shared org-wide default password
         # (editable on Employee List) rather than a random/emailed one — this
         # app has no outbound email, so there's no way to deliver a random

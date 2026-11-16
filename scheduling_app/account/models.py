@@ -37,9 +37,13 @@ class Employee(AbstractUser):
     )
     wants_lunch_break = models.BooleanField(default=False)
 
-    # If set to a future date, this employee can edit their own availability
-    # even while the global AvailabilityWindow is closed to everyone else.
+    # An availability exception: until this date (inclusive), this employee
+    # can edit their own availability for one term (a scheduling.models.Term
+    # code + year) even while that term's AvailabilityWindow is closed to
+    # everyone else. Other terms stay subject to their windows.
     availability_override_until = models.DateField(null=True, blank=True)
+    availability_override_term = models.CharField(max_length=2, blank=True, default='')
+    availability_override_year = models.PositiveSmallIntegerField(null=True, blank=True)
 
     def clean(self):
         super().clean()
@@ -61,10 +65,13 @@ class Employee(AbstractUser):
             return ''
         return f'{calendar.month_name[self.birth_month]} {self.birth_day}'
 
-    def has_availability_override(self):
+    def has_availability_override(self, term, year):
+        """True while this employee's exception is active for (term, year)."""
         return bool(
             self.availability_override_until
             and self.availability_override_until >= datetime.date.today()
+            and self.availability_override_term == term
+            and self.availability_override_year == year
         )
 
 

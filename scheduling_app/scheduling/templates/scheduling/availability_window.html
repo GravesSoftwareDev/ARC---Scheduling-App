@@ -7,32 +7,46 @@
   <div class="oh-page-header">
     <div>
       <h1 class="oh-title">Availability Window</h1>
-      <p class="oh-subtitle">Control when employees can edit their availability. Individual exceptions are granted from the Employee List.</p>
+      <p class="oh-subtitle">Control when employees can edit their availability for each term. Individual exceptions are granted from the Employee List.</p>
     </div>
     <a href="{% url 'dashboard:dashboard' %}" class="btn btn-secondary">← Back to Dashboard</a>
   </div>
 
   <div class="oh-card aw-card">
+    <div class="reg-field aw-term-picker">
+      <label class="reg-label" for="term-select">Term</label>
+      <div class="aw-term-inputs">
+        <select id="term-select">
+          {% for code, label in term_choices %}
+          <option value="{{ code }}" {% if code == term %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+        <input type="number" id="term-year" min="2000" max="2100" step="1" value="{{ year }}" aria-label="Year">
+      </div>
+    </div>
+
     <div class="aw-status-row">
       <span class="aw-status-badge {% if window.is_currently_open %}aw-status-open{% else %}aw-status-closed{% endif %}">
         {% if window.is_currently_open %}Open{% else %}Closed{% endif %}
       </span>
       <span class="aw-status-desc">
         {% if window.is_currently_open %}
-          Employees can currently edit their availability.
+          Employees can currently edit their {{ term_label }} availability.
         {% else %}
-          Employees cannot edit their availability right now (unless individually granted an exception).
+          Employees cannot edit their {{ term_label }} availability right now (unless individually granted an exception).
         {% endif %}
       </span>
     </div>
 
     <form method="post" class="registration-form">
       {% csrf_token %}
+      <input type="hidden" name="term" value="{{ term }}">
+      <input type="hidden" name="year" value="{{ year }}">
 
       <div class="reg-field">
         <label class="reg-checkbox-item">
           {{ form.is_open }}
-          <span class="reg-label">Editing enabled</span>
+          <span class="reg-label">Editing enabled for {{ term_label }}</span>
         </label>
         {% if form.is_open.errors %}<p class="reg-error">{{ form.is_open.errors|join:" " }}</p>{% endif %}
       </div>
@@ -49,15 +63,52 @@
           {% if form.closes_at.errors %}<p class="reg-error">{{ form.closes_at.errors|join:" " }}</p>{% endif %}
         </div>
       </div>
-      <p class="oh-card-desc">Editing is open whenever "Editing enabled" is checked, OR whenever today falls within the optional date range below — either one alone is enough to open editing. Leave both dates blank to rely only on the toggle.</p>
+      <p class="oh-card-desc">Editing is open whenever "Editing enabled" is checked, OR whenever today falls within the optional date range — either one alone is enough to open editing. Leave both dates blank to rely only on the toggle. Terms that have never been set up are closed.</p>
 
       {% if form.non_field_errors %}
       <p class="reg-error">{{ form.non_field_errors|join:" " }}</p>
       {% endif %}
 
-      <button type="submit" class="btn btn-primary">Save</button>
+      <button type="submit" class="btn btn-primary">Save {{ term_label }}</button>
     </form>
   </div>
 
+  {% if windows %}
+  <div class="oh-card aw-card">
+    <h2 class="oh-card-title">All terms</h2>
+    <ul class="aw-term-list">
+      {% for w in windows %}
+      <li>
+        <a href="?term={{ w.term }}&year={{ w.year }}"{% if w.term == term and w.year == year %} class="aw-term-current"{% endif %}>{{ w.label }}</a>
+        <span class="aw-term-name">{{ w.get_term_display }} {{ w.year }}</span>
+        <span class="aw-status-badge {% if w.is_currently_open %}aw-status-open{% else %}aw-status-closed{% endif %}">
+          {% if w.is_currently_open %}Open{% else %}Closed{% endif %}
+        </span>
+        {% if w.opens_at or w.closes_at %}
+        <span class="aw-status-desc">
+          {% if w.opens_at %}from {{ w.opens_at|date:"M j, Y" }}{% endif %}
+          {% if w.closes_at %}until {{ w.closes_at|date:"M j, Y" }}{% endif %}
+        </span>
+        {% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
 </div>
+
+<script>
+(function () {
+  const termSelect = document.getElementById('term-select');
+  const yearInput = document.getElementById('term-year');
+  function go() {
+    const year = parseInt(yearInput.value, 10);
+    if (!year || year < 2000 || year > 2100) return;
+    window.location = `?term=${termSelect.value}&year=${year}`;
+  }
+  termSelect.addEventListener('change', go);
+  yearInput.addEventListener('change', go);
+})();
+</script>
 {% endblock %}
