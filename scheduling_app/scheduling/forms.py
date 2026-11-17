@@ -1,11 +1,11 @@
 from django import forms
-from .models import DateOperatingHours, DayOfWeek, Schedule, AvailabilityWindow, validate_quarter_hour
+from .models import DateOperatingHours, DayOfWeek, Schedule, AvailabilityWindow, TermPreferences, validate_quarter_hour
 
 
 class EmployeePreferencesForm(forms.ModelForm):
+    """Desired weekly hours + lunch break for one term (a TermPreferences row)."""
     class Meta:
-        from account.models import Employee
-        model = Employee
+        model = TermPreferences
         fields = ['desired_weekly_hours', 'wants_lunch_break']
         widgets = {
             'desired_weekly_hours': forms.NumberInput(attrs={

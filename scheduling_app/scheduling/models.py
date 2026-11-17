@@ -2,7 +2,7 @@ from django.db import models
 from django.db.models import Case, IntegerField, Value, When
 from django.conf import settings
 from django.core.exceptions import ValidationError
-from django.core.validators import RegexValidator
+from django.core.validators import MinValueValidator, RegexValidator
 import datetime
 
 from account.models import Employee
@@ -138,6 +138,48 @@ class WeeklyAvailability(models.Model):
     class Meta:
         ordering = [DAY_ORDER, 'start_time']
         verbose_name_plural = 'Weekly Availabilities'
+
+class TermPreferences(models.Model):
+    """An employee's scheduling preferences for one semester (term + year),
+    set alongside their availability for that term. A term with no row
+    means no preferences were given."""
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='term_preferences',
+    )
+    term = models.CharField(max_length=2, choices=Term.choices)
+    year = models.PositiveSmallIntegerField()
+    desired_weekly_hours = models.FloatField(
+        null=True, blank=True, validators=[MinValueValidator(0)]
+    )
+    wants_lunch_break = models.BooleanField(default=False)
+
+    @classmethod
+    def for_term(cls, user, term, year):
+        """The preferences for (user, term, year) — an unsaved, empty one if
+        none exist yet, so merely viewing a term never creates a row."""
+        return (
+            cls.objects.filter(user=user, term=term, year=year).first()
+            or cls(user=user, term=term, year=year)
+        )
+
+    @classmethod
+    def by_user(cls, users, term, year):
+        """{user_pk: TermPreferences} for `users` in (term, year); users
+        without a row are left out."""
+        return {
+            p.user_id: p
+            for p in cls.objects.filter(user__in=users, term=term, year=year)
+        }
+
+    def __str__(self):
+        return f"{self.user} ({term_label(self.term, self.year)}) preferences"
+
+    class Meta:
+        unique_together = ['user', 'term', 'year']
+        verbose_name_plural = 'Term Preferences'
+
 
 class AvailabilityWindow(models.Model):
     """On/off switch (with optional date range) for editing availability in

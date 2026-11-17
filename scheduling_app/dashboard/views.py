@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from django.http import HttpResponse
-from scheduling.models import WeeklyAvailability, ScheduleEntry, term_for_date, term_label, min_availability_hours
+from scheduling.models import WeeklyAvailability, ScheduleEntry, TermPreferences, term_for_date, term_label, min_availability_hours
 
 from scheduling import hours
 from datetime import time, date, timedelta, datetime, timezone as dt_timezone
@@ -188,6 +188,7 @@ def dashboard(request):
         'total_availability_hours': total_availability_hours,
         'avail_term': avail_term, 'avail_year': avail_year,
         'avail_term_label': term_label(avail_term, avail_year),
+        'term_prefs': TermPreferences.for_term(request.user, avail_term, avail_year),
         'min_availability_hours': min_availability_hours(avail_term),
         'below_min_availability': total_availability_hours < min_availability_hours(avail_term),
         'has_schedule': bool(schedule_entries),

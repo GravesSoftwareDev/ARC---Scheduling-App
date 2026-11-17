@@ -137,11 +137,11 @@
       <div class="avail-preferences-summary">
         <div class="avail-preference-field">
           <span class="info-label">Desired weekly hours</span>
-          <span class="info-value">{{ user.desired_weekly_hours|default:"Not set" }}</span>
+          <span class="info-value">{{ term_prefs.desired_weekly_hours|default_if_none:"Not set" }}</span>
         </div>
         <div class="avail-preference-field">
           <span class="info-label">Scheduled lunch break</span>
-          <span class="info-value">{{ user.wants_lunch_break|yesno:"Requested,Not requested" }}</span>
+          <span class="info-value">{{ term_prefs.wants_lunch_break|yesno:"Requested,Not requested" }}</span>
         </div>
       </div>
 

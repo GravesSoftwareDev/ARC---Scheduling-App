@@ -32,10 +32,8 @@ class Employee(AbstractUser):
     # is_staff/is_superuser (which only control the built-in /admin/ site).
     # This is what every admin-only screen in the app itself checks.
     is_admin = models.BooleanField(default=False)
-    desired_weekly_hours = models.FloatField(
-        null=True, blank=True, validators=[MinValueValidator(0)]
-    )
-    wants_lunch_break = models.BooleanField(default=False)
+    # Desired weekly hours + lunch break are per term:
+    # see scheduling.models.TermPreferences.
 
     # An availability exception: until this date (inclusive), this employee
     # can edit their own availability for one term (a scheduling.models.Term

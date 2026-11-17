@@ -4,7 +4,7 @@ from django.test import TestCase
 from django.urls import reverse
 
 from account.models import Employee
-from .models import AvailabilityWindow, Term, WeeklyAvailability, term_for_date, term_label, min_availability_hours
+from .models import AvailabilityWindow, Term, TermPreferences, WeeklyAvailability, term_for_date, term_label, min_availability_hours
 from .views import _newest_terms_first
 
 
@@ -109,3 +109,46 @@ class PerTermAvailabilityWindowTests(TestCase):
             {'term': 'FF', 'year': 2026, 'is_open': 'on'},
         )
         self.assertFalse(AvailabilityWindow.objects.exists())
+
+
+class PerTermPreferencesTests(TestCase):
+    """Desired weekly hours + lunch break are saved per term, like availability."""
+
+    def setUp(self):
+        self.employee = Employee.objects.create_user('emp', password='pw')
+        self.url = reverse('scheduling:manage_availability')
+        for term in ('FA', 'SP'):
+            AvailabilityWindow.objects.create(term=term, year=2027, is_open=True)
+        self.client.force_login(self.employee)
+
+    def _save(self, term, hours, lunch=False):
+        data = {'term': term, 'year': 2027, 'desired_weekly_hours': hours}
+        if lunch:
+            data['wants_lunch_break'] = 'on'
+        self.client.post(self.url, data)
+
+    def test_each_term_keeps_its_own_preferences(self):
+        self._save('FA', 19.5, lunch=True)
+        self._save('SP', 10)
+        fa = TermPreferences.objects.get(user=self.employee, term='FA', year=2027)
+        sp = TermPreferences.objects.get(user=self.employee, term='SP', year=2027)
+        self.assertEqual((fa.desired_weekly_hours, fa.wants_lunch_break), (19.5, True))
+        self.assertEqual((sp.desired_weekly_hours, sp.wants_lunch_break), (10, False))
+
+        form = self.client.get(self.url + '?term=FA&year=2027').context['preferences_form']
+        self.assertEqual(form.instance.desired_weekly_hours, 19.5)
+
+    def test_viewing_a_term_does_not_create_preferences(self):
+        self.client.get(self.url + '?term=FA&year=2027')
+        self.assertFalse(TermPreferences.objects.exists())
+
+    def test_copy_from_prefills_preferences(self):
+        self._save('FA', 15, lunch=True)
+        WeeklyAvailability.objects.create(
+            user=self.employee, term='FA', year=2027, day_of_week='MON',
+            start_time=datetime.time(10), end_time=datetime.time(11),
+        )
+        form = self.client.get(self.url + '?term=SP&year=2027&copy_from=FA-2027').context['preferences_form']
+        self.assertEqual(form.instance.desired_weekly_hours, 15)
+        self.assertTrue(form.instance.wants_lunch_break)
+        self.assertFalse(TermPreferences.objects.filter(term='SP').exists())  # unsaved until Save

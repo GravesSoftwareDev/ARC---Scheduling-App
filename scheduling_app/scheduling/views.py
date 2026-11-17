@@ -10,7 +10,7 @@ import json
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 
-from .models import WeeklyAvailability, OperatingHours, DayOfWeek, ScheduleEntry, DateOperatingHours, Schedule, ShiftLabel, LABEL_PALETTE, WeeklySchedule, AvailabilityWindow, EmployeeColor, hex_color_validator, Term, TERM_ORDER, term_for_date, term_label, min_availability_hours
+from .models import WeeklyAvailability, OperatingHours, DayOfWeek, ScheduleEntry, DateOperatingHours, Schedule, ShiftLabel, LABEL_PALETTE, WeeklySchedule, AvailabilityWindow, TermPreferences, EmployeeColor, hex_color_validator, Term, TERM_ORDER, term_for_date, term_label, min_availability_hours
 from django.core.exceptions import ValidationError
 from .forms import WeeklyHoursForm, DateOperatingHoursForm, EmployeePreferencesForm, AvailabilityWindowForm
 from . import hours
@@ -192,6 +192,15 @@ def _saved_terms(schedule):
         WeeklySchedule.objects.filter(schedule=schedule).values_list('term', 'year')
     ))
 
+def _term_preferences_json(employees, term, year):
+    """({emp_pk_str: desired_weekly_hours}, {emp_pk_str: wants_lunch_break})
+    for `employees` in (term, year), for the schedule builders' JS. Employees
+    with no preferences for the term get None / False."""
+    prefs = TermPreferences.by_user(employees, term, year)
+    desired = {str(e.pk): getattr(prefs.get(e.pk), 'desired_weekly_hours', None) for e in employees}
+    lunch = {str(e.pk): getattr(prefs.get(e.pk), 'wants_lunch_break', False) for e in employees}
+    return desired, lunch
+
 def _availability_terms(user):
     """[(term, year), ...] that `user` has saved availability for, newest first."""
     return _newest_terms_first(set(
@@ -237,7 +246,9 @@ def manage_availability(request):
         if not can_edit:
             messages.error(request, f"{term_label(term, year)} availability editing is currently closed.")
             return redirect(f"{reverse('scheduling:manage_availability')}?term={term}&year={year}")
-        preferences_form = EmployeePreferencesForm(request.POST, instance=request.user)
+        preferences_form = EmployeePreferencesForm(
+            request.POST, instance=TermPreferences.for_term(request.user, term, year),
+        )
         if preferences_form.is_valid():
             preferences_form.save()
 
@@ -290,8 +301,6 @@ def manage_availability(request):
         messages.success(request, f"{term_label(term, year)} availability saved.")
         return redirect('dashboard:dashboard')
 
-    preferences_form = EmployeePreferencesForm(instance=request.user)
-
     saved_terms = _availability_terms(request.user)
     copy_term, _, copy_year = request.GET.get('copy_from', '').partition('-')
     copy_from = next(
@@ -309,6 +318,15 @@ def manage_availability(request):
     else:
         copy_from = None
         existing = list(WeeklyAvailability.objects.filter(user=request.user, term=term, year=year))
+
+    # Preferences are per term too. When copying, prefill them from the
+    # copied term (as unsaved initial values) unless this term has its own.
+    term_prefs = TermPreferences.for_term(request.user, term, year)
+    if copy_from and term_prefs.pk is None:
+        source = TermPreferences.for_term(request.user, *copy_from)
+        term_prefs.desired_weekly_hours = source.desired_weekly_hours
+        term_prefs.wants_lunch_break = source.wants_lunch_break
+    preferences_form = EmployeePreferencesForm(instance=term_prefs)
     grid = []
     for slot in slots:
         row = {'time': slot, 'display': _slot_display(slot), 'days': {}}
@@ -507,14 +525,6 @@ def schedule_builder(request):
 
     employee_colors, custom_color_pks = _employee_colors(active_schedule, visible_employees)
 
-    # Desired weekly hours + lunch break preference, set by each employee on their availability page
-    employee_desired_hours = {
-        str(e.pk): e.desired_weekly_hours for e in visible_employees
-    }
-    employee_wants_lunch = {
-        str(e.pk): e.wants_lunch_break for e in visible_employees
-    }
-
     # The semester dropdown at the top picks the semester for "Load Default
     # Week", "Save Week as Default" and the availability shown. It preselects
     # the semester in the URL (a dropdown change, Load or Save), else the
@@ -531,6 +541,12 @@ def schedule_builder(request):
     # Availability data for visible employees (keyed by emp pk → day → list of
     # blocks), from the semester selected in the dropdown
     avail_term, avail_year = selected_term
+
+    # Desired weekly hours + lunch break preference, set by each employee on
+    # their availability page for this semester
+    employee_desired_hours, employee_wants_lunch = _term_preferences_json(
+        visible_employees, avail_term, avail_year,
+    )
     avail_data = {}
     avail_minutes_by_user = {}
     all_avail = WeeklyAvailability.objects.filter(
@@ -915,12 +931,9 @@ def default_schedule_builder(request):
 
     employee_colors, custom_color_pks = _employee_colors(active_schedule, visible_employees)
 
-    employee_desired_hours = {
-        str(e.pk): e.desired_weekly_hours for e in visible_employees
-    }
-    employee_wants_lunch = {
-        str(e.pk): e.wants_lunch_break for e in visible_employees
-    }
+    employee_desired_hours, employee_wants_lunch = _term_preferences_json(
+        visible_employees, term, year,
+    )
 
     # Availability is already day-of-week based — same shape as the live builder
     # uses — from the semester this default week is for.
